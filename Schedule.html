@@ -66,12 +66,12 @@
     <script src="asset/js/auth.js"></script>
     <script src="asset/js/portable-shim.js"></script>
     <script src="asset/js/common.js"></script>
-    <!-- notifications.js là thông báo món của Phục vụ -> chỉ nạp cho Phục vụ, Bếp không cần -->
+    <!-- notifications.js: Phục vụ/Thu ngân có Thông báo + Thanh toán + Giao ca; Bếp chỉ có nút Giao ca -->
     <script>
         (function () {
             var ss = AuthAPI.getSession();
             if (ss && ss.roleKey === 'cashier') document.write('<script src="asset/js/cashier-core.js"><\/script><script src="asset/js/notifications.js"><\/script>');
-            else if (ss && ss.roleKey === 'waiter') document.write('<script src="asset/js/notifications.js"><\/script>');
+            else if (ss && (ss.roleKey === 'waiter' || ss.roleKey === 'kitchen')) document.write('<script src="asset/js/notifications.js"><\/script>');
         })();
     </script>
     <script src="asset/js/schedule.js"></script>

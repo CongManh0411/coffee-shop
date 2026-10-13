@@ -201,7 +201,8 @@
         const menu = $('sidebarMenu');
         if (!menu || !menu.children.length) return; // sidebar chưa vẽ xong — chờ sự kiện 'sidebar-ready'
         const session = (typeof AuthAPI !== 'undefined') ? AuthAPI.getSession() : null;
-        if (!session || (session.roleKey !== 'waiter' && session.roleKey !== 'cashier')) return; // Phục vụ và Thu ngân
+        const role = session && session.roleKey;
+        if (role !== 'waiter' && role !== 'cashier' && role !== 'kitchen') return; // Phục vụ, Thu ngân, Bếp
         mounted = true;
 
         if (getSeen() === null) setSeen(Date.now()); // lần đầu dùng: chưa có tin cũ nào
@@ -213,11 +214,20 @@
             b.type = 'button'; b.className = 'tab ' + cls; b.id = id; b.innerHTML = html;
             return b;
         };
+        const handBtn = makeBtn('navHandover', 'nav-handover', 'Giao ca');
+        handBtn.addEventListener('click', () => withTimesheet(() => window.WaiterTimesheet.openHandover()));
+
+        // BẾP: chỉ có nút "Giao ca" (xếp sau Lịch ca) + tự ghi giờ vào ca.
+        // Không có Thông báo / Thanh toán vì đó là việc của Phục vụ & Thu ngân.
+        if (role === 'kitchen') {
+            menu.appendChild(handBtn);
+            withTimesheet(() => { window.WaiterTimesheet.recordClockIn(); window.WaiterTimesheet.refreshButton(); });
+            return;
+        }
+
         const btn = makeBtn('navNotif', 'nav-notif', 'Thông báo <span class="notif-badge" id="notifBadge" hidden>0</span>');
         const payBtn = makeBtn('navPay', 'nav-pay', 'Thanh toán');
         payBtn.addEventListener('click', () => withPay(() => window.WaiterPay.open()));
-        const handBtn = makeBtn('navHandover', 'nav-handover', 'Giao ca');
-        handBtn.addEventListener('click', () => withTimesheet(() => window.WaiterTimesheet.openHandover()));
         // Thứ tự: Bàn, Thông báo, Thanh toán, Lịch ca làm, Giao ca
         const shiftLink = menu.querySelector('a[data-view="schedule"]');
         menu.insertBefore(btn, shiftLink);
