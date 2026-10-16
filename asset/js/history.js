@@ -39,23 +39,23 @@ function render() {
         const itemsSummary = inv.items.map(it => `${it.name} x${it.qty}`).join(', ');
         const statusBadge = inv.status === 'active'
             ? `<span class="badge badge-active">Hiệu lực</span>`
-            : `<span class="badge badge-cancelled">Đã hủy</span>${inv.cancelReason ? `<div class="cancel-reason-note">Lý do: ${escapeHtml(inv.cancelReason)}</div>` : ''}`;
+            : `<span class="badge badge-cancelled">Đã hủy</span>${inv.cancelReason ? `<div class="cancel-reason-note">Lý do: ${escapeHtml(inv.cancelReason)}${inv.cancelledBy ? ' (' + escapeHtml(inv.cancelledBy) + ')' : ''}</div>` : ''}`;
 
         return `
             <tr>
-                <td><b>${inv.id}</b></td>
-                <td>${inv.tableName}</td>
+                <td><b>${escapeHtml(inv.id)}</b></td>
+                <td>${escapeHtml(inv.tableName)}</td>
                 <td>${fmtDateTime(inv.createdAt)}</td>
                 <td style="max-width:220px;">
-                    <span style="cursor:pointer; color:#7a5c3e; text-decoration:underline;" onclick="openDetailModal('${inv.id}')">${escapeHtml(itemsSummary)}</span>
+                    <span style="cursor:pointer; color:#7a5c3e; text-decoration:underline;" onclick="openDetailModal('${escapeHtml(inv.id)}')">${escapeHtml(itemsSummary)}</span>
                 </td>
-                <td><span class="badge ${methodBadgeClass[inv.paymentMethod]}">${methodLabel[inv.paymentMethod] || inv.paymentMethod}</span></td>
+                <td><span class="badge ${methodBadgeClass[inv.paymentMethod] || ''}">${methodLabel[inv.paymentMethod] || inv.paymentMethod || '—'}</span></td>
                 <td><b>${fmtMoney(inv.total)}</b></td>
                 <td>${statusBadge}</td>
                 <td>
                     <div style="display:flex; gap:6px;">
-                        <button class="btn-outline" style="padding:6px 10px; font-size:12px;" onclick="openDetailModal('${inv.id}')">Xem</button>
-                        ${inv.status === 'active' ? `<button class="btn-danger" style="padding:6px 10px; font-size:12px;" onclick="openCancelModal('${inv.id}')">Xóa</button>` : ''}
+                        <button class="btn-outline" style="padding:6px 10px; font-size:12px;" onclick="openDetailModal('${escapeHtml(inv.id)}')">Xem</button>
+                        ${inv.status === 'active' ? `<button class="btn-danger" style="padding:6px 10px; font-size:12px;" onclick="openCancelModal('${escapeHtml(inv.id)}')">Xóa</button>` : ''}
                     </div>
                 </td>
             </tr>
@@ -65,7 +65,7 @@ function render() {
 
 function escapeHtml(str) {
     const div = document.createElement('div');
-    div.innerText = str;
+    div.innerText = str == null ? '' : str;
     return div.innerHTML;
 }
 
@@ -108,10 +108,14 @@ function confirmCancelInvoice() {
     const list = loadInvoices();
     const inv = list.find(i => i.id === invoiceIdForCancel);
     if (!inv) return;
+    const who = (window.Cashier && Cashier.me().name) || 'Quản lý';
     inv.status = 'cancelled';
     inv.cancelReason = reason;
     inv.cancelledAt = new Date().toISOString();
+    inv.cancelledBy = who;
     saveInvoices(list);
+    // Ghi Nhật ký để Quản lý truy vết (Logs.html)
+    try { if (window.Cashier) Cashier.log('cancel_order', `Hủy hóa đơn ${inv.id} (${inv.tableName}). Lý do: ${reason}`, inv.total, true); } catch (e) {}
 
     closeCancelModal();
     render();
@@ -122,7 +126,7 @@ function openDetailModal(invoiceId) {
     const inv = loadInvoices().find(i => i.id === invoiceId);
     if (!inv) return;
     document.getElementById('detailModalTitle').innerText = `Hóa đơn ${inv.id}`;
-    document.getElementById('detailModalMeta').innerText = `${inv.tableName} • ${fmtDateTime(inv.createdAt)} • ${methodLabel[inv.paymentMethod] || inv.paymentMethod}`;
+    document.getElementById('detailModalMeta').innerText = `${inv.tableName} • ${fmtDateTime(inv.createdAt)} • ${methodLabel[inv.paymentMethod] || inv.paymentMethod || '—'}`;
     document.getElementById('detailModalItems').innerHTML = inv.items.map(it => `
         <tr>
             <td>${escapeHtml(it.name)}</td>
@@ -134,7 +138,7 @@ function openDetailModal(invoiceId) {
     `;
     const noteEl = document.getElementById('detailModalCancelNote');
     noteEl.innerHTML = inv.status === 'cancelled'
-        ? `<div class="cancel-reason-note" style="margin-bottom:16px;">Đã hủy lúc ${fmtDateTime(inv.cancelledAt)} — Lý do: ${escapeHtml(inv.cancelReason || '')}</div>`
+        ? `<div class="cancel-reason-note" style="margin-bottom:16px;">Đã hủy lúc ${fmtDateTime(inv.cancelledAt)}${inv.cancelledBy ? ' bởi ' + escapeHtml(inv.cancelledBy) : ''} — Lý do: ${escapeHtml(inv.cancelReason || '')}</div>`
         : '';
     document.getElementById('detailModal').classList.add('active');
 }

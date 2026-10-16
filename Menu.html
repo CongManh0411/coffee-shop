@@ -14,11 +14,10 @@
  
     <!-- Nội dung chính -->
     <main class="main">
-        <!-- Thanh điều hướng ngang — các thao tác trong trang Menu -->
+        <!-- Thanh điều hướng ngang — các thao tác trong trang Thực đơn -->
         <nav class="topnav">
             <button class="topnav-item active" data-action="edit">Sửa món</button>
             <button class="topnav-item" data-action="add">Thêm món</button>
-            <button class="topnav-item" data-action="ingredients">Định mức nguyên liệu</button>
         </nav>
  
         <div class="main-content">
@@ -26,7 +25,7 @@
             <div class="tab-panel active" id="panel-edit">
                 <div class="menu-page-header">
                     <h2>Thực đơn</h2>
-                    <p>Thêm, sửa, ẩn món trực tiếp.</p>
+                    <p>Thêm, sửa, ẩn món trực tiếp. Số lượng tồn kho quản lý ở trang <a href="Warehouse.html">Kho</a>.</p>
                 </div>
  
                 <div class="menu-toolbar">
@@ -34,7 +33,7 @@
                     <input type="text" id="menuSearchInput" class="menu-search-input" placeholder="Tìm món theo tên...">
                 </div>
 
-                <!-- Danh sách món sẽ được đổ vào đây từ dữ liệu thật (database/API) -->
+                <!-- Danh sách món sẽ được đổ vào đây -->
                 <div class="menu-category-list" id="menuCategoryList">
                     <div class="menu-empty-state">
                         Chưa có món nào. Vào tab "Thêm món" để bắt đầu.
@@ -83,38 +82,13 @@
                     <button type="button" class="btn-cancel-edit" id="btnCancelEdit" style="display:none;">Hủy sửa</button>
                 </form>
             </div>
- 
-            <!-- ============ PANEL: Định mức nguyên liệu ============ -->
-            <div class="tab-panel" id="panel-ingredients">
-                <div class="menu-page-header">
-                    <h2>Công thức nguyên liệu (tham khảo)</h2>
-                    <p>Phiên bản này trừ kho theo số ly/số phần khi thanh toán. Công thức ở đây chỉ để tham khảo, không ảnh hưởng đến số lượng trong Kho. Để nhập số ly, hãy mở <a href="Warehouse.html">trang Kho</a>.</p>
-                </div>
-
-                <div class="recipe-card">
-                    <div class="recipe-toolbar">
-                        <select id="recipeItemSelect" class="recipe-select">
-                            <!-- options đổ vào từ sampleMenuData -->
-                        </select>
-                        <button type="button" class="btn-outline" id="btnAddIngredient">+ Nguyên liệu</button>
-                    </div>
-
-                    <div class="ingredient-list" id="ingredientList">
-                        <div class="ingredient-empty">Chưa có nguyên liệu nào cho món này.</div>
-                    </div>
-
-                    <div class="recipe-status" id="recipeStatus">Chưa định mức</div>
-
-                    <button type="button" class="btn-submit" id="btnSaveRecipe">Lưu công thức món</button>
-                </div>
-            </div>
         </div>
     </main>
  
     <!-- auth.js PHẢI nạp trước script.js: chặn trang nếu chưa đăng nhập / sai quyền -->
     <script src="asset/js/auth.js"></script>
     <script src="asset/js/portable-shim.js"></script>
-<script src="asset/js/common.js"></script>
+    <script src="asset/js/common.js"></script>
     <script src="asset/js/menu-data.js"></script>
     <script src="asset/js/inventory.js"></script>
     <script src="asset/js/menu.js"></script>
