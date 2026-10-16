@@ -60,26 +60,30 @@ function promoDel(id) { write(K.PROMO, read(K.PROMO, []).filter(p => p.id !== id
 
 /* ---------- KHO NÂNG CAO ---------- */
 function viewStock() {
-    const wh = read(K.WH, null) || [{ id: 1, name: 'Cà phê hạt', unit: 'kg', stock: 5 }, { id: 2, name: 'Sữa đặc', unit: 'hộp', stock: 8 }, { id: 3, name: 'Đường', unit: 'kg', stock: 20 }, { id: 4, name: 'Đá viên', unit: 'kg', stock: 30 }];
+    const wh = InventoryAPI.getAll();
     const sup = read(K.SUP, []), mv = read(K.MOV, []).slice().reverse(), today = new Date().toISOString().slice(0, 10), soon = new Date(Date.now() + 7 * 864e5).toISOString().slice(0, 10);
     const cost = {}; mv.filter(m => m.type === 'Nhập' && m.qty > 0).forEach(m => { const c = cost[m.item] || (cost[m.item] = { q: 0, v: 0 }); c.q += m.qty; c.v += m.qty * m.price; });
     const loss = mv.filter(m => m.type === 'Hao hụt').reduce((t, m) => t + m.qty * (cost[m.item] ? cost[m.item].v / cost[m.item].q : 0), 0);
     return `<div class="ops-card"><h3>Nhà cung cấp</h3><div class="ops-form">${field('sName', 'Tên NCC')}${field('sPhone', 'SĐT')}<button onclick="addSup()">Thêm NCC</button></div>
         ${table(['NCC', 'SĐT', ''], sup.map(s => [esc(s.name), esc(s.phone), btn('supDel', s.id, 'Xóa', 'red')]))}</div>
-        <div class="ops-card"><h3>Phiếu nhập / xuất / hao hụt</h3><div class="ops-form"><select id="mType"><option>Nhập</option><option>Xuất</option><option>Hao hụt</option></select>
-        <select id="mItem">${wh.map(w => `<option value="${esc(w.name)}">${esc(w.name)} (${w.unit})</option>`).join('')}</select>${field('mQty', 'Số lượng', 'number', 'step=any')}${field('mPrice', 'Đơn giá nhập', 'number')}
+        <div class="ops-card"><h3>Phiếu nhập / xuất / hao hụt (ly / phần)</h3><div class="ops-form"><select id="mType"><option>Nhập</option><option>Xuất</option><option>Hao hụt</option></select>
+        <select id="mItem">${wh.map(w => `<option value="${esc(w.id)}">${esc(w.name)} (${w.unit})</option>`).join('')}</select>${field('mQty', 'Số lượng', 'number', 'min=1 step=1')}${field('mPrice', 'Đơn giá nhập', 'number')}
         <select id="mSup"><option value="">-- NCC --</option>${sup.map(s => `<option>${esc(s.name)}</option>`).join('')}</select><label>Hạn dùng ${field('mExp', '', 'date')}</label>${field('mNote', 'Ghi chú / lý do')}<button onclick="addMove()">Lập phiếu</button></div>
         <p style="font-size:13px">Giá vốn bình quân: ${Object.keys(cost).map(k => `<b>${esc(k)}</b> ${money(cost[k].v / cost[k].q)}`).join(' · ') || 'chưa có phiếu nhập'} &nbsp;|&nbsp; Giá trị hao hụt: <b>${money(loss)}</b></p>
-        ${table(['Ngày', 'Loại', 'Nguyên liệu', 'SL', 'Đơn giá', 'NCC', 'Hạn dùng', 'Ghi chú'], mv.map(m => [m.date, m.type, esc(m.item), m.qty, m.price ? money(m.price) : '—', esc(m.sup || '—'), m.exp ? (m.exp < today ? '<span class="ops-warn">' + m.exp + ' (hết hạn)</span>' : m.exp <= soon ? '<span class="ops-warn">' + m.exp + ' (sắp hết)</span>' : m.exp) : '—', esc(m.note)]))}</div>`;
+        ${table(['Ngày', 'Loại', 'Món', 'SL', 'Đơn giá', 'NCC', 'Hạn dùng', 'Ghi chú'], mv.map(m => [m.date, m.type, esc(m.item), m.qty, m.price ? money(m.price) : '—', esc(m.sup || '—'), m.exp ? (m.exp < today ? '<span class="ops-warn">' + m.exp + ' (hết hạn)</span>' : m.exp <= soon ? '<span class="ops-warn">' + m.exp + ' (sắp hết)</span>' : m.exp) : '—', esc(m.note)]))}</div>`;
 }
 function addSup() { if (!val('sName')) return; const l = read(K.SUP, []); l.push({ id: uid(), name: val('sName'), phone: val('sPhone') }); write(K.SUP, l); go(); }
 function supDel(id) { write(K.SUP, read(K.SUP, []).filter(s => s.id !== id)); go(); }
 function addMove() {
     const qty = +val('mQty'); if (!(qty > 0)) return alert('Nhập số lượng > 0.');
-    const type = val('mType'), item = val('mItem'), wh = read(K.WH, null);
+    if (!Number.isSafeInteger(qty)) return alert('Số lượng phải là số nguyên (ly / phần).');
+    const type = val('mType'), itemId = val('mItem'), product = InventoryAPI.get(itemId);
+    if (!product) return alert('Chọn món từ Menu.');
     if (type === 'Nhập' && !+val('mPrice')) return alert('Phiếu nhập cần đơn giá để tính giá vốn.');
-    const mv = read(K.MOV, []); mv.push({ id: uid(), date: new Date().toISOString().slice(0, 10), type, item, qty, price: +val('mPrice') || 0, sup: val('mSup'), exp: val('mExp'), note: val('mNote') }); write(K.MOV, mv);
-    if (wh) { const w = wh.find(x => x.name === item); if (w) { w.stock = Math.round((w.stock + (type === 'Nhập' ? qty : -qty)) * 1e6) / 1e6; write(K.WH, wh); } } // đồng bộ tồn ở trang Kho
+    const result = InventoryAPI.adjust(itemId, type === 'Nhập' ? qty : -qty, val('mNote') || `Phiếu ${type.toLowerCase()}`);
+    if (!result.ok) return alert(result.error);
+    const mv = read(K.MOV, []); mv.push({ id: uid(), date: new Date().toISOString().slice(0, 10), type,
+        item: product.name, qty, price: +val('mPrice') || 0, sup: val('mSup'), exp: val('mExp'), note: val('mNote') }); write(K.MOV, mv);
     go();
 }
 

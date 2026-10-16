@@ -59,7 +59,21 @@
         $('lgNote').textContent = '';
     }
 
-    function render() { fillFilters(); (tab === 'logs' ? renderLogs : renderShifts)(); }
+    function renderStock() {
+        $('lgTitle').textContent = 'Nhật ký kho theo ly / phần';
+        $('lgFilters').hidden = true;
+        $('lgHead').innerHTML = '<tr><th>Thời gian</th><th>Người thực hiện</th><th>Món</th><th>Thao tác</th><th>Biến động</th><th>Hóa đơn / Ghi chú</th></tr>';
+        const list = InventoryAPI.getLog().slice().reverse();
+        const typeLabel = { import: 'Nhập kho', adjust: 'Điều chỉnh', sale: 'Bán hàng', rollback: 'Hoàn tác' };
+        $('lgSub').textContent = `${list.length} biến động kho`;
+        $('lgBody').innerHTML = list.length ? list.map(l => `<tr><td>${fmtDT(new Date(l.ts).toISOString())}</td>
+            <td>${esc(l.actor)}</td><td>${esc(l.name)}</td><td>${esc(typeLabel[l.type] || l.type)}</td>
+            <td>${l.delta > 0 ? '+' : ''}${l.delta} ${esc(l.unit)}</td><td>${esc(l.ref)}</td></tr>`).join('')
+            : '<tr><td colspan="6"><div class="empty-table-state">Chưa có biến động kho.</div></td></tr>';
+        $('lgNote').textContent = 'Hủy hay hoàn tiền không tự nhập lại món đã pha; quản lý điều chỉnh ở trang Kho khi cần.';
+    }
+
+    function render() { fillFilters(); (tab === 'logs' ? renderLogs : tab === 'shifts' ? renderShifts : renderStock)(); }
 
     document.addEventListener('DOMContentLoaded', () => {
         $('lgTabs').addEventListener('click', e => {
@@ -77,6 +91,6 @@
         $('lgClose').onclick = () => $('lgModal').classList.remove('active');
         $('lgPrint').onclick = () => { if (reportShift) C.printHtml('Báo cáo kết ca', C.shiftReportHtml(reportShift)); };
         render();
-        window.addEventListener('storage', e => { if ([C.K.LOGS, C.K.SHIFT].includes(e.key)) render(); });
+        window.addEventListener('storage', e => { if ([C.K.LOGS, C.K.SHIFT, InventoryAPI.LOG_KEY].includes(e.key)) render(); });
     });
 })();

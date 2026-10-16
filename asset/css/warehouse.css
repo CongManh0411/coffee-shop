@@ -58,3 +58,8 @@
 .tab-panel.active {
     display: block;
 }
+/* Kho theo số ly/số phần — tái dùng màu sắc, bảng và form gốc. */
+.stock-current { padding: 11px 12px; border-radius: 8px; background: #fbf1e8; color: #4a2a18; font-weight: 700; }
+#inventoryStats { grid-template-columns: repeat(auto-fit,minmax(145px,1fr)); }
+#inventoryTable small { color: #8b7d6f; }
+#inventoryForm select { width: 100%; min-height: 43px; border: 1px solid #e4d6c8; border-radius: 8px; padding: 9px; background: white; }

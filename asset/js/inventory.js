@@ -1,143 +1,151 @@
-// ============================================================
-// inventory.js — LỚP DỮ LIỆU KHO DÙNG CHUNG (InventoryAPI)
-// ------------------------------------------------------------
-// Nạp TRƯỚC warehouse.js, menu.js, kitchen.js, table-order.js (và notifications.js dùng khi thanh toán).
-// - Kho:      'coffee_warehouse_v1'      [{ id, name, unit, stock, minLevel, trackingCode }]
-// - Công thức:'coffee_menu_recipes_v1'   { [menuItemId]: [{ ingredientId, name, qty, unit }] }  (menu.js ghi)
-// - Biến động:'coffee_warehouse_log_v1'  [{ ts, type, ingredientId, name, unit, delta, ref }]  (tối đa 300 dòng)
-//
-// QUY TẮC TRỪ KHO: món bị trừ nguyên liệu đúng 1 lần khi BẾP bấm "Xong" (hoặc khi Phục vụ thanh toán mà món chưa xong).
-// Bếp bấm "Hoàn tác" thì cộng lại đúng số đã trừ. Trừ không bao giờ xuống dưới 0 và không chặn việc làm món.
-// Món đã trừ được đánh dấu: item.stockDeducted = true, item.stockUsed = [{ id, amt }].
-// Đơn vị: công thức có thể ghi g/ml còn Kho tính kg/lít (tự quy đổi).
-//
-// Khi nối backend: giữ nguyên tên hàm, chỉ đổi phần đọc/ghi (read/write) thành gọi API; việc trừ kho nên làm ở server.
-// ============================================================
+// Kho thành phẩm (theo số ly / phần) — dùng chung cho Menu, Bán hàng, Kho, Thu ngân.
+// Không quy đổi nguyên liệu cũ sang ly; dữ liệu nguyên liệu cũ vẫn giữ tại coffee_warehouse_v1.
 (function () {
     'use strict';
     if (window.InventoryAPI) return;
-
-    const KEY = 'coffee_warehouse_v1', LOG_KEY = 'coffee_warehouse_log_v1', RECIPE_KEY = 'coffee_menu_recipes_v1', MENU_KEY = 'coffee_menu_data_v2';
-    const DEFAULTS = [
-        { id: 1, name: 'Cà phê hạt', unit: 'kg',  stock: 5,  minLevel: 10, trackingCode: 'VN123456789' },
-        { id: 2, name: 'Sữa đặc',    unit: 'hộp', stock: 8,  minLevel: 15, trackingCode: 'VN987654321' },
-        { id: 3, name: 'Đường',      unit: 'kg',  stock: 20, minLevel: 10, trackingCode: 'VN456789123' },
-        { id: 4, name: 'Đá viên',    unit: 'kg',  stock: 30, minLevel: 20, trackingCode: 'VN789123456' }
-    ];
-
-    const read = (k, d) => { try { const v = JSON.parse(localStorage.getItem(k)); return v === null || v === undefined ? d : v; } catch (e) { return d; } };
-    const write = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } };
-    const round = n => Math.round(n * 1e6) / 1e6;
-
-    function getAll() { const s = read(KEY, null); return Array.isArray(s) ? s : JSON.parse(JSON.stringify(DEFAULTS)); }
-    function saveAll(list) { return write(KEY, list); }
-    function getRecipes() { const r = read(RECIPE_KEY, {}); return r && typeof r === 'object' ? r : {}; }
-
-    // ---------- Đơn vị ----------
-    const UNITS = { g: ['g', 1], kg: ['g', 1000], ml: ['ml', 1], l: ['ml', 1000], 'lít': ['ml', 1000], lit: ['ml', 1000] };
-    const norm = u => String(u || '').trim().toLowerCase();
-    // 1 [from] = ? [to]  (null nếu không quy đổi được)
-    function factor(from, to) {
-        const a = norm(from), b = norm(to);
-        if (!a || !b) return null;
-        if (a === b) return 1;
-        const x = UNITS[a], y = UNITS[b];
-        return x && y && x[0] === y[0] ? x[1] / y[1] : null;
+    const KEY = 'coffee_portion_stock_v1';
+    const LOG_KEY = 'coffee_portion_stock_log_v1';
+    const SALE_KEY = 'coffee_portion_stock_sales_v1';
+    const MENU_STORAGE = 'coffee_menu_data_v2';
+    const TABLES_KEY = 'coffee_tables_v1';
+    const PENDING_KEY = 'coffee_pending_orders_v1';
+    const read = (key, fallback) => { try { const v = JSON.parse(localStorage.getItem(key)); return v == null ? fallback : v; } catch (_) { return fallback; } };
+    const write = (key, data) => { try { localStorage.setItem(key, JSON.stringify(data)); return true; } catch (_) { return false; } };
+    const unitFor = category => category === 'Bánh' ? 'phần' : 'ly';
+    const positiveInt = value => Number.isSafeInteger(Number(value)) && Number(value) >= 0;
+    const actor = () => { try { const u = window.AuthAPI && AuthAPI.getSession(); return u ? (u.name || u.fullName || u.username || u.roleKey || 'Nhân viên') : 'Nhân viên'; } catch (_) { return 'Nhân viên'; } };
+    function menuItems() {
+        const menu = read(MENU_STORAGE, typeof DEFAULT_MENU !== 'undefined' ? DEFAULT_MENU : []);
+        return (Array.isArray(menu) ? menu : []).flatMap(cat => (cat.items || []).map(item => ({ id: String(item.id), name: item.name, category: cat.category, unit: unitFor(cat.category) })));
     }
-    function unitOptions(stockUnit) {
-        const x = UNITS[norm(stockUnit)];
-        if (!x) return [stockUnit];
-        return x[0] === 'g' ? ['g', 'kg'] : ['ml', 'l'];
-    }
-
-    // ---------- Công thức ----------
-    function findIng(wh, id) { return wh.find(w => String(w.id) === String(id)); }
-    function isValidRow(row, wh) {
-        const ing = row && row.ingredientId != null ? findIng(wh, row.ingredientId) : null;
-        return !!ing && Number(row.qty) > 0 && !!row.unit && factor(row.unit, ing.unit) !== null;
-    }
-    // Nguyên liệu cần cho `qty` phần món menuId, quy về đơn vị của Kho: [{ id, amt }]
-    function needsOf(menuId, qty, wh, recipes) {
-        const rows = (recipes || getRecipes())[menuId] || [];
-        const out = [];
-        rows.forEach(r => {
-            if (!isValidRow(r, wh)) return;
-            const ing = findIng(wh, r.ingredientId), amt = Number(r.qty) * factor(r.unit, ing.unit) * qty;
-            const e = out.find(o => String(o.id) === String(ing.id));
-            if (e) e.amt += amt; else out.push({ id: ing.id, amt });
+    function getAll() {
+        const items = menuItems(), raw = read(KEY, {}), stock = raw && !Array.isArray(raw) && typeof raw === 'object' ? raw : {};
+        return items.map(m => {
+            const old = stock[m.id] || {};
+            return { ...m, stock: positiveInt(old.stock) ? Number(old.stock) : 0,
+                minLevel: positiveInt(old.minLevel) ? Number(old.minLevel) : 10 };
         });
-        return out;
     }
-
-    // Số nguyên liệu đã "giữ chỗ" cho các món đã gọi (kể cả nháp) mà CHƯA bị trừ kho
-    function reservedMap(tables, wh, recipes) {
-        const res = {};
-        (tables || []).forEach(t => (t.items || []).forEach(i => {
-            if (i.stockDeducted) return;
-            needsOf(i.id, i.quantity, wh, recipes).forEach(n => { res[n.id] = (res[n.id] || 0) + n.amt; });
-        }));
-        return res;
+    const get = id => getAll().find(x => x.id === String(id));
+    function log(type, item, delta, ref) {
+        const logs = read(LOG_KEY, []);
+        logs.push({ ts: Date.now(), type, itemId: item.id, name: item.name, unit: item.unit, delta, ref: ref || '', actor: actor() });
+        write(LOG_KEY, logs.slice(-1500));
     }
-    // Còn làm được tối đa bao nhiêu phần (Infinity nếu món chưa có công thức hợp lệ)
-    function portionsLeft(menuId, wh, recipes, reserved) {
-        const needs = needsOf(menuId, 1, wh, recipes);
-        if (!needs.length) return Infinity;
-        const n = Math.min(...needs.map(x => (findIng(wh, x.id).stock - ((reserved || {})[x.id] || 0)) / x.amt));
-        return Math.max(0, Math.floor(n + 1e-9));
+    function getLog() { const logs = read(LOG_KEY, []); return Array.isArray(logs) ? logs : []; }
+    function adjust(id, delta, reason) {
+        const item = get(id), change = Number(delta);
+        if (!item) return { ok: false, error: 'Món không còn trong Menu.' };
+        if (!Number.isSafeInteger(change) || !change) return { ok: false, error: 'Số lượng thay đổi phải là số nguyên khác 0.' };
+        if (item.stock + change < 0) return { ok: false, error: `Kho ${item.name} chỉ còn ${item.stock} ${item.unit}.` };
+        const data = read(KEY, {});
+        data[item.id] = { stock: item.stock + change, minLevel: item.minLevel };
+        if (!write(KEY, data)) return { ok: false, error: 'Không thể lưu kho vào trình duyệt.' };
+        log(change > 0 ? 'import' : 'adjust', item, change, reason || 'Điều chỉnh thủ công');
+        return { ok: true };
     }
-
-    // ---------- Lịch sử ----------
-    function getLog() { const l = read(LOG_KEY, []); return Array.isArray(l) ? l : []; }
-    function pushLog(entries) {
-        if (!entries.length) return;
-        write(LOG_KEY, getLog().concat(entries).slice(-300));
+    function setLevel(id, level) {
+        const item = get(id);
+        if (!item || !positiveInt(level)) return { ok: false, error: 'Định mức cảnh báo phải là số nguyên không âm.' };
+        const data = read(KEY, {});
+        data[item.id] = { stock: item.stock, minLevel: Number(level) };
+        return write(KEY, data) ? { ok: true } : { ok: false, error: 'Không thể lưu định mức.' };
     }
-    function logChange(type, ing, delta, ref) {
-        pushLog([{ ts: Date.now(), type, ingredientId: ing.id, name: ing.name, unit: ing.unit, delta: round(delta), ref: ref || '' }]);
+    function totals(items) {
+        const qty = {};
+        for (const line of items || []) {
+            const id = line.id ?? line.itemId ?? line.menuItemId;
+            const n = Number(line.quantity ?? line.qty);
+            if (id == null || !Number.isSafeInteger(n) || n <= 0) return null;
+            qty[String(id)] = (qty[String(id)] || 0) + n;
+        }
+        return qty;
     }
-
-    // ---------- Trừ / hoàn kho cho 1 dòng món (item trong bàn). Sửa `wh` tại chỗ; người gọi tự saveAll(wh). ----------
-    function applySale(item, wh, ref) {
-        if (!item || item.stockDeducted) return false;
-        const used = [], logs = [];
-        needsOf(item.id, item.quantity, wh).forEach(n => {
-            const ing = findIng(wh, n.id), amt = Math.min(Number(ing.stock) || 0, n.amt);
-            if (amt <= 0) return;
-            ing.stock = round(ing.stock - amt);
-            used.push({ id: ing.id, amt: round(amt) });
-            logs.push({ ts: Date.now(), type: 'sale', ingredientId: ing.id, name: ing.name, unit: ing.unit, delta: -round(amt), ref: `${ref || ''} · ${item.name} x${item.quantity}` });
+    // Cộng cả món nháp và món đã gửi bếp: món chỉ bị trừ khi thanh toán, không phải khi bếp bấm Xong.
+    function reserved(excludeTableId) {
+        const sum = {};
+        const tables = read(TABLES_KEY, []);
+        (Array.isArray(tables) ? tables : []).forEach(table => {
+            if (excludeTableId != null && String(table.id) === String(excludeTableId)) return;
+            (table.items || []).forEach(i => {
+                if (i.id == null) return;
+                const n = Number(i.quantity || 0);
+                if (n > 0) sum[String(i.id)] = (sum[String(i.id)] || 0) + n;
+            });
         });
-        item.stockDeducted = true;
-        item.stockUsed = used;
-        pushLog(logs);
-        return used.length > 0;
-    }
-    function undoSale(item, wh, ref) {
-        if (!item || !item.stockDeducted) return false;
-        const logs = [];
-        (item.stockUsed || []).forEach(u => {
-            const ing = findIng(wh, u.id);
-            if (!ing) return;
-            ing.stock = round((Number(ing.stock) || 0) + u.amt);
-            logs.push({ ts: Date.now(), type: 'undo', ingredientId: ing.id, name: ing.name, unit: ing.unit, delta: round(u.amt), ref: `${ref || ''} · hoàn tác ${item.name}` });
+        // Các hóa đơn trong Pay.html có thể là đơn độc lập, không có bàn lưu tương ứng.
+        const pending = read(PENDING_KEY, []);
+        (Array.isArray(pending) ? pending : []).forEach(p => {
+            if ((Array.isArray(tables) ? tables : []).some(t => String(t.id) === String(p.tableId))) return;
+            (p.items || []).forEach(i => {
+                if (i.id == null) return;
+                const n = Number(i.quantity || i.qty || 0);
+                if (n > 0) sum[String(i.id)] = (sum[String(i.id)] || 0) + n;
+            });
         });
-        const changed = (item.stockUsed || []).length > 0;
-        delete item.stockDeducted; delete item.stockUsed;
-        pushLog(logs);
-        return changed;
+        return sum;
     }
-
-    // Tên các món đang dùng nguyên liệu này trong công thức
-    function usedByRecipes(ingredientId) {
-        const recipes = getRecipes(), menu = read(MENU_KEY, []), names = [];
-        (Array.isArray(menu) ? menu : []).forEach(cat => (cat.items || []).forEach(it => {
-            if ((recipes[it.id] || []).some(r => String(r.ingredientId) === String(ingredientId))) names.push(it.name);
-        }));
-        return names;
+    function available(id) { const item = get(id); return item ? Math.max(0, item.stock - (reserved()[String(id)] || 0)) : 0; }
+    function canReserve(id, quantity) {
+        const item = get(id), n = Number(quantity);
+        if (!item) return { ok: false, error: 'Món không có trong thực đơn.' };
+        if (!Number.isSafeInteger(n) || n < 1) return { ok: false, error: 'Số lượng món không hợp lệ.' };
+        const left = available(id);
+        return left >= n ? { ok: true, left } : { ok: false, left, error: `${item.name} chỉ còn ${left} ${item.unit} có thể đặt (tồn kho ${item.stock}).` };
     }
-
-    window.InventoryAPI = {
-        KEY, LOG_KEY, RECIPE_KEY, getAll, saveAll, getRecipes, factor, unitOptions, isValidRow, needsOf,
-        reservedMap, portionsLeft, applySale, undoSale, usedByRecipes, getLog, logChange
-    };
+    function validateSale(lines, invoiceId) {
+        const sold = read(SALE_KEY, {});
+        if (invoiceId && sold[invoiceId]) return { ok: false, error: `Hóa đơn ${invoiceId} đã được trừ kho trước đó.` };
+        const summary = totals(lines);
+        if (!summary || !Object.keys(summary).length) return { ok: false, error: 'Hóa đơn không có số lượng món hợp lệ.' };
+        const items = getAll();
+        const details = [];
+        for (const [id, quantity] of Object.entries(summary)) {
+            const item = items.find(x => x.id === id);
+            if (!item) return { ok: false, error: `Mã món ${id} không có trong thực đơn. Không thể trừ kho.` };
+            if (item.stock < quantity) return { ok: false, error: `${item.name} chỉ còn ${item.stock} ${item.unit}; hóa đơn cần ${quantity}.` };
+            details.push({ ...item, quantity });
+        }
+        return { ok: true, details };
+    }
+    function drop(id) {
+        const data = read(KEY, {});
+        delete data[String(id)];
+        return write(KEY, data);
+    }
+    // Trừ đúng 1 lần theo mã hóa đơn. Nếu không ghi được sổ theo dõi thì hoàn nguyên tồn kho.
+    function consume(lines, invoiceId) {
+        const check = validateSale(lines, invoiceId);
+        if (!check.ok) return check;
+        const before = read(KEY, {}), after = JSON.parse(JSON.stringify(before));
+        const sold = read(SALE_KEY, {});
+        check.details.forEach(x => { after[x.id] = { stock: x.stock - x.quantity, minLevel: x.minLevel }; });
+        if (!write(KEY, after)) return { ok: false, error: 'Không lưu được tồn kho.' };
+        sold[invoiceId] = { ts: Date.now(), lines: check.details.map(x => ({ id: x.id, quantity: x.quantity })) };
+        if (!write(SALE_KEY, sold)) {
+            write(KEY, before);
+            return { ok: false, error: 'Không lưu được lịch sử trừ kho.' };
+        }
+        check.details.forEach(x => log('sale', x, -x.quantity, `Hóa đơn ${invoiceId}`));
+        return { ok: true };
+    }
+    // Chỉ sử dụng khi ghi hóa đơn thất bại, không tự động trả kho khi hoàn tiền.
+    function rollback(invoiceId) {
+        const sales = read(SALE_KEY, {}), record = sales[invoiceId];
+        if (!record) return false;
+        const before = read(KEY, {});
+        const data = JSON.parse(JSON.stringify(before));
+        for (const line of record.lines) {
+            const item = get(line.id);
+            if (!item) continue;
+            data[item.id] = { stock: item.stock + line.quantity, minLevel: item.minLevel };
+        }
+        if (!write(KEY, data)) return false;
+        delete sales[invoiceId];
+        write(SALE_KEY, sales);
+        record.lines.forEach(x => { const it = get(x.id); if (it) log('rollback', it, x.quantity, `Hoàn tác lỗi thanh toán ${invoiceId}`); });
+        return true;
+    }
+    window.InventoryAPI = { KEY, LOG_KEY, SALE_KEY, getAll, get, menuItems, adjust, setLevel,
+        getLog, reserved, available, canReserve, validateSale, consume, rollback, drop };
 })();

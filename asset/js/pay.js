@@ -64,9 +64,12 @@
         const invoices = read(INVOICE_KEY, []);
         let n = invoices.length + 1, id; do { id = 'HD' + String(n++).padStart(3, '0'); } while (invoices.some(i => i.id === id));
         const now = new Date().toISOString();
+        const stock = InventoryAPI.consume(o.items, id);
+        if (!stock.ok) return alert('Không thể thanh toán: ' + stock.error);
         invoices.push({ id, tableName: o.tableName, createdAt: now, paymentMethod: m,
-            items: o.items.map(i => ({ name: i.name, qty: i.quantity, price: i.price })), total, status: 'active' });
-        write(INVOICE_KEY, invoices);
+            items: o.items.map(i => ({ id: i.id, name: i.name, qty: i.quantity, price: i.price })), total, status: 'active' });
+        try { localStorage.setItem(INVOICE_KEY, JSON.stringify(invoices)); }
+        catch (e) { InventoryAPI.rollback(id); alert('Không lưu được hóa đơn. Kho đã được hoàn lại.'); return; }
         // dọn đơn chờ + trả bàn về trạng thái trống
         orders = orders.filter(x => x.tableId !== o.tableId); write(PENDING_KEY, orders);
         const tables = read(TABLES_KEY, null);

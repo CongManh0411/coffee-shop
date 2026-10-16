@@ -79,7 +79,7 @@ window.addEventListener('popstate', function () {
  
 // Quản lý sửa menu ở tab khác -> nạp lại danh sách món + danh mục
 window.addEventListener('storage', function (e) {
-    if (e.key !== MENU_KEY) return;
+    if (![MENU_KEY, InventoryAPI.KEY, 'coffee_soldout_v1'].includes(e.key)) return;
     menuList = loadMenuList();
     renderCategoryTabs();
     renderMenuGrid();
@@ -235,6 +235,7 @@ function renderMenuGrid() {
             <div class="menu-item-action">
                 <span class="menu-item-price">${m.price.toLocaleString()} đ</span>
                 ${isSoldOut(m.id) ? '<span class="soldout-tag">Hết hàng</span>' : `<button class="btn-add-item" onclick="addToBill(${m.id})">+ Thêm</button>`}
+                <small style="display:block;color:#8b7d6f">Còn đặt: ${InventoryAPI.available(m.id)} ${escHtml((InventoryAPI.get(m.id) || {}).unit || 'ly')}</small>
                 ${isCashierRole() ? `<button type="button" class="btn-soldout" onclick="toggleSoldOut(${m.id})">${isSoldOut(m.id) ? 'Bán lại' : 'Báo hết'}</button>` : ''}
             </div>
         </div>
@@ -303,7 +304,9 @@ function addLineToBill(menuId, opt) {
     const table = tables.find(t => t.id === selectedTableId);
     const menuItem = menuList.find(m => m.id === menuId);
     if (!menuItem) return alert("Món này vừa bị Quản lý ẩn hoặc xóa khỏi menu.");
-    if (isSoldOut(menuId)) return alert("Món này đang tạm HẾT HÀNG.");
+    if (isSoldOut(menuId)) return alert("Món này đã hết hàng hoặc tạm ngừng bán.");
+    const availability = InventoryAPI.canReserve(menuId, 1);
+    if (!availability.ok) return alert(availability.error);
  
     if (table.status === 'empty') {
         table.status = 'occupied';
@@ -324,6 +327,7 @@ function addLineToBill(menuId, opt) {
  
     saveTables();
     renderBillItems();
+    renderMenuGrid();
 }
  
 function updateQuantity(lineId, delta) {
@@ -332,12 +336,17 @@ function updateQuantity(lineId, delta) {
     const item = table.items.find(i => i.lineId === lineId);
     if (!item || item.confirmed) return; // món đã Xác nhận (khóa) thì không cho sửa +/- nữa
  
+    if (delta > 0) {
+        const availability = InventoryAPI.canReserve(item.id, delta);
+        if (!availability.ok) return alert(availability.error);
+    }
     item.quantity += delta;
     if (item.quantity <= 0) {
         table.items = table.items.filter(i => i.lineId !== lineId);
     }
     saveTables();
     renderBillItems();
+    renderMenuGrid();
 }
  
 function renderBillItems() {
@@ -395,6 +404,15 @@ function confirmOrder() {
     const table = tables.find(t => t.id === selectedTableId);
     const unconfirmed = table.items.filter(i => !i.confirmed);
     if (unconfirmed.length === 0) return;
+    // Trước khi gửi bếp, kiểm tra nếu tồn kho đã bị điều chỉnh ở trang khác.
+    const reservations = InventoryAPI.reserved();
+    for (const line of table.items) {
+        const product = InventoryAPI.get(line.id);
+        if (!product || (reservations[String(line.id)] || 0) > product.stock) {
+            alert(`Không đủ tồn kho cho món ${line.name}. Hãy kiểm tra lại Kho và số lượng đã đặt.`);
+            return;
+        }
+    }
  
     // Gửi bếp: món vào hàng chờ (kStatus = 'waiting'), bếp bấm "Nhận làm" / "Xong" ở trang Bếp.
     const nowMs = Date.now();
@@ -412,7 +430,7 @@ function confirmOrder() {
    5. THU NGÂN: ĐƠN MANG ĐI / GIAO HÀNG, GHI CHÚ MÓN, BÁO HẾT MÓN
    ========================================== */
 const isCashierRole = () => !!(window.Cashier && window.Cashier.isCashier());
-const isSoldOut = id => !!(window.Cashier && window.Cashier.soldOutIds().includes(id));
+const isSoldOut = id => InventoryAPI.available(id) < 1 || !!(window.Cashier && window.Cashier.soldOutIds().some(x => String(x) === String(id)));
 
 function toggleSoldOut(id) {
     const m = menuList.find(x => x.id === id); if (!m) return;

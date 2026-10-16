@@ -283,15 +283,20 @@
             paymentMethod: m === 'cash' ? 'cash' : (m === 'card' ? 'card' : 'transfer'), // Lịch sử/Doanh thu: QR & ví = "Chuyển khoản"
             paymentDetail: m === 'cash' ? undefined : m,
             ref: state.ref || undefined,
-            items: bill.items.map(i => ({ name: i.name, qty: i.quantity, price: i.price })),
+            items: bill.items.map(i => ({ id: i.id, name: i.name, qty: i.quantity, price: i.price })),
             subtotal: cv.sub, discount: cv.disc || 0, voucher: cv.code || undefined,
             total: cv.total, status: 'active',
             orderType: t.type || 'dinein', shiftId: sh ? sh.id : undefined,
             createdById: who.id, createdBy: who.name, createdRole: who.role
         };
+        const stockResult = InventoryAPI.consume(bill.items, id);
+        if (!stockResult.ok) return alert('Không thể thanh toán: ' + stockResult.error);
         invoices.push(inv);
+        if (!writeInvoices(invoices)) {
+            InventoryAPI.rollback(id);
+            alert('Không lưu được hóa đơn. Tồn kho đã được hoàn lại.'); return;
+        }
         try { if (inv.voucher) Cashier.promoUsed(inv.voucher); } catch (e) {}
-        if (!writeInvoices(invoices)) { alert('Không lưu được hóa đơn. Kiểm tra lại trình duyệt rồi thử lại.'); return; }
 
         if (C && cv.disc > 0) {
             const large = C.isLargeDiscount(cv.disc, cv.sub);

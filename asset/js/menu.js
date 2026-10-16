@@ -175,12 +175,16 @@ const MenuAPI = {
     // Xoá món theo id
     async deleteItem(id) {
         // ---- BẢN DEMO ----
+        if ((window.InventoryAPI && InventoryAPI.reserved()[String(id)]) > 0) {
+            throw new Error('Không thể xóa món đang có trong đơn hàng.');
+        }
         sampleMenuData.forEach(cat => {
             cat.items = cat.items.filter(it => String(it.id) !== String(id));
         });
         delete sampleRecipes[id];
         persistMenuData();
         persistRecipes();
+        if (window.InventoryAPI) InventoryAPI.drop(id);
         return true;
  
         // ---- BẢN BACKEND ----
@@ -316,7 +320,7 @@ function createMenuItemEl(item, categoryName) {
     const actionsEl = document.createElement('div');
     actionsEl.className = 'menu-item-actions';
     actionsEl.appendChild(createActionButton('btn-outline', 'edit', item.id, 'Sửa'));
-    actionsEl.appendChild(createActionButton('btn-outline', 'ingredient', item.id, 'Định mức'));
+    actionsEl.appendChild(createActionButton('btn-outline', 'ingredient', item.id, 'Công thức'));
     actionsEl.appendChild(createActionButton('btn-outline', 'hide', item.id, item.hidden ? 'Hiện' : 'Ẩn'));
     actionsEl.appendChild(createActionButton('btn-danger', 'delete', item.id, 'Xóa'));
     rightEl.appendChild(actionsEl);
@@ -425,7 +429,7 @@ function attachMenuItemEvents() {
                 await reloadMenu();
             } catch (err) {
                 console.error('Không thực hiện được thao tác:', err);
-                alert('Có lỗi xảy ra. Vui lòng thử lại.');
+                alert(err.message || 'Có lỗi xảy ra. Vui lòng thử lại.');
                 rowButtons.forEach(b => (b.disabled = false));
             }
         });
