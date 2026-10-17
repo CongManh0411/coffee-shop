@@ -1,5 +1,7 @@
 // ============================================================
-// TRANG NHÂN VIÊN (Staff.html)
+// TRANG NHÂN VIÊN (Staff.html) — chỉ Quản lý vào được
+// Mỗi nhân viên: { id, fullName, username, password, role, phone, email, gender, birthDate }
+// phone / email / gender / birthDate là thông tin liên hệ, chỉ hiển thị ở trang này.
 // ============================================================
 
 // ==================== Tab (topnav) ====================
@@ -37,6 +39,9 @@ let nextId = Math.max(0, ...staffList.map(x => x.id)) + 1;
 
 // ==================== Initialize Page ====================
 function initStaffManagement() {
+    // Không cho chọn ngày sinh trong tương lai
+    document.getElementById('birthDate').max = new Date().toISOString().slice(0, 10);
+
     attachTabListeners();
     renderStaffList();
     document.getElementById('staffForm').addEventListener('submit', handleFormSubmit);
@@ -61,6 +66,12 @@ function renderStaffList() {
             <div class="staff-info">
                 <div class="staff-name">${escapeHtml(staff.fullName)}</div>
                 <div class="staff-username">@${escapeHtml(staff.username)}</div>
+                <div class="staff-contact">
+                    <span><i class="ri-phone-line"></i> ${staff.phone ? escapeHtml(staff.phone) : '<em>Chưa có SĐT</em>'}</span>
+                    <span><i class="ri-mail-line"></i> ${staff.email ? escapeHtml(staff.email) : '<em>Chưa có email</em>'}</span>
+                    <span><i class="ri-user-line"></i> ${staff.gender ? escapeHtml(staff.gender) : '<em>Chưa rõ giới tính</em>'}</span>
+                    <span><i class="ri-cake-2-line"></i> ${staff.birthDate ? fmtBirth(staff.birthDate) + ' (' + ageOf(staff.birthDate) + ' tuổi)' : '<em>Chưa có ngày sinh</em>'}</span>
+                </div>
             </div>
             <div class="staff-actions">
                 <div class="staff-role">${escapeHtml(staff.role)}</div>
@@ -81,6 +92,10 @@ function handleFormSubmit(e) {
     const username = document.getElementById('username').value.trim();
     const password = document.getElementById('password').value.trim();
     const role = document.getElementById('role').value;
+    const phone = document.getElementById('phone').value.trim().replace(/[\s.-]/g, '');
+    const email = document.getElementById('email').value.trim();
+    const gender = document.getElementById('gender').value;
+    const birthDate = document.getElementById('birthDate').value;
 
     if (!fullName || !username || !password || !role) {
         alert('Vui lòng điền đầy đủ thông tin!');
@@ -92,13 +107,29 @@ function handleFormSubmit(e) {
         return;
     }
 
+    if (!/^0\d{9}$/.test(phone)) {
+        alert('Số điện thoại phải gồm 10 chữ số và bắt đầu bằng 0.');
+        return;
+    }
+    if (email && !/^\S+@\S+\.\S+$/.test(email)) {
+        alert('Email chưa hợp lệ.');
+        return;
+    }
+    if (birthDate) {
+        const age = ageOf(birthDate);
+        if (age < 16 || age > 80) {
+            alert('Ngày sinh không hợp lệ (nhân viên phải từ 16 đến 80 tuổi).');
+            return;
+        }
+    }
+
     if (currentEditingId !== null) {
         const staffIndex = staffList.findIndex(s => s.id === currentEditingId);
         if (staffIndex !== -1) {
-            staffList[staffIndex] = { ...staffList[staffIndex], fullName, username, password, role };
+            staffList[staffIndex] = { ...staffList[staffIndex], fullName, username, password, role, phone, email, gender, birthDate };
         }
     } else {
-        staffList.push({ id: nextId++, fullName, username, password, role });
+        staffList.push({ id: nextId++, fullName, username, password, role, phone, email, gender, birthDate });
     }
 
     resetForm();
@@ -124,6 +155,10 @@ function editStaff(id) {
     document.getElementById('username').value = staff.username;
     document.getElementById('password').value = staff.password;
     document.getElementById('role').value = staff.role;
+    document.getElementById('phone').value = staff.phone || '';
+    document.getElementById('email').value = staff.email || '';
+    document.getElementById('gender').value = staff.gender || '';
+    document.getElementById('birthDate').value = staff.birthDate || '';
 
     document.getElementById('submitBtn').textContent = 'Lưu thay đổi';
     document.getElementById('staffFormTitle').textContent = 'Sửa nhân viên';
@@ -156,7 +191,22 @@ function deleteStaff(id) {
 // ==================== Utility Functions ====================
 function escapeHtml(text) {
     const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
-    return text.replace(/[&<>"']/g, m => map[m]);
+    return String(text ?? '').replace(/[&<>"']/g, m => map[m]);
+}
+
+// '2000-05-21' -> '21/05/2000'
+function fmtBirth(iso) {
+    if (!iso) return '';
+    const [y, m, d] = iso.split('-');
+    return `${d}/${m}/${y}`;
+}
+
+// Tính tuổi từ ngày sinh dạng 'YYYY-MM-DD'
+function ageOf(iso) {
+    const b = new Date(iso + 'T00:00:00'), n = new Date();
+    let a = n.getFullYear() - b.getFullYear();
+    if (n.getMonth() < b.getMonth() || (n.getMonth() === b.getMonth() && n.getDate() < b.getDate())) a--;
+    return a;
 }
 
 // ==================== Initialize on Page Load ====================
