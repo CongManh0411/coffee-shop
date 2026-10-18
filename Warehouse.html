@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="asset/css/style.css">
+    <link rel="stylesheet" href="asset/css/warehouse.css">
+    <title>Kho</title>
+</head>
+<body data-page="warehouse">
+    <div id="sidebar-container"></div>
+
+    <main class="main">
+        <nav class="topnav">
+            <button class="topnav-item active" data-action="list">Danh sách kho</button>
+            <button class="topnav-item" data-action="add">Nhập / điều chỉnh kho</button>
+            <button class="topnav-item" data-action="history">Lịch sử kho</button>
+        </nav>
+        <div class="main-content">
+            <div class="tab-panel active" id="panel-list">
+                <div class="menu-page-header"><h2>Kho theo số ly / số phần</h2>
+                    <p>Số lượng món có thể bán, không phải số ly đã pha sẵn. Nhập thủ công theo từng món; không tự quy đổi từ kg hay lít.</p></div>
+                <div class="stats-grid" id="inventoryStats">
+                    <div class="stat-card"><div class="stat-card-label">Món trong Menu</div><div class="stat-card-value" id="totalIngredients">0</div></div>
+                    <div class="stat-card cancelled-note"><div class="stat-card-label">Sắp hết</div><div class="stat-card-value" id="underMinLevel">0</div></div>
+                    <div class="stat-card cancelled-note"><div class="stat-card-label">Hết hàng</div><div class="stat-card-value" id="outOfStock">0</div></div>
+                    <div class="stat-card highlight"><div class="stat-card-label">Tổng số ly / phần</div><div class="stat-card-value" id="totalStock">0</div></div>
+                </div>
+                <div class="content-section-title">Danh sách tồn kho theo món</div>
+                <div class="data-table-wrapper"><table class="data-table" id="inventoryTable">
+                    <thead><tr><th>Món / Danh mục</th><th>Đơn vị</th><th>Tồn kho</th><th>Còn có thể đặt</th><th>Cảnh báo ≤</th><th>Trạng thái</th><th>Hành động</th></tr></thead>
+                    <tbody id="tableBody"></tbody>
+                </table></div>
+            </div>
+            <div class="tab-panel" id="panel-add">
+                <div class="menu-page-header"><h2>Nhập / điều chỉnh tồn kho</h2><p>Chọn món đã có trong Menu. Nhập thêm hoặc trừ do hao hụt, kiểm kê; bán hàng sẽ tự trừ khi thanh toán.</p></div>
+                <form id="inventoryForm" class="add-item-form">
+                    <div class="form-row"><div class="form-group"><label for="stockItem">Món trong Menu</label><select id="stockItem" required></select></div>
+                    <div class="form-group"><label>Số lượng hiện tại</label><div id="stockCurrent" class="stock-current">0</div></div></div>
+                    <div class="form-row"><div class="form-group"><label for="stockMode">Thao tác</label><select id="stockMode"><option value="import">Nhập thêm (+)</option><option value="adjust">Điều chỉnh giảm (-)</option></select></div>
+                    <div class="form-group"><label for="stockAmount">Số lượng (<span id="stockUnit">ly</span>)</label><input type="number" id="stockAmount" min="1" step="1" value="1" required></div></div>
+                    <div class="form-row"><div class="form-group"><label for="minLevel">Cảnh báo khi tồn ≤</label><input type="number" id="minLevel" min="0" step="1" value="10" required></div>
+                    <div class="form-group"><label for="stockReason">Ghi chú / lý do</label><input type="text" id="stockReason" maxlength="180" placeholder="Ví dụ: Nhập hàng sáng nay"></div></div>
+                    <button type="submit" class="btn-submit">Lưu và cập nhật kho</button>
+                    <button type="button" class="btn-outline btn-cancel-edit" id="btnCancelEdit">Quay về danh sách</button>
+                    <p class="form-subtext">Các kho món mới mặc định tồn 0 cho đến khi nhập. Bản lưu kho theo nguyên liệu cũ vẫn được giữ riêng, không bị xóa.</p>
+                </form>
+            </div>
+            <div class="tab-panel" id="panel-history">
+                <div class="menu-page-header"><h2>Lịch sử biến động kho</h2><p>Nhập hàng, điều chỉnh và trừ tự động sau thanh toán.</p></div>
+                <div class="data-table-wrapper"><table class="data-table"><thead><tr><th>Thời gian</th><th>Món</th><th>Biến động</th><th>Thao tác</th><th>Tham chiếu / Ghi chú</th><th>Người thực hiện</th></tr></thead><tbody id="stockLogBody"></tbody></table></div>
+            </div>
+        </div>
+    </main>
+
+    <!-- auth.js PHẢI nạp trước script.js: chặn trang nếu chưa đăng nhập / sai quyền -->
+    <script src="asset/js/auth.js"></script>
+    <script src="asset/js/portable-shim.js"></script>
+    <script src="asset/js/common.js"></script>
+    <script src="asset/js/menu-data.js"></script>
+    <script src="asset/js/inventory.js"></script>
+    <script src="asset/js/warehouse.js"></script>
+</body>
+</html>
