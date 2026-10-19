@@ -4,6 +4,7 @@ require_once __DIR__ . '/../helpers/response.php';
 require_once __DIR__ . '/../helpers/auth.php';
 require_once __DIR__ . '/modules/auth.php';
 require_once __DIR__ . '/modules/staff.php';
+require_once __DIR__ . '/modules/menu.php';
 
 $route  = $_GET['route'] ?? '';
 $method = $_SERVER['REQUEST_METHOD'];
@@ -26,7 +27,7 @@ try {
         case 'auth/me':
             json_ok(require_login());
             break;
-                case 'staff':
+        case 'staff':
             $me = require_role(array('manager'));
             if ($method === 'GET') {
                 json_ok(staff_list());
@@ -49,7 +50,28 @@ try {
             }
             json_error('Sai phương thức.', 405);
             break;
-
+        case 'menu':
+            if ($method === 'GET') {
+                require_login();                 // mọi vai trò đều xem được thực đơn
+                json_ok(menu_list());
+            }
+            require_role(array('manager'));      // chỉ Quản lý được thêm/sửa/xóa
+            if ($method === 'POST') {
+                list($id, $err) = menu_create(json_input());
+                if ($err) json_error($err);
+                json_ok(array('id' => $id));
+            }
+            if ($method === 'PUT') {
+                $err = menu_update((int) ($_GET['id'] ?? 0), json_input());
+                if ($err) json_error($err);
+                json_ok();
+            }
+            if ($method === 'DELETE') {
+                menu_delete((int) ($_GET['id'] ?? 0));
+                json_ok();
+            }
+            json_error('Sai phương thức.', 405);
+            break;
         default:
             json_error('Không tìm thấy API.', 404);
     }

@@ -74,10 +74,9 @@ const AuthAPI = {
     // Gọi khi bấm nút "Đăng nhập". Trả về { roleKey, name } nếu đúng,
     // ném lỗi (throw) nếu sai tài khoản/mật khẩu.
     async login(username, password) {
-        const user = await Api.post('auth/login', { username: username.trim(), password });
-        // Giữ bản sao trong localStorage chỉ để giao diện đọc nhanh (quyền thật do server kiểm tra)
-        localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
-        return user;
+    const user = await Api.post('auth/login', { username: username.trim(), password });
+    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
+    return user;
     },
 
     async logout() {

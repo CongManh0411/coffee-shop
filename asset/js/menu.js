@@ -26,127 +26,45 @@ tabs.forEach(tab => {
 });
 
 // ============================================================
-// LƯU DỮ LIỆU DEMO (localStorage)
+// ============================================================
+// MenuAPI — gọi backend (api/modules/menu.php)
 // ============================================================
 const MENU_STORAGE_KEY = MENU_KEY; // khai báo trong menu-data.js
-const NEXT_ID_STORAGE_KEY = 'coffee_menu_next_id_v1';
 
-function loadFromStorage(key, fallback) {
-    try {
-        const raw = localStorage.getItem(key);
-        return raw ? JSON.parse(raw) : fallback;
-    } catch (err) {
-        console.error(`Không đọc được dữ liệu demo (${key}):`, err);
-        return fallback;
-    }
+// Bản sao cho các trang chưa có API (Bán hàng, Kho) đọc bằng localStorage
+function mirrorMenu(data) {
+    try { localStorage.setItem(MENU_STORAGE_KEY, JSON.stringify(data)); } catch (e) {}
 }
 
-function saveToStorage(key, value) {
-    try {
-        localStorage.setItem(key, JSON.stringify(value));
-    } catch (err) {
-        console.error(`Không lưu được dữ liệu demo (${key}):`, err);
-    }
-}
-
-function persistMenuData() {
-    saveToStorage(MENU_STORAGE_KEY, sampleMenuData);
-    saveToStorage(NEXT_ID_STORAGE_KEY, sampleNextId);
-}
-
-// Dọn dữ liệu công thức cũ (không còn dùng)
 try { localStorage.removeItem('coffee_menu_recipes_v1'); } catch (e) {}
 
-const defaultMenuData = DEFAULT_MENU.map(c => ({ category: c.category, items: c.items.map(i => ({ ...i })) }));
-
-const sampleMenuData = loadFromStorage(MENU_STORAGE_KEY, defaultMenuData);
-// Bỏ cờ hasRecipe còn sót trong dữ liệu đã lưu từ phiên bản cũ
-sampleMenuData.forEach(cat => (cat.items || []).forEach(it => { delete it.hasRecipe; }));
-let sampleNextId = loadFromStorage(NEXT_ID_STORAGE_KEY, 12);
-
-// ============================================================
-// MenuAPI — nơi duy nhất cần sửa khi có backend
-// ============================================================
 const MenuAPI = {
     async getMenu() {
-        return JSON.parse(JSON.stringify(sampleMenuData));
+        const data = await Api.get('menu');
+        mirrorMenu(data);
+        return data;
     },
-
     // payload = { category, newCategory, name, price, img }
     async addItem(payload) {
-        const categoryName = payload.newCategory || payload.category;
-        const newItem = {
-            id: sampleNextId++,
-            name: payload.name,
-            desc: '',
-            price: Number(payload.price) || 0,
-            img: payload.img || '',
-        };
-        let categoryObj = sampleMenuData.find(c => c.category === categoryName);
-        if (!categoryObj) {
-            categoryObj = { category: categoryName, items: [] };
-            sampleMenuData.push(categoryObj);
-        }
-        categoryObj.items.push(newItem);
-        persistMenuData();
-        return newItem;
+        return Api.post('menu', payload);
     },
-
     async updateItem(id, payload) {
-        let target = null;
-        let oldCategoryObj = null;
-        sampleMenuData.forEach(cat => {
-            const found = cat.items.find(it => String(it.id) === String(id));
-            if (found) {
-                target = found;
-                oldCategoryObj = cat;
-            }
-        });
-        if (!target) throw new Error('Không tìm thấy món để sửa');
-
-        target.name = payload.name;
-        if (payload.img !== undefined) target.img = payload.img;
-        target.price = Number(payload.price) || 0;
-
-        const categoryName = payload.newCategory || payload.category;
-        if (categoryName && oldCategoryObj && categoryName !== oldCategoryObj.category) {
-            oldCategoryObj.items = oldCategoryObj.items.filter(it => it !== target);
-            let newCategoryObj = sampleMenuData.find(c => c.category === categoryName);
-            if (!newCategoryObj) {
-                newCategoryObj = { category: categoryName, items: [] };
-                sampleMenuData.push(newCategoryObj);
-            }
-            newCategoryObj.items.push(target);
-            for (let i = sampleMenuData.length - 1; i >= 0; i--) {
-                if (sampleMenuData[i].items.length === 0) sampleMenuData.splice(i, 1);
-            }
-        }
-
-        persistMenuData();
-        return target;
+        return Api.put('menu&id=' + id, payload);
     },
-
     async deleteItem(id) {
         if ((window.InventoryAPI && InventoryAPI.reserved()[String(id)]) > 0) {
             throw new Error('Không thể xóa món đang có trong đơn hàng.');
         }
-        sampleMenuData.forEach(cat => {
-            cat.items = cat.items.filter(it => String(it.id) !== String(id));
-        });
-        persistMenuData();
+        await Api.del('menu&id=' + id);
         if (window.InventoryAPI) InventoryAPI.drop(id);
         return true;
     },
-
     async toggleHideItem(id) {
-        let target = null;
-        sampleMenuData.forEach(cat => {
-            const found = cat.items.find(it => String(it.id) === String(id));
-            if (found) target = found;
-        });
-        if (target) target.hidden = !target.hidden;
-        persistMenuData();
-        return target;
+        let item = null;
+        currentMenuData.forEach(c => c.items.forEach(it => { if (String(it.id) === String(id)) item = it; }));
+        if (!item) throw new Error('Không tìm thấy món.');
+        await Api.put('menu&id=' + id, { hidden: !item.hidden });
+        return true;
     },
 };
 
@@ -467,7 +385,7 @@ if (addItemFormEl) {
             document.querySelector('.topnav-item[data-action="edit"]').click();
         } catch (err) {
             console.error('Không lưu được món:', err);
-            alert('Có lỗi xảy ra, không lưu được món. Vui lòng thử lại.');
+            alert(err.message || 'Có lỗi xảy ra, không lưu được món. Vui lòng thử lại.');
         } finally {
             if (submitBtn) {
                 submitBtn.disabled = false;
