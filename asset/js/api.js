@@ -9,9 +9,9 @@ const Api = {
         let json;
         try { json = await res.json(); }
         catch (e) { throw new Error('Máy chủ trả về dữ liệu không hợp lệ.'); }
-        if (res.status === 401 && !location.pathname.endsWith('Login.html')) {
+        if (res.status === 401 && new URLSearchParams(location.search).get('page') !== 'login') {
             localStorage.removeItem('coffee_auth_session_v1');
-            location.replace('Login.html');
+            location.replace('index.php?page=login');
         }
         if (!json.ok) throw new Error(json.error || 'Có lỗi xảy ra.');
         return json.data;

@@ -18,13 +18,41 @@
     const $ = id => document.getElementById(id);
     const { esc, money, fmtTime, fmtDT } = C;
     let tab = 'processing';
+    let invoices = [];
 
     const readTables = () => C.read('coffee_tables_v1', []);
-    const readInv = () => C.read(C.K.INV, []);
+    const readInv = () => invoices;
     const lineState = i => i.kStatus ? i.kStatus : ((Number(i.readyAt) || 0) > Date.now() ? 'making' : 'done');
     const STATE_TXT = { waiting: 'Chờ pha chế', making: 'Đang làm', done: 'Đã xong' };
     const isToday = iso => { const d = new Date(iso), n = new Date(); return d.toDateString() === n.toDateString(); };
     const typeBadge = t => `<span class="cs-type">${esc(C.ORDER_TYPES[t || 'dinein'])}</span>`;
+
+    async function refreshOrdersFromServer() {
+        try {
+            const [active, invoiceRows] = await Promise.all([Api.get('orders'), Api.get('orders/invoices?status=all')]);
+            invoices = invoiceRows;
+            const tables = readTables().filter(t => !t.type && !t.orderId && t.status === 'empty');
+            active.forEach(order => {
+                const id = order.orderType === 'dinein' ? Number(order.tableId) : -Number(order.id);
+                tables.push({
+                    id, orderId: Number(order.id), orderCode: order.order_code,
+                    type: order.orderType === 'dinein' ? undefined : order.orderType,
+                    name: order.tableName, customer: order.customer || '', address: order.address || '',
+                    status: 'occupied', time: order.created_at || '', total: Number(order.subtotal) || 0,
+                    items: (order.items || []).map(i => ({
+                        lineId: String(i.id), id: i.menuId, name: i.name, price: Number(i.price),
+                        quantity: Number(i.quantity), note: i.note || '', confirmed: i.status !== 'draft',
+                        kStatus: i.status === 'draft' ? undefined : i.status,
+                        confirmedAt: i.confirmedAt ? new Date(i.confirmedAt).getTime() : 0,
+                        startedAt: i.startedAt ? new Date(i.startedAt).getTime() : 0,
+                        doneAt: i.doneAt ? new Date(i.doneAt).getTime() : 0
+                    }))
+                });
+            });
+            C.write('coffee_tables_v1', tables);
+            render();
+        } catch (err) { $('ordNote').textContent = 'Không tải được đơn từ máy chủ: ' + err.message; }
+    }
 
     function overall(items) {
         const conf = items.filter(i => i.confirmed);
@@ -60,11 +88,10 @@
     function renderDone() {
         $('ordTitle').textContent = 'Đơn đã hoàn thành hôm nay';
         $('ordHead').innerHTML = '<tr><th>Mã HD</th><th>Đơn</th><th>Loại</th><th>Giờ</th><th>Thanh toán</th><th>Tổng tiền</th><th></th></tr>';
-        const sh = C.currentShift();
         const list = readInv().filter(i => i.status === 'active' && isToday(i.createdAt)).reverse();
         $('ordSub').textContent = `${list.length} hóa đơn • ${money(list.reduce((s, i) => s + i.total, 0))}`;
         $('ordBody').innerHTML = list.length ? list.map(i => {
-            const canRefund = sh && i.shiftId === sh.id;
+            const canRefund = true;
             return `<tr><td><b>${esc(i.id)}</b></td><td>${esc(i.tableName)}</td><td>${typeBadge(i.orderType)}</td><td>${fmtTime(i.createdAt)}</td>
                 <td>${esc(C.METHODS[C.methodKey(i)])}${i.discount ? `<br><small>Giảm ${money(i.discount)}${i.voucher ? ' (' + esc(i.voucher) + ')' : ''}</small>` : ''}</td>
                 <td>${money(i.total)}</td>
@@ -88,17 +115,16 @@
     function render() { ({ processing: renderProcessing, done: renderDone, cancelled: renderCancelled })[tab](); }
     window.onOrdersChanged = render;
 
-    function refund(id) {
-        const invs = readInv(), inv = invs.find(i => i.id === id), sh = C.currentShift();
+    async function refund(id) {
+        const inv = readInv().find(i => i.id === id);
         if (!inv || inv.status !== 'active') return;
-        if (!sh || inv.shiftId !== sh.id) return alert('Chỉ hoàn tiền được hóa đơn của ca đang mở.');
         const reason = (prompt(`Hoàn tiền hóa đơn ${id} (${money(inv.total)}) — nhập lý do (bắt buộc, sẽ ghi Nhật ký cho Quản lý):`) || '').trim();
         if (!reason) return alert('Chưa nhập lý do — chưa hoàn tiền.');
         if (!confirm(`Hoàn ${money(inv.total)} cho khách${C.methodKey(inv) === 'cash' ? ' (lấy từ két tiền mặt)' : ''}?`)) return;
-        inv.status = 'cancelled'; inv.cancelReason = 'Hoàn tiền: ' + reason; inv.cancelledAt = new Date().toISOString(); inv.cancelledBy = C.me().name;
-        C.write(C.K.INV, invs);
+        try { await Api.post('orders/invoices/refund', { orderId: inv.orderId, reason }); }
+        catch (err) { return alert(err.message); }
         C.log('refund', `Hoàn tiền ${id} (${inv.tableName}, ${C.METHODS[C.methodKey(inv)]}). Lý do: ${reason}`, inv.total, true);
-        render();
+        await refreshOrdersFromServer();
     }
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -115,7 +141,8 @@
             else if (b.dataset.act === 'refund') refund(b.dataset.id);
         });
         render();
-        setInterval(render, 3000);
-        window.addEventListener('storage', e => { if ([C.K.INV, 'coffee_tables_v1', C.K.SHIFT].includes(e.key)) render(); });
+        refreshOrdersFromServer();
+        setInterval(refreshOrdersFromServer, 3000);
+        window.addEventListener('storage', e => { if (['coffee_tables_v1', C.K.SHIFT].includes(e.key)) render(); });
     });
 })();

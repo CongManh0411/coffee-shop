@@ -15,7 +15,6 @@
 (function () {
     'use strict';
 
-    const TABLES_KEY = 'coffee_tables_v1';
     const DONE_SHOW_MS = 30 * 60 * 1000; // cột "Đã xong" chỉ giữ 30 phút gần nhất
     const WARN_MS = 3 * 60 * 1000;       // chờ quá 3 phút -> vàng
     const LATE_MS = 5 * 60 * 1000;       // chờ quá 5 phút -> đỏ
@@ -23,22 +22,55 @@
     const $ = id => document.getElementById(id);
     const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-    function readTables() {
-        try { const s = JSON.parse(localStorage.getItem(TABLES_KEY)); return Array.isArray(s) ? s : []; } catch (e) { return []; }
+    let activeOrders = [];
+
+    async function refreshOrders() {
+        try {
+            activeOrders = await Api.get('orders');
+            syncLocalCache();
+            render();
+        } catch (err) {
+            $('kSummary').textContent = 'Không tải được đơn từ máy chủ: ' + err.message;
+        }
     }
-    function writeTables(list) {
-        try { localStorage.setItem(TABLES_KEY, JSON.stringify(list)); return true; }
-        catch (e) { alert('Không lưu được trạng thái món. Kiểm tra lại trình duyệt rồi thử lại.'); return false; }
+
+    function syncLocalCache() {
+        const key = 'coffee_tables_v1';
+        let tables;
+        try { tables = JSON.parse(localStorage.getItem(key)); } catch (e) { return; }
+        if (!Array.isArray(tables)) return;
+        const byId = new Map();
+        activeOrders.forEach(order => (order.items || []).forEach(item => byId.set(String(item.id), item)));
+        let changed = false;
+        tables.forEach(table => (table.items || []).forEach(item => {
+            if (!item.confirmed) return;
+            const server = byId.get(String(item.lineId));
+            if (!server) return;
+            const startedAt = server.startedAt ? new Date(server.startedAt).getTime() : 0;
+            const doneAt = server.doneAt ? new Date(server.doneAt).getTime() : 0;
+            if (item.kStatus !== server.status || (Number(item.startedAt) || 0) !== startedAt || (Number(item.doneAt) || 0) !== doneAt) {
+                item.kStatus = server.status;
+                item.startedAt = startedAt || undefined;
+                item.doneAt = doneAt || undefined;
+                changed = true;
+            }
+        }));
+        if (changed) {
+            try { localStorage.setItem(key, JSON.stringify(tables)); } catch (e) {}
+        }
     }
 
     // Gom toàn bộ món đã gửi bếp thành danh sách phẳng
     function collect(now) {
         const out = [];
-        readTables().forEach(t => (t.items || []).forEach(i => {
-            if (!i.confirmed || !i.kStatus) return;
-            if (i.kStatus === 'done' && now - (Number(i.doneAt) || 0) > DONE_SHOW_MS) return;
-            out.push({ tableId: t.id, tableName: t.name, lineId: i.lineId, name: i.name, qty: i.quantity, note: i.note || '',
-                       status: i.kStatus, since: Number(i.confirmedAt) || now, startedAt: Number(i.startedAt) || 0, doneAt: Number(i.doneAt) || 0 });
+        activeOrders.forEach(order => (order.items || []).forEach(i => {
+            if (i.status === 'draft') return;
+            const doneAt = i.doneAt ? new Date(i.doneAt).getTime() : 0;
+            if (i.status === 'done' && doneAt && now - doneAt > DONE_SHOW_MS) return;
+            out.push({ orderId: order.id, tableId: order.tableId || -order.id, tableName: order.tableName,
+                       lineId: String(i.id), name: i.name, qty: i.quantity, note: i.note || '', status: i.status,
+                       since: i.confirmedAt ? new Date(i.confirmedAt).getTime() : now,
+                       startedAt: i.startedAt ? new Date(i.startedAt).getTime() : 0, doneAt });
         }));
         return out;
     }
@@ -57,19 +89,13 @@
     }
 
     // Đổi trạng thái nhiều món cùng lúc. Luôn đọc mới từ localStorage trước khi ghi để không đè thay đổi của Phục vụ.
-    function setStatus(tableId, lineIds, status) {
-        const list = readTables();
-        const t = list.find(x => x.id === tableId);
-        const items = t ? (t.items || []).filter(i => i.confirmed && lineIds.includes(i.lineId)) : [];
-        if (!items.length) { render(); return; } // món vừa bị Phục vụ xóa / bàn đã thanh toán
-        const now = Date.now();
-        items.forEach(item => {
-            item.kStatus = status;
-            if (status === 'making') { item.startedAt = now; delete item.doneAt; }
-            else if (status === 'done') { if (!item.startedAt) item.startedAt = now; item.doneAt = now; }
-            else if (status === 'waiting') { delete item.startedAt; delete item.doneAt; }
-        });
-        if (writeTables(list)) render();
+    async function setStatus(tableId, lineIds, status) {
+        const ids = lineIds.map(Number).filter(Number.isFinite);
+        if (!ids.length) return;
+        try {
+            await Promise.all(ids.map(itemId => Api.put('orders/kitchen', { itemId, status })));
+            await refreshOrders();
+        } catch (err) { alert('Không cập nhật được trạng thái món: ' + err.message); }
     }
 
     // ---------- Hiển thị ----------
@@ -156,9 +182,7 @@
         lastSig = signature();
     }
 
-    function signature() {
-        return JSON.stringify(readTables().map(t => (t.items || []).map(i => [i.lineId, i.confirmed, i.kStatus, i.quantity, i.note])));
-    }
+    function signature() { return JSON.stringify(activeOrders.map(o => [o.id, (o.items || []).map(i => [i.id, i.status, i.quantity, i.note])])); }
 
     // Mỗi giây: cập nhật đồng hồ và màu phiếu mà không vẽ lại cả bảng
     function tick() {
@@ -181,7 +205,7 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-        render();
+        refreshOrders();
 
         document.querySelector('.k-board').addEventListener('click', e => {
             const btn = e.target.closest('button[data-to]');
@@ -192,9 +216,8 @@
         document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { keepAwake(); render(); } });
 
         // Phục vụ gửi món mới / sửa món ở tab khác -> cập nhật ngay
-        window.addEventListener('storage', e => { if (e.key === TABLES_KEY) render(); });
-        // Phòng khi sự kiện storage không tới: kiểm tra lại mỗi 3 giây, chỉ vẽ lại khi dữ liệu đổi
-        setInterval(() => { if (signature() !== lastSig) render(); }, 3000);
+        // Lấy trạng thái mới từ server định kỳ để các màn hình bếp khác nhau đồng bộ.
+        setInterval(refreshOrders, 3000);
         setInterval(tick, 1000);
         // Cột "Đã xong" tự bỏ món quá 30 phút
         setInterval(render, 60000);

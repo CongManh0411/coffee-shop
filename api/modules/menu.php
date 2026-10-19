@@ -42,7 +42,9 @@ function menu_resolve_category($d)
 function menu_validate($name, $price, $categoryId, $exceptId = 0)
 {
     if ($name === '') return 'Vui lòng nhập tên món.';
-    if (!is_numeric($price) || (int) $price <= 0) return 'Giá món phải lớn hơn 0.';
+    if (!(is_int($price) || (is_string($price) && preg_match('/^[0-9]+$/', $price))) || (int) $price <= 0) {
+        return 'Giá món phải là số nguyên lớn hơn 0.';
+    }
     $dup = db()->fetchOne(
         "SELECT item_id FROM menu_items WHERE category_id = ? AND item_name = ? AND item_id <> ?",
         array((int) $categoryId, $name, (int) $exceptId)

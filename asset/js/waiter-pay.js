@@ -68,10 +68,11 @@
         if ((t.items || []).length) return;
         if (t.type) { const idx = list.indexOf(t); if (idx >= 0) list.splice(idx, 1); return; }
         t.status = 'empty'; t.time = ''; t.total = 0;
+        delete t.orderId; delete t.orderCode;
     }
 
     // Bỏ 1 phần của 1 món. force = true (Thu ngân hủy món ĐÃ LÀM) -> bắt buộc có reason. Trả về true nếu đã xóa.
-    function removeOne(tableId, lineId, reason) {
+    async function removeOne(tableId, lineId, reason) {
         const now = Date.now();
         const list = readTables();
         const t = list.find(x => x.id === tableId);
@@ -80,6 +81,8 @@
         if (!item) return false;
         const done = lineState(item, now) === 'done';
         if (done && !(isCashier() && reason)) return false;
+        try { await Api.post('orders/items/cancel', { itemId: Number(lineId), reason: reason || '' }); }
+        catch (err) { alert('Không thể hủy món trên máy chủ: ' + err.message); return false; }
         const nm = item.name, pr = item.price;
         item.quantity -= 1;
         if (item.quantity <= 0) t.items = t.items.filter(i => i !== item);
@@ -259,7 +262,7 @@
     }
 
     // Xác nhận thanh toán: tạo hóa đơn + trả bàn
-    function pay() {
+    async function pay() {
         const now = Date.now();
         const list = readTables();
         const t = list.find(x => x.id === state.tableId);
@@ -277,8 +280,9 @@
         const invoices = readInvoices();
         let n = invoices.length + 1, id;
         do { id = 'HD' + String(n++).padStart(3, '0'); } while (invoices.some(i => i.id === id));
+        id = t.orderCode || id;
         const m = state.method;
-        const inv = {
+        let inv = {
             id, tableName: t.name, createdAt: new Date(now).toISOString(),
             paymentMethod: m === 'cash' ? 'cash' : (m === 'card' ? 'card' : 'transfer'), // Lịch sử/Doanh thu: QR & ví = "Chuyển khoản"
             paymentDetail: m === 'cash' ? undefined : m,
@@ -289,8 +293,27 @@
             orderType: t.type || 'dinein', shiftId: sh ? sh.id : undefined,
             createdById: who.id, createdBy: who.name, createdRole: who.role
         };
+        if (!t.orderId) return alert('Đơn này chưa được lưu trên máy chủ. Hãy tải lại trang bán hàng.');
         const stockResult = InventoryAPI.consume(bill.items, id);
         if (!stockResult.ok) return alert('Không thể thanh toán: ' + stockResult.error);
+        let serverInvoice;
+        try {
+            serverInvoice = await Api.post('orders/pay', {
+                orderId: t.orderId, paymentMethod: m, discount: cv.disc || 0, expectedSubtotal: cv.sub,
+                voucher: cv.code || '', paymentRef: state.ref || ''
+            });
+        } catch (err) {
+            InventoryAPI.rollback(id);
+            return alert('Máy chủ chưa chốt được đơn: ' + err.message);
+        }
+        inv = Object.assign(inv, serverInvoice, {
+            id: serverInvoice.id,
+            paymentMethod: m === 'cash' ? 'cash' : (m === 'card' ? 'card' : 'transfer'),
+            paymentDetail: m === 'cash' ? undefined : m,
+            ref: state.ref || undefined,
+            shiftId: sh ? sh.id : undefined,
+            createdById: who.id, createdBy: who.name, createdRole: who.role
+        });
         invoices.push(inv);
         if (!writeInvoices(invoices)) {
             InventoryAPI.rollback(id);
@@ -305,6 +328,10 @@
 
         t.items = (t.items || []).filter(i => !i.confirmed);
         t.total = t.items.reduce((s, i) => s + i.price * i.quantity, 0);
+        if (serverInvoice.nextOrder) {
+            t.orderId = Number(serverInvoice.nextOrder.id);
+            t.orderCode = serverInvoice.nextOrder.code;
+        }
         releaseIfEmpty(list, t);
         writeTables(list);
         syncPageState();
@@ -325,7 +352,7 @@
             <button type="button" class="ho-btn primary" data-act="close">Xong</button>`;
     }
 
-    function onClick(e) {
+    async function onClick(e) {
         const b = e.target.closest('[data-act]');
         if (!b) { if (e.target.id === 'wpBackdrop') close(); return; }
         const act = b.dataset.act;
@@ -348,13 +375,13 @@
             const t = readTables().find(x => x.id === state.tableId);
             const last = t && billOf(t, Date.now()).count === 1;
             if (last && !window.confirm('Xóa món cuối cùng sẽ hủy đơn của bàn này. Tiếp tục?')) return;
-            removeOne(state.tableId, b.dataset.line);
+            await removeOne(state.tableId, b.dataset.line);
             renderBill();
         }
         else if (act === 'void') {
             const reason = (window.prompt('Hủy món ĐÃ LÀM XONG — nhập lý do (bắt buộc, sẽ ghi Nhật ký cho Quản lý):') || '').trim();
             if (!reason) return alert('Chưa nhập lý do — chưa hủy món.');
-            removeOne(state.tableId, b.dataset.line, reason);
+            await removeOne(state.tableId, b.dataset.line, reason);
             renderBill();
         }
         else if (act === 'pay') pay();

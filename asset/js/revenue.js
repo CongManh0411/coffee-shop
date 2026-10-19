@@ -1,12 +1,8 @@
-const LS_INVOICES_KEY = 'qlcp_invoices';
 let currentPeriod = 'today';
 let customFrom = null;
 let customTo = null;
 
-function loadInvoices() {
-    try { return JSON.parse(localStorage.getItem(LS_INVOICES_KEY)) || []; }
-    catch (e) { return []; }
-}
+async function loadInvoices() { return await Api.get('orders/invoices?status=all'); }
 
 function fmtMoney(n) { return `${Math.round(n).toLocaleString('vi-VN')} đ`; }
 
@@ -47,11 +43,13 @@ function getPeriodRange(period) {
     return { start: startOfDay(now), end: endOfDay(now), label: 'Doanh thu hôm nay' };
 }
 
-function render() {
+async function render() {
     const { start, end, label } = getPeriodRange(currentPeriod);
     document.getElementById('periodLabel').innerText = label;
 
-    const all = loadInvoices();
+    let all;
+    try { all = await loadInvoices(); }
+    catch (err) { document.getElementById('statTotalRevenue').innerText = err.message; return; }
     const inRange = all.filter(inv => {
         const t = new Date(inv.createdAt);
         return t >= start && t <= end;
@@ -127,8 +125,4 @@ document.getElementById('btnApplyRange').addEventListener('click', () => {
 });
 
 // Tự cập nhật nếu có hóa đơn mới được tạo ở tab/trang khác (cùng trình duyệt)
-window.addEventListener('storage', (e) => {
-    if (e.key === LS_INVOICES_KEY) render();
-});
-
 render();

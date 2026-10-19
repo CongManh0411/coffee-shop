@@ -1,0 +1,19 @@
+RewriteEngine On
+RewriteBase /coffee-shop/
+
+# Send legacy page URLs through the PHP front controller.
+RewriteRule ^Login\.html$ index.php?page=login [R=302,L,NC]
+RewriteRule ^TableManage\.html$ index.php?page=tablemanage [R=302,L,NC]
+RewriteRule ^Menu\.html$ index.php?page=menu [R=302,L,NC]
+RewriteRule ^Revenue\.html$ index.php?page=revenue [R=302,L,NC]
+RewriteRule ^History\.html$ index.php?page=history [R=302,L,NC]
+RewriteRule ^Staff\.html$ index.php?page=staff [R=302,L,NC]
+RewriteRule ^Shifts\.html$ index.php?page=shifts [R=302,L,NC]
+RewriteRule ^Warehouse\.html$ index.php?page=warehouse [R=302,L,NC]
+RewriteRule ^Ops\.html$ index.php?page=ops [R=302,L,NC]
+RewriteRule ^Logs\.html$ index.php?page=logs [R=302,L,NC]
+RewriteRule ^Table\.html$ index.php?page=tables [R=302,L,NC]
+RewriteRule ^Schedule\.html$ index.php?page=schedule [R=302,L,NC]
+RewriteRule ^Orders\.html$ index.php?page=orders [R=302,L,NC]
+RewriteRule ^Shift\.html$ index.php?page=cashshift [R=302,L,NC]
+RewriteRule ^Kitchen\.html$ index.php?page=kitchen [R=302,L,NC]

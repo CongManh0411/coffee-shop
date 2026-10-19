@@ -24,6 +24,19 @@ class Database
         $stmt->execute();
         return $stmt;
     }
+    public function transaction(callable $fn)
+    {
+        $this->begin();
+
+        try {
+            $result = $fn();
+            $this->commit();
+            return $result;
+        } catch (\Throwable $e) {
+            $this->rollback();
+            throw $e;
+        }
+    }
 
     public function fetchAll($sql, $params = array())
     {

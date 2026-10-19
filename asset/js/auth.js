@@ -8,31 +8,31 @@ const ROLE_LABELS = {
 
 const PAGES_BY_ROLE = {
     manager: [
-        { path: 'TableManage.html', label: 'Bàn',    view: 'tablemanage', id: 'navTables' },
-        { path: 'Menu.html',    label: 'Thực đơn',  view: 'menu',    id: 'navMenu' },
-        { path: 'Revenue.html', label: 'Doanh thu',  view: 'revenue', id: 'navRevenue' },
-        { path: 'History.html', label: 'Lịch sử',    view: 'history', id: 'navHistory' },
-        { path: 'Staff.html',   label: 'Nhân viên',  view: 'staff',   id: 'navStaff' },
-        { path: 'Shifts.html',  label: 'Lịch ca',    view: 'shifts',  id: 'navShifts' },
-        { path: 'Warehouse.html', label: 'Kho', view: 'warehouse', id: 'navWarehouse' },
-        { path: 'Ops.html', label: 'Vận hành', view: 'ops', id: 'navOps' },
-        { path: 'Logs.html', label: 'Nhật ký', view: 'logs', id: 'navLogs' },
+        { path: 'index.php?page=tablemanage', label: 'Bàn',    view: 'tablemanage', id: 'navTables' },
+        { path: 'index.php?page=menu',    label: 'Thực đơn',  view: 'menu',    id: 'navMenu' },
+        { path: 'index.php?page=revenue', label: 'Doanh thu',  view: 'revenue', id: 'navRevenue' },
+        { path: 'index.php?page=history', label: 'Lịch sử',    view: 'history', id: 'navHistory' },
+        { path: 'index.php?page=staff',   label: 'Nhân viên',  view: 'staff',   id: 'navStaff' },
+        { path: 'index.php?page=shifts',  label: 'Lịch ca',    view: 'shifts',  id: 'navShifts' },
+        { path: 'index.php?page=warehouse', label: 'Kho', view: 'warehouse', id: 'navWarehouse' },
+        { path: 'index.php?page=ops', label: 'Vận hành', view: 'ops', id: 'navOps' },
+        { path: 'index.php?page=logs', label: 'Nhật ký', view: 'logs', id: 'navLogs' },
     ],
     waiter: [
-        { path: 'Table.html', label: 'Bàn', view: 'tables' },
-        { path: 'Schedule.html', label: 'Lịch ca', view: 'schedule', id: 'navShift' },
+        { path: 'index.php?page=tables', label: 'Bàn', view: 'tables' },
+        { path: 'index.php?page=schedule', label: 'Lịch ca', view: 'schedule', id: 'navShift' },
     ],
     // THU NGÂN: bán hàng (dùng trang Bàn của Phục vụ + đơn mang đi/giao hàng), quản lý đơn, ca & quỹ, lịch ca (xem + đăng ký)
     cashier: [
-        { path: 'Table.html', label: 'Bán hàng', view: 'tables', id: 'navPOS' },
-        { path: 'Ops.html', label: 'Vận hành', view: 'ops', id: 'navOps' },
-        { path: 'Orders.html', label: 'Đơn hàng', view: 'orders', id: 'navOrders' },
-        { path: 'Shift.html', label: 'Ca & Quỹ', view: 'cashshift', id: 'navCashShift' },
-        { path: 'Schedule.html', label: 'Lịch ca', view: 'schedule', id: 'navShift' },
+        { path: 'index.php?page=tables', label: 'Bán hàng', view: 'tables', id: 'navPOS' },
+        { path: 'index.php?page=ops', label: 'Vận hành', view: 'ops', id: 'navOps' },
+        { path: 'index.php?page=orders', label: 'Đơn hàng', view: 'orders', id: 'navOrders' },
+        { path: 'index.php?page=cashshift', label: 'Ca & Quỹ', view: 'cashshift', id: 'navCashShift' },
+        { path: 'index.php?page=schedule', label: 'Lịch ca', view: 'schedule', id: 'navShift' },
     ],
     kitchen: [
-        { path: 'Kitchen.html', label: 'Bếp', view: 'kitchen', id: 'navKitchen' },
-        { path: 'Schedule.html', label: 'Lịch ca', view: 'schedule', id: 'navShift' },
+        { path: 'index.php?page=kitchen', label: 'Bếp', view: 'kitchen', id: 'navKitchen' },
+        { path: 'index.php?page=schedule', label: 'Lịch ca', view: 'schedule', id: 'navShift' },
     ],
 };
 
@@ -83,7 +83,7 @@ const AuthAPI = {
         try { await Api.post('auth/logout'); } catch (err) {}
         try { localStorage.removeItem(AUTH_STORAGE_KEY); } catch (err) {}
         try { sessionStorage.clear(); } catch (err) {}
-        window.location.replace('Login.html');
+        window.location.replace('index.php?page=login');
     },
 
     // Đọc phiên đăng nhập hiện tại (đồng bộ — không chờ mạng), dùng để
@@ -142,14 +142,14 @@ const UserAPI = {
 
     const session = AuthAPI.getSession();
     if (!session) {
-        window.location.replace('Login.html');
+        window.location.replace('index.php?page=login');
         return;
     }
 
     const allowedPages = PAGES_BY_ROLE[session.roleKey];
     if (!allowedPages) {
         // Vai trò lạ (dữ liệu hỏng) -> coi như chưa đăng nhập hợp lệ
-        window.location.replace('Login.html');
+        window.location.replace('index.php?page=login');
         return;
     }
 
@@ -201,7 +201,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const session = await AuthAPI.login(userEl.value, passEl.value);
             const home = PAGES_BY_ROLE[session.roleKey]
                 ? PAGES_BY_ROLE[session.roleKey][0].path
-                : 'Login.html';
+                : 'index.php?page=login';
             window.location.href = home;
         } catch (err) {
             if (errEl) {

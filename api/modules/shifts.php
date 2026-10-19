@@ -29,14 +29,28 @@ function shifts_list()
 
 function shifts_valid_date($d)
 {
-    return is_string($d) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $d) && strtotime($d) !== false;
+    if (!is_string($d) || !preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $d, $matches)) {
+        return false;
+    }
+    return checkdate((int) $matches[2], (int) $matches[3], (int) $matches[1]);
+}
+
+// Serialize shift writes for one employee by holding the staff row lock until commit.
+function shifts_lock_staff($staffId)
+{
+    $staff = db()->fetchOne(
+        "SELECT staff_id FROM staff WHERE staff_id = ? AND status = 1 FOR UPDATE",
+        array((int) $staffId)
+    );
+    return $staff ? '' : 'Không tìm thấy nhân viên đang hoạt động.';
 }
 
 function shifts_validate($staffId, $date, $start, $end, $exceptId = 0)
 {
     if ($staffId <= 0) return 'Thiếu nhân viên.';
     if (!shifts_valid_date($date)) return 'Ngày không hợp lệ.';
-    if (!preg_match('/^\d{2}:\d{2}$/', (string) $start) || !preg_match('/^\d{2}:\d{2}$/', (string) $end)) {
+    if (!preg_match('/^(?:[01]\d|2[0-3]):[0-5]\d$/', (string) $start) ||
+        !preg_match('/^(?:[01]\d|2[0-3]):[0-5]\d$/', (string) $end)) {
         return 'Vui lòng nhập giờ bắt đầu và kết thúc.';
     }
     $s = shifts_to_min($start);
@@ -63,28 +77,41 @@ function shifts_create($d)
     $date  = $d['date'] ?? '';
     $start = $d['start'] ?? '';
     $end   = $d['end'] ?? '';
-    $err = shifts_validate($staffId, $date, $start, $end);
-    if ($err) return array(null, $err);
-    db()->execute(
-        "INSERT INTO shifts (staff_id, shift_date, start_time, end_time) VALUES (?, ?, ?, ?)",
-        array($staffId, $date, $start . ':00', $end . ':00')
-    );
-    return array(db()->insertId(), '');
+    return db()->transaction(function () use ($staffId, $date, $start, $end) {
+        $err = shifts_lock_staff($staffId);
+        if ($err) return array(null, $err);
+        $err = shifts_validate($staffId, $date, $start, $end);
+        if ($err) return array(null, $err);
+        db()->execute(
+            "INSERT INTO shifts (staff_id, shift_date, start_time, end_time) VALUES (?, ?, ?, ?)",
+            array($staffId, $date, $start . ':00', $end . ':00')
+        );
+        return array(db()->insertId(), '');
+    });
 }
 
 function shifts_update($id, $d)
 {
-    $cur = db()->fetchOne("SELECT staff_id, shift_date FROM shifts WHERE shift_id = ?", array((int) $id));
-    if (!$cur) return 'Không tìm thấy ca.';
     $start = $d['start'] ?? '';
     $end   = $d['end'] ?? '';
-    $err = shifts_validate((int) $cur['staff_id'], $cur['shift_date'], $start, $end, $id);
-    if ($err) return $err;
-    db()->execute(
-        "UPDATE shifts SET start_time = ?, end_time = ? WHERE shift_id = ?",
-        array($start . ':00', $end . ':00', (int) $id)
-    );
-    return '';
+    $id = (int) $id;
+    $initial = db()->fetchOne("SELECT staff_id FROM shifts WHERE shift_id = ?", array($id));
+    if (!$initial) return 'Không tìm thấy ca.';
+    $staffId = (int) $initial['staff_id'];
+
+    return db()->transaction(function () use ($id, $staffId, $start, $end) {
+        $err = shifts_lock_staff($staffId);
+        if ($err) return $err;
+        $cur = db()->fetchOne("SELECT staff_id, shift_date FROM shifts WHERE shift_id = ? FOR UPDATE", array($id));
+        if (!$cur) return 'Không tìm thấy ca.';
+        $err = shifts_validate($staffId, $cur['shift_date'], $start, $end, $id);
+        if ($err) return $err;
+        db()->execute(
+            "UPDATE shifts SET start_time = ?, end_time = ? WHERE shift_id = ?",
+            array($start . ':00', $end . ':00', $id)
+        );
+        return '';
+    });
 }
 
 function shifts_delete($id)
@@ -99,23 +126,35 @@ function shifts_copy_week($weekStart)
     $prevStart = date('Y-m-d', strtotime($weekStart . ' -7 days'));
     $prevEnd   = date('Y-m-d', strtotime($weekStart . ' -1 day'));
     $rows = db()->fetchAll(
-        "SELECT staff_id, shift_date, start_time, end_time FROM shifts WHERE shift_date BETWEEN ? AND ?",
+        "SELECT staff_id, shift_date, start_time, end_time FROM shifts WHERE shift_date BETWEEN ? AND ? ORDER BY staff_id, shift_date, start_time",
         array($prevStart, $prevEnd)
     );
     if (!$rows) return array(0, 'Tuần trước chưa có ca nào để sao chép.');
-    $added = 0;
-    foreach ($rows as $r) {
-        $date = date('Y-m-d', strtotime($r['shift_date'] . ' +7 days'));
-        $start = substr($r['start_time'], 0, 5);
-        $end   = substr($r['end_time'], 0, 5);
-        if (shifts_validate((int) $r['staff_id'], $date, $start, $end) !== '') continue; // trùng -> bỏ qua
-        db()->execute(
-            "INSERT INTO shifts (staff_id, shift_date, start_time, end_time) VALUES (?, ?, ?, ?)",
-            array((int) $r['staff_id'], $date, $start . ':00', $end . ':00')
-        );
-        $added++;
-    }
-    return array($added, '');
+    return db()->transaction(function () use ($rows) {
+        $lockedStaff = array();
+        foreach ($rows as $r) {
+            $staffId = (int) $r['staff_id'];
+            if (!array_key_exists($staffId, $lockedStaff)) {
+                $lockedStaff[$staffId] = shifts_lock_staff($staffId) === '';
+            }
+        }
+
+        $added = 0;
+        foreach ($rows as $r) {
+            $staffId = (int) $r['staff_id'];
+            if (!$lockedStaff[$staffId]) continue;
+            $date = date('Y-m-d', strtotime($r['shift_date'] . ' +7 days'));
+            $start = substr($r['start_time'], 0, 5);
+            $end   = substr($r['end_time'], 0, 5);
+            if (shifts_validate($staffId, $date, $start, $end) !== '') continue; // trùng -> bỏ qua
+            db()->execute(
+                "INSERT INTO shifts (staff_id, shift_date, start_time, end_time) VALUES (?, ?, ?, ?)",
+                array($staffId, $date, $start . ':00', $end . ':00')
+            );
+            $added++;
+        }
+        return array($added, '');
+    });
 }
 
 function shifts_clear_week($weekStart)

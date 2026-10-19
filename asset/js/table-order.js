@@ -36,16 +36,45 @@ function saveTables() { try { localStorage.setItem(TABLES_KEY, JSON.stringify(ta
 // Danh sách bàn (id + tên) lấy từ máy chủ; trạng thái bàn/món vẫn ở localStorage cho tới khi chuyển đơn hàng vào DB.
 async function syncTablesFromApi() {
     const apiList = await Api.get('tables');
-    let local = [];
-    try { const s = JSON.parse(localStorage.getItem(TABLES_KEY)); if (Array.isArray(s)) local = s; } catch (e) {}
-    const extra = local.filter(t => t.type);
+    const orders = await Api.get('orders');
     const merged = apiList.map(a => {
-        const old = local.find(t => !t.type && Number(t.id) === a.id);
-        return old ? Object.assign({}, old, { id: a.id, name: a.name })
-                   : { id: a.id, name: a.name, status: 'empty', time: '', total: 0, items: [] };
+        const order = orders.find(o => o.orderType === 'dinein' && Number(o.tableId) === a.id);
+        return order ? orderToTable(order, a.id, a.name)
+                     : { id: a.id, name: a.name, status: 'empty', time: '', total: 0, items: [] };
     });
-    tables = merged.concat(extra);
+    orders.filter(o => o.orderType !== 'dinein').forEach(o => merged.push(orderToTable(o, -Number(o.id), o.tableName)));
+    tables = merged;
     saveTables();
+}
+
+function orderToTable(order, id, name) {
+    const items = (order.items || []).map(i => ({
+        lineId: String(i.id), id: i.menuId, name: i.name, price: Number(i.price), quantity: Number(i.quantity),
+        note: i.note || '', confirmed: i.status !== 'draft',
+        confirmedAt: i.confirmedAt ? new Date(i.confirmedAt).getTime() : 0,
+        kStatus: i.status === 'draft' ? undefined : i.status,
+        startedAt: i.startedAt ? new Date(i.startedAt).getTime() : undefined,
+        doneAt: i.doneAt ? new Date(i.doneAt).getTime() : undefined
+    }));
+    return {
+        id, orderId: Number(order.id), name, orderCode: order.order_code || '',
+        type: order.orderType === 'dinein' ? undefined : order.orderType,
+        customer: order.customer || '', address: order.address || '',
+        status: 'occupied', time: order.created_at ? new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
+        total: Number(order.subtotal) || 0, items
+    };
+}
+
+async function ensureOrder(table) {
+    if (table.orderId) return table.orderId;
+    const data = await Api.post('orders', {
+        type: table.type || 'dinein',
+        tableId: table.type ? null : Number(table.id),
+        tableName: table.name,
+        customer: table.customer || '', address: table.address || ''
+    });
+    table.orderId = Number(data.id);
+    return table.orderId;
 }
  
 // ---- MENU: đọc từ trang Menu của Quản lý (cùng key 'coffee_menu_data_v1' với menu.js) ----
@@ -84,6 +113,18 @@ document.addEventListener("DOMContentLoaded", async function () {
     renderTablesGrid();
     renderCategoryTabs();
     renderMenuGrid();
+    setInterval(async () => {
+        if (document.visibilityState !== 'visible') return;
+        try {
+            await syncTablesFromApi();
+            if (selectedTableId && !tables.some(t => t.id === selectedTableId)) {
+                selectedTableId = null;
+                switchView('view-tables');
+            }
+            renderTablesGrid();
+            if (selectedTableId) renderBillItems();
+        } catch (err) { /* giữ bản cache hiện tại khi mạng tạm thời gián đoạn */ }
+    }, 5000);
     // ...phần còn lại giữ nguyên
     document.getElementById('categoryTabs').addEventListener('click', function (e) {
         const b = e.target.closest('[data-cat]');
@@ -225,7 +266,10 @@ function selectTable(tableId) {
 function showTablesView() {
     // Đơn mang đi / giao hàng chưa có món nào -> bỏ luôn, khỏi để lại đơn rỗng
     const cur = tables.find(t => t.id === selectedTableId);
-    if (cur && cur.type && !(cur.items || []).length) { tables = tables.filter(t => t !== cur); saveTables(); }
+    if (cur && cur.type && !(cur.items || []).length) {
+        if (cur.orderId) Api.post('orders/cancel', { orderId: cur.orderId }).catch(() => {});
+        tables = tables.filter(t => t !== cur); saveTables();
+    }
     selectedTableId = null;
     switchView('view-tables');
     renderTablesGrid(); // cập nhật trạng thái bàn vừa gọi món / báo thu ngân
@@ -319,10 +363,13 @@ function confirmOption() {
     const { m, o } = optState, price = optPrice();
     const text = [`Size ${o.size}`, `${o.sugar} đường`, o.ice].concat(o.toppings.map(t => '+' + t)).join(', ') + (note ? ' · ' + note : '');
     closeOptionPopup();
-    addLineToBill(m.id, { price, text, key: text });
+    addLineToBill(m.id, {
+        price, text, key: text,
+        options: { size: o.size, sugar: o.sugar, ice: o.ice, toppings: o.toppings.slice() }
+    });
 }
 
-function addLineToBill(menuId, opt) {
+async function addLineToBill(menuId, opt) {
     if (!selectedTableId) return alert("Vui lòng chọn bàn trước!");
  
     const table = tables.find(t => t.id === selectedTableId);
@@ -332,29 +379,45 @@ function addLineToBill(menuId, opt) {
     const availability = InventoryAPI.canReserve(menuId, 1);
     if (!availability.ok) return alert(availability.error);
  
-    if (table.status === 'empty') {
-        table.status = 'occupied';
-        const now = new Date();
-        table.time = `${String(now.getHours()).padStart(2, "0")}:${now.getMinutes().toString().padStart(2, '0')}`;
-        renderTablesGrid();
-    }
- 
     // Chỉ cộng dồn vào dòng CÙNG món và CHƯA xác nhận. Món đã khóa (confirmed) luôn tạo dòng mới riêng.
     const existItem = table.items.find(i => i.id === menuId && !i.confirmed && (i.optKey || '') === (opt ? opt.key : ''));
-    if (existItem) {
-        existItem.quantity++;
-    } else {
-        const line = { lineId: genLineId(), id: menuItem.id, name: menuItem.name, price: opt ? opt.price : menuItem.price, quantity: 1, confirmed: false };
-        if (opt) { line.note = opt.text; line.optKey = opt.key; }
-        table.items.push(line);
-    }
- 
-    saveTables();
-    renderBillItems();
-    renderMenuGrid();
+    (async () => {
+        try {
+            const orderId = await ensureOrder(table);
+            if (existItem) {
+                await Api.put('orders/items&id=' + encodeURIComponent(existItem.lineId), {
+                    quantity: existItem.quantity + 1, note: existItem.note || ''
+                });
+                existItem.quantity++;
+            } else {
+                const result = await Api.post('orders/items', {
+                    orderId, menuId: menuItem.id, quantity: 1, note: opt ? opt.text : '',
+                    options: opt ? opt.options : undefined
+                });
+                const line = { lineId: String(result.id), id: menuItem.id, name: menuItem.name,
+                    price: opt ? opt.price : menuItem.price, quantity: 1, confirmed: false };
+                if (opt) { line.note = opt.text; line.optKey = opt.key; }
+                table.items.push(line);
+            }
+            if (table.status === 'empty') {
+                table.status = 'occupied';
+                const now = new Date();
+                table.time = `${String(now.getHours()).padStart(2, "0")}:${now.getMinutes().toString().padStart(2, '0')}`;
+            }
+            saveTables();
+            renderTablesGrid(); renderBillItems(); renderMenuGrid();
+        } catch (err) {
+            if (table.orderId && !table.items.length) {
+                Api.post('orders/cancel', { orderId: table.orderId }).catch(() => {});
+                delete table.orderId; delete table.orderCode;
+                table.status = 'empty'; table.time = '';
+            }
+            alert('Không lưu được món lên máy chủ: ' + err.message);
+        }
+    })();
 }
  
-function updateQuantity(lineId, delta) {
+async function updateQuantity(lineId, delta) {
     if (!selectedTableId) return;
     const table = tables.find(t => t.id === selectedTableId);
     const item = table.items.find(i => i.lineId === lineId);
@@ -364,9 +427,18 @@ function updateQuantity(lineId, delta) {
         const availability = InventoryAPI.canReserve(item.id, delta);
         if (!availability.ok) return alert(availability.error);
     }
-    item.quantity += delta;
+    const quantity = item.quantity + delta;
+    try {
+        if (quantity <= 0) await Api.del('orders/items&id=' + encodeURIComponent(lineId));
+        else await Api.put('orders/items&id=' + encodeURIComponent(lineId), { quantity, note: item.note || '' });
+    } catch (err) { return alert('Không cập nhật được số lượng: ' + err.message); }
+    item.quantity = quantity;
     if (item.quantity <= 0) {
         table.items = table.items.filter(i => i.lineId !== lineId);
+        if (!table.items.length) {
+            table.status = 'empty'; table.time = ''; table.total = 0;
+            delete table.orderId; delete table.orderCode;
+        }
     }
     saveTables();
     renderBillItems();
@@ -423,7 +495,7 @@ function renderBillItems() {
 }
 
 // Khóa toàn bộ món đang nháp lại và gửi cho Bếp
-function confirmOrder() {
+async function confirmOrder() {
     if (!selectedTableId) return;
     const table = tables.find(t => t.id === selectedTableId);
     const unconfirmed = table.items.filter(i => !i.confirmed);
@@ -439,6 +511,8 @@ function confirmOrder() {
     }
  
     // Gửi bếp: món vào hàng chờ (kStatus = 'waiting'), bếp bấm "Nhận làm" / "Xong" ở trang Bếp.
+    try { await Api.post('orders/confirm', { orderId: table.orderId }); }
+    catch (err) { return alert('Không gửi được món cho Bếp: ' + err.message); }
     const nowMs = Date.now();
     unconfirmed.forEach(i => {
         i.confirmed = true;
@@ -462,18 +536,21 @@ function toggleSoldOut(id) {
     renderMenuGrid();
 }
 
-function editNote(lineId) {
+async function editNote(lineId) {
     const table = tables.find(t => t.id === selectedTableId); if (!table) return;
     const item = table.items.find(i => i.lineId === lineId); if (!item || item.confirmed) return;
     const v = prompt('Ghi chú cho món (vd: ít đường, không đá). Để trống để xóa:', item.note || '');
     if (v === null) return;
-    item.note = v.trim().slice(0, 80);
+    const note = v.trim().slice(0, 80);
+    try { await Api.put('orders/items&id=' + encodeURIComponent(lineId), { quantity: item.quantity, note }); }
+    catch (err) { return alert('Không lưu được ghi chú: ' + err.message); }
+    item.note = note;
     if (!item.note) delete item.note;
     saveTables(); renderBillItems();
 }
 
 // Tạo đơn không gắn bàn: type = 'takeaway' | 'delivery'
-function createTogoOrder(type) {
+async function createTogoOrder(type) {
     let customer = '', address = '';
     if (type === 'delivery') {
         customer = (prompt('Tên / số điện thoại khách:') || '').trim();
@@ -481,14 +558,14 @@ function createTogoOrder(type) {
         address = (prompt('Địa chỉ giao hàng:') || '').trim();
         if (!address) return alert('Cần nhập địa chỉ giao hàng.');
     }
-    // đọc lại danh sách mới nhất để không đè dữ liệu tab khác
-    try { const s = JSON.parse(localStorage.getItem(TABLES_KEY)); if (Array.isArray(s)) tables = s; } catch (e) {}
-    let seq = Number(localStorage.getItem('coffee_order_seq_v1')) || 0; seq++;
-    try { localStorage.setItem('coffee_order_seq_v1', String(seq)); } catch (e) {}
+    const name = type === 'delivery' ? 'Giao hàng' : 'Mang đi';
+    let order;
+    try { order = await Api.post('orders', { type, tableName: name, customer, address }); }
+    catch (err) { return alert('Không tạo được đơn: ' + err.message); }
     const now = new Date();
-    const id = Date.now();
+    const id = -Number(order.id);
     tables.push({
-        id, type, name: (type === 'delivery' ? 'Giao hàng #' : 'Mang đi #') + String(seq).padStart(3, '0'),
+        id, orderId: Number(order.id), type, name: name + ' #' + order.id,
         customer, address, status: 'occupied', total: 0, items: [],
         time: `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
     });
@@ -524,25 +601,34 @@ function pickTable(msg, list) {
     return v ? list.find(t => String(t.id) === v.trim()) : null;
 }
 function occupy(t, from) { t.status = 'occupied'; t.time = t.time || from.time; }
-function moveTable() {
+async function moveTable() {
     const t = curTable(); if (!t || !t.items.length) return alert('Bàn chưa có món để chuyển.');
+    if (!t.orderId) return alert('Đơn chưa đồng bộ với máy chủ. Hãy tải lại trang rồi thử lại.');
     const dst = pickTable('Chuyển sang bàn TRỐNG (nhập số):', tables.filter(x => x.status === 'empty' && !x.type));
     if (!dst) return;
+    try { await Api.post('orders/move', { orderId: t.orderId, tableId: dst.id }); }
+    catch (err) { return alert('Không chuyển được bàn: ' + err.message); }
     dst.items = t.items; dst.total = t.total; occupy(dst, t);
+    dst.orderId = t.orderId; dst.orderCode = t.orderCode;
     t.items = []; t.total = 0; t.status = 'empty'; t.time = '';
+    delete t.orderId; delete t.orderCode;
     selectedTableId = dst.id; saveTables(); renderTablesGrid(); renderBillItems(); refreshBillHeader();
     try { Cashier.log && Cashier.log('table', `Chuyển ${t.name} → ${dst.name}`); } catch (e) {}
 }
-function mergeTable() {
+async function mergeTable() {
     const t = curTable(); if (!t) return;
     const src = pickTable('Gộp bàn nào VÀO bàn này (nhập số):', tables.filter(x => x.id !== t.id && x.status === 'occupied' && x.items.length && !x.type));
     if (!src) return;
+    if (!t.orderId || !src.orderId) return alert('Một trong các đơn chưa đồng bộ máy chủ.');
+    try { await Api.post('orders/merge', { sourceOrderId: src.orderId, targetOrderId: t.orderId }); }
+    catch (err) { return alert('Không gộp được đơn: ' + err.message); }
     t.items = t.items.concat(src.items); occupy(t, src);
     src.items = []; src.total = 0; src.status = 'empty'; src.time = '';
+    delete src.orderId; delete src.orderCode;
     saveTables(); renderTablesGrid(); renderBillItems();
     try { Cashier.log && Cashier.log('table', `Gộp ${src.name} vào ${t.name}`); } catch (e) {}
 }
-function splitBill() {
+async function splitBill() {
     const t = curTable(); if (!t || t.items.length < 2) return alert('Cần ít nhất 2 dòng món để tách bill.');
     const v = prompt('Tách các dòng nào sang bill riêng? Nhập số dòng, cách nhau dấu phẩy:\n' + t.items.map((i, k) => `${k + 1}. ${i.name} x${i.quantity}`).join('\n'));
     if (!v) return;
@@ -550,7 +636,17 @@ function splitBill() {
     if (!idx.length || idx.length >= t.items.length) return alert('Chọn ít nhất 1 dòng và không chọn hết.');
     const dst = pickTable('Chuyển các dòng đó sang bàn TRỐNG (nhập số) — thanh toán riêng:', tables.filter(x => x.status === 'empty' && !x.type));
     if (!dst) return;
-    dst.items = t.items.filter((_, k) => idx.includes(k)); t.items = t.items.filter((_, k) => !idx.includes(k)); occupy(dst, t);
+    if (!t.orderId) return alert('Đơn chưa đồng bộ với máy chủ.');
+    const itemsToMove = t.items.filter((_, k) => idx.includes(k));
+    let newOrder;
+    try {
+        newOrder = await Api.post('orders/split', {
+            sourceOrderId: t.orderId, tableId: dst.id,
+            itemIds: itemsToMove.map(i => Number(i.lineId))
+        });
+    } catch (err) { return alert('Không tách được hóa đơn: ' + err.message); }
+    dst.items = itemsToMove; t.items = t.items.filter((_, k) => !idx.includes(k)); occupy(dst, t);
+    dst.orderId = Number(newOrder.id); dst.orderCode = newOrder.code;
     saveTables(); renderTablesGrid(); renderBillItems();
     try { Cashier.log && Cashier.log('table', `Tách bill ${t.name} → ${dst.name}`); } catch (e) {}
 }
