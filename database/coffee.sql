@@ -89,3 +89,7 @@ CREATE TABLE IF NOT EXISTS shifts (
   -- Nếu cột khóa chính của bảng staff là staff_id kiểu INT thì thêm:
   -- , FOREIGN KEY (staff_id) REFERENCES staff(staff_id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+INSERT INTO categories (category_id, category_name, has_options) VALUES
+(1,'Cà phê',1),(2,'Trà sữa',1),(3,'Trà trái cây',1),(4,'Bánh',0);
+
+ALTER TABLE menu_items MODIFY image MEDIUMTEXT NULL;
