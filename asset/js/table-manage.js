@@ -1,5 +1,5 @@
 // table-manage.js — Trang Quản lý bàn (vai trò Quản lý): chỉ thêm / sửa tên / xóa bàn.
-// Dùng CHUNG key 'coffee_tables_v1' với trang Bàn của Phục vụ (table-order.js), Bếp và Thanh toán của Phục vụ,
+// Danh sách bàn lấy từ API (bảng dining_tables); trạng thái bàn vẫn dùng key 'coffee_tables_v1' với trang Bàn của Phục vụ (table-order.js), Bếp và Thanh toán của Phục vụ,
 // nên bàn thêm/sửa/xóa ở đây sẽ hiện ngay trên sơ đồ bàn của Phục vụ.
 (function () {
     const TABLES_KEY = 'coffee_tables_v1';
@@ -8,34 +8,49 @@
     const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     const norm = s => String(s).trim().replace(/\s+/g, ' ').toLowerCase();
 
-    // Danh sách mặc định — giống hệt table-order.js, dùng khi chưa có dữ liệu lưu
-    const defaultTables = () => Array.from({ length: 8 }, (_, i) => ({
-        id: i + 1, name: 'Bàn ' + String(i + 1).padStart(2, '0'), status: 'empty', time: '', total: 0, items: []
-    }));
-
     const STATUS = {
-        empty:    { text: 'Bàn trống',      badge: 'badge-active' },
-        occupied: { text: 'Đang phục vụ',   badge: 'badge-serving' },
-        pending:  { text: 'Chờ thanh toán', badge: 'badge-pending' }
+        empty: { text: 'Bàn trống', badge: 'badge-active' },
+        occupied: { text: 'Đang phục vụ', badge: 'badge-serving' },
+        pending: { text: 'Chờ thanh toán', badge: 'badge-pending' }
     };
 
-    // Luôn đọc mới từ localStorage trước khi ghi, để không đè mất trạng thái bàn
-    // mà Phục vụ / Thu ngân vừa thay đổi ở tab khác.
-    function load() {
-        try { const s = JSON.parse(localStorage.getItem(TABLES_KEY)); if (Array.isArray(s)) return s; } catch (e) {}
-        return defaultTables();
+    // Danh sách bàn (id + tên) nằm trong DB. Trạng thái bàn (đang phục vụ, món...) vẫn ở localStorage
+    // cho tới khi chuyển đơn hàng vào DB, nên sau mỗi lần lấy danh sách từ API ta trộn vào localStorage:
+    // giữ nguyên trạng thái bàn cũ, thêm bàn mới (trống), bỏ bàn đã bị xóa, cập nhật tên.
+    function readLocal() {
+        try { const s = JSON.parse(localStorage.getItem(TABLES_KEY)); if (Array.isArray(s)) return s; } catch (e) { }
+        return [];
     }
-    function save(list) {
-        try { localStorage.setItem(TABLES_KEY, JSON.stringify(list)); return true; }
-        catch (e) { alert('Không lưu được dữ liệu bàn. Kiểm tra lại trình duyệt rồi thử lại.'); return false; }
+    function writeLocal(list) {
+        try { localStorage.setItem(TABLES_KEY, JSON.stringify(list)); } catch (e) { }
+    }
+    async function pull() {
+        const apiList = await Api.get('tables');
+        const local = readLocal();
+        const extra = local.filter(t => t.type); // đơn mang đi/giao hàng của Thu ngân: giữ nguyên
+        const merged = apiList.map(a => {
+            const old = local.find(t => !t.type && Number(t.id) === a.id);
+            return old ? Object.assign({}, old, { id: a.id, name: a.name })
+                : { id: a.id, name: a.name, status: 'empty', time: '', total: 0, items: [] };
+        });
+        writeLocal(merged.concat(extra));
+        return merged;
     }
 
     let editingId = null;   // null = đang thêm bàn mới
     let deletingId = null;
+    let current = [];       // danh sách bàn mới nhất từ máy chủ
 
     // ---------- Hiển thị danh sách ----------
+    async function refresh(silent) {
+        try { current = await pull(); }
+        catch (err) { if (silent !== true) alert('Không tải được danh sách bàn: ' + err.message); }
+        render();
+    }
     function render() {
-        const list = load().filter(t => !t.type); // bỏ đơn mang đi/giao hàng của Thu ngân
+        const list = current;
+        const local = readLocal();
+        list.forEach(t => { const o = local.find(x => !x.type && Number(x.id) === t.id); t.status = o ? o.status : 'empty'; t.time = o ? o.time : ''; });
         const count = s => list.filter(t => t.status === s).length;
         $('tableSummary').textContent = list.length
             ? `Tổng cộng ${list.length} bàn — ${count('empty')} trống, ${count('occupied')} đang phục vụ, ${count('pending')} chờ thanh toán`
@@ -76,7 +91,7 @@
     }
 
     function openTableModal(id) {
-        const list = load();
+        const list = current;
         editingId = id ?? null;
         const t = editingId === null ? null : list.find(x => x.id === editingId);
         if (editingId !== null && !t) { render(); return; }
@@ -94,31 +109,28 @@
         editingId = null;
     }
 
-    function submitTable(e) {
+    async function submitTable(e) {
         e.preventDefault();
         const name = $('tableNameInput').value.trim().replace(/\s+/g, ' ');
-        const list = load();
         if (!name) return showNameError('Vui lòng nhập tên bàn.');
-        if (list.some(t => t.id !== editingId && norm(t.name) === norm(name))) return showNameError(`Đã có bàn tên "${name}". Hãy chọn tên khác.`);
-
-        if (editingId === null) {
-            const id = list.reduce((m, t) => Math.max(m, Number(t.id) || 0), 0) + 1;
-            list.push({ id, name, status: 'empty', time: '', total: 0, items: [] });
-        } else {
-            const t = list.find(x => x.id === editingId);
-            if (!t) { closeTableModal(); render(); return; }
-            t.name = name;
-        }
-        if (!save(list)) return;
+        if (current.some(t => t.id !== editingId && norm(t.name) === norm(name))) return showNameError(`Đã có bàn tên "${name}". Hãy chọn tên khác.`);
+        try {
+            if (editingId === null) await Api.post('tables', { name });
+            else await Api.put('tables&id=' + editingId, { name });
+        } catch (err) { return showNameError(err.message); }
         closeTableModal();
-        render();
+        await refresh();
     }
 
     // ---------- Xóa ----------
+    function localStatus(id) {
+        const t = readLocal().find(x => !x.type && Number(x.id) === id);
+        return t ? t.status : 'empty';
+    }
     function openDeleteModal(id) {
-        const t = load().find(x => x.id === id);
-        if (!t) { render(); return; }
-        if (t.status !== 'empty') { alert(`${t.name} đang có khách nên chưa thể xóa.`); render(); return; }
+        const t = current.find(x => x.id === id);
+        if (!t) { refresh(); return; }
+        if (localStatus(id) !== 'empty') { alert(`${t.name} đang có khách nên chưa thể xóa.`); render(); return; }
         deletingId = id;
         $('deleteModalName').textContent = t.name;
         $('deleteModal').classList.add('active');
@@ -127,19 +139,18 @@
         $('deleteModal').classList.remove('active');
         deletingId = null;
     }
-    function confirmDelete() {
-        const list = load();
-        const t = list.find(x => x.id === deletingId);
-        if (t && t.status !== 'empty') { closeDeleteModal(); alert(`${t.name} vừa có khách nên chưa thể xóa.`); render(); return; }
-        const next = list.filter(x => x.id !== deletingId);
-        if (!save(next)) return;
+    async function confirmDelete() {
+        const t = current.find(x => x.id === deletingId);
+        if (t && localStatus(t.id) !== 'empty') { closeDeleteModal(); alert(`${t.name} vừa có khách nên chưa thể xóa.`); render(); return; }
+        try { await Api.del('tables&id=' + deletingId); }
+        catch (err) { closeDeleteModal(); alert('Không xóa được bàn: ' + err.message); return; }
         closeDeleteModal();
-        render();
+        await refresh();
     }
 
     // ---------- Gắn sự kiện ----------
     document.addEventListener('DOMContentLoaded', () => {
-        render();
+        refresh();
         $('btnAddTable').addEventListener('click', () => openTableModal(null));
         $('tableManageBody').addEventListener('click', e => {
             const b = e.target.closest('button[data-act]');
@@ -162,6 +173,8 @@
             closeTableModal(); closeDeleteModal();
         });
         // trạng thái bàn đổi ở tab khác (Phục vụ gọi món, Thu ngân thanh toán) -> cập nhật lại
+        // (trạng thái bàn lấy từ localStorage nên chỉ cần vẽ lại, không gọi API)
         window.addEventListener('storage', e => { if (e.key === TABLES_KEY) render(); });
+        setInterval(() => refresh(true), 5000); // quản lý khác thêm/xóa bàn -> tự cập nhật
     });
 })();

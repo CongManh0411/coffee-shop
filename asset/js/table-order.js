@@ -32,22 +32,42 @@ const TABLES_KEY = 'coffee_tables_v1';
 })();
 function genLineId() { return 'i' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
 function saveTables() { try { localStorage.setItem(TABLES_KEY, JSON.stringify(tables)); } catch (e) {} }
+// ---- ĐỒNG BỘ DANH SÁCH BÀN TỪ API (bảng dining_tables) ----
+// Danh sách bàn (id + tên) lấy từ máy chủ; trạng thái bàn/món vẫn ở localStorage cho tới khi chuyển đơn hàng vào DB.
+async function syncTablesFromApi() {
+    const apiList = await Api.get('tables');
+    let local = [];
+    try { const s = JSON.parse(localStorage.getItem(TABLES_KEY)); if (Array.isArray(s)) local = s; } catch (e) {}
+    const extra = local.filter(t => t.type);
+    const merged = apiList.map(a => {
+        const old = local.find(t => !t.type && Number(t.id) === a.id);
+        return old ? Object.assign({}, old, { id: a.id, name: a.name })
+                   : { id: a.id, name: a.name, status: 'empty', time: '', total: 0, items: [] };
+    });
+    tables = merged.concat(extra);
+    saveTables();
+}
  
 // ---- MENU: đọc từ trang Menu của Quản lý (cùng key 'coffee_menu_data_v1' với menu.js) ----
 // Món Quản lý thêm/sửa/ẩn/xóa ở Menu.html sẽ hiện ngay ở đây. Món bị ẩn không hiện để gọi.
 // MENU_KEY, DEFAULT_MENU, itemImage, OPTION_CONFIG: lấy từ menu-data.js
 const escHtml = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-function loadMenuList() {
-    let data = DEFAULT_MENU;
-    try { const raw = JSON.parse(localStorage.getItem(MENU_KEY)); if (Array.isArray(raw)) data = raw; } catch (e) {}
+function menuFromData(data) {
     const out = [];
-    data.forEach(cat => (cat.items || []).forEach(it => {
+    (data || []).forEach(cat => (cat.items || []).forEach(it => {
         if (it.hidden) return;
-        out.push({ id: it.id, name: it.name, category: cat.category, price: Number(it.price) || 0, desc: it.desc || '', img: it.img || '' });
+        out.push({ id: it.id, name: it.name, category: cat.category,
+                   price: Number(it.price) || 0, desc: it.desc || '', img: it.img || '' });
     }));
     return out;
 }
-let menuList = loadMenuList();
+async function loadMenuList() {
+    const data = await Api.get('menu');
+    // InventoryAPI (inventory.js) vẫn đọc menu từ localStorage nên phải chép sang
+    try { localStorage.setItem(MENU_KEY, JSON.stringify(data)); } catch (e) {}
+    return menuFromData(data);
+}
+let menuList = [];
  
 let selectedTableId = null;
 let currentFilterCategory = "all";
@@ -56,11 +76,15 @@ let currentFilterTable = "all";
 /* ==========================================
    2. KHỞI TẠO VÀ SIDEBAR (CÓ LOGO & NGUYỄN VĂN A)
    ========================================== */
-document.addEventListener("DOMContentLoaded", function () {
-    // renderSidebar() bo: dung sidebar chung cua web
+document.addEventListener("DOMContentLoaded", async function () {
+    try { menuList = await loadMenuList(); }
+    catch (err) { alert('Không tải được thực đơn: ' + err.message); }
+    try { await syncTablesFromApi(); }
+    catch (err) { alert('Không tải được danh sách bàn: ' + err.message); }
     renderTablesGrid();
     renderCategoryTabs();
     renderMenuGrid();
+    // ...phần còn lại giữ nguyên
     document.getElementById('categoryTabs').addEventListener('click', function (e) {
         const b = e.target.closest('[data-cat]');
         if (!b) return;
@@ -80,7 +104,7 @@ window.addEventListener('popstate', function () {
 // Quản lý sửa menu ở tab khác -> nạp lại danh sách món + danh mục
 window.addEventListener('storage', function (e) {
     if (![MENU_KEY, InventoryAPI.KEY, 'coffee_soldout_v1'].includes(e.key)) return;
-    menuList = loadMenuList();
+    try { menuList = menuFromData(JSON.parse(localStorage.getItem(MENU_KEY))); } catch (err) {}
     renderCategoryTabs();
     renderMenuGrid();
 });

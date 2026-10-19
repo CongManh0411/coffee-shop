@@ -66,3 +66,26 @@ INSERT INTO menu_items (item_id, category_id, item_name, description, price) VAL
 (10,3,'Trà vải hoa hồng','Vải, hoa hồng',39000),
 (6,4,'Bánh croissant','Nướng giòn',22000),
 (11,4,'Bánh tiramisu','Lát 1 phần',35000);
+
+-- Chạy trong phpMyAdmin (tab SQL) trên database coffee
+
+-- 1) Bàn: seed 8 bàn mặc định nếu chưa có
+INSERT IGNORE INTO dining_tables (table_name, is_active) VALUES
+('Bàn 01',1),('Bàn 02',1),('Bàn 03',1),('Bàn 04',1),
+('Bàn 05',1),('Bàn 06',1),('Bàn 07',1),('Bàn 08',1);
+
+-- 2) Ca làm
+CREATE TABLE IF NOT EXISTS shifts (
+  shift_id    INT AUTO_INCREMENT PRIMARY KEY,
+  staff_id    INT NOT NULL,
+  shift_date  DATE NOT NULL,
+  start_time  TIME NOT NULL,
+  end_time    TIME NOT NULL,
+  registered  TINYINT(1) NOT NULL DEFAULT 0,
+  left_at     DATETIME NULL,
+  created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_shift_date (shift_date),
+  INDEX idx_shift_staff_date (staff_id, shift_date)
+  -- Nếu cột khóa chính của bảng staff là staff_id kiểu INT thì thêm:
+  -- , FOREIGN KEY (staff_id) REFERENCES staff(staff_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

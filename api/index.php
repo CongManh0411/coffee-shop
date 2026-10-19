@@ -5,6 +5,8 @@ require_once __DIR__ . '/../helpers/auth.php';
 require_once __DIR__ . '/modules/auth.php';
 require_once __DIR__ . '/modules/staff.php';
 require_once __DIR__ . '/modules/menu.php';
+require_once __DIR__ . '/modules/tables.php';
+require_once __DIR__ . '/modules/shifts.php';
 
 $route  = $_GET['route'] ?? '';
 $method = $_SERVER['REQUEST_METHOD'];
@@ -71,6 +73,66 @@ try {
                 json_ok();
             }
             json_error('Sai phương thức.', 405);
+            break;
+        case 'tables':
+            if ($method === 'GET') {
+                require_login();                 // mọi vai trò đều xem được danh sách bàn
+                json_ok(tables_list());
+            }
+            require_role(array('manager'));      // chỉ Quản lý được thêm/sửa/xóa bàn
+            if ($method === 'POST') {
+                list($id, $err) = tables_create(json_input());
+                if ($err) json_error($err);
+                json_ok(array('id' => $id));
+            }
+            if ($method === 'PUT') {
+                $err = tables_update((int) ($_GET['id'] ?? 0), json_input());
+                if ($err) json_error($err);
+                json_ok();
+            }
+            if ($method === 'DELETE') {
+                tables_delete((int) ($_GET['id'] ?? 0));
+                json_ok();
+            }
+            json_error('Sai phương thức.', 405);
+            break;
+        case 'shifts':
+            if ($method === 'GET') {
+                require_login();
+                json_ok(shifts_list());
+            }
+            require_role(array('manager'));      // chỉ Quản lý xếp ca
+            if ($method === 'POST') {
+                list($id, $err) = shifts_create(json_input());
+                if ($err) json_error($err);
+                json_ok(array('id' => $id));
+            }
+            if ($method === 'PUT') {
+                $err = shifts_update((int) ($_GET['id'] ?? 0), json_input());
+                if ($err) json_error($err);
+                json_ok();
+            }
+            if ($method === 'DELETE') {
+                shifts_delete((int) ($_GET['id'] ?? 0));
+                json_ok();
+            }
+            json_error('Sai phương thức.', 405);
+            break;
+        case 'shifts/copy':
+            require_role(array('manager'));
+            if ($method !== 'POST') json_error('Sai phương thức.', 405);
+            $in = json_input();
+            list($n, $err) = shifts_copy_week($in['weekStart'] ?? '');
+            if ($err) json_error($err);
+            json_ok(array('added' => $n));
+            break;
+        case 'shifts/clear':
+            require_role(array('manager'));
+            if ($method !== 'POST') json_error('Sai phương thức.', 405);
+            $in = json_input();
+            list($n, $err) = shifts_clear_week($in['weekStart'] ?? '');
+            if ($err) json_error($err);
+            json_ok(array('removed' => $n));
             break;
         default:
             json_error('Không tìm thấy API.', 404);

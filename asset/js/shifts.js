@@ -1,8 +1,8 @@
-// shifts.js — XẾP LỊCH CA (Shifts.html, vai trò Quản lý). Ghi 'coffee_shifts_v1' cho trang Lịch ca làm của nhân viên đọc.
+// shifts.js — XẾP LỊCH CA (Shifts.html, vai trò Quản lý). Dữ liệu lưu trong DB (API 'shifts'); đồng thời chép sang 'coffee_shifts_v1' cho trang Lịch ca làm của nhân viên đọc.
 // Ca: { id, staffId, date: 'YYYY-MM-DD', start: 'HH:MM', end: 'HH:MM' }. Kiểm tra: giờ trong 6h30–22h, kết thúc sau bắt đầu, không trùng ca khác của cùng người.
 (function () {
     'use strict';
-    const SHIFTS_KEY = 'coffee_shifts_v1', STAFF_KEY = 'coffee_staff_v1';
+    const SHIFTS_KEY = 'coffee_shifts_v1';
     const OPEN = 6 * 60 + 30, CLOSE = 22 * 60;
     const DAYS = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'CN'];
     const $ = id => document.getElementById(id);
@@ -16,24 +16,29 @@
     const clock = m => { const h = Math.floor(m / 60), r = m % 60; return r ? `${h}h${pad(r)}` : `${h}h`; };
     const hours = m => (m / 60).toFixed(m % 60 ? 1 : 0) + 'h';
 
-    function loadStaff() {
-        let s = [];
-        try { s = JSON.parse(localStorage.getItem(STAFF_KEY)); } catch (e) {}
-        if (!Array.isArray(s) || !s.length) s = [{ id: 1, fullName: 'Nguyễn Văn A', role: 'Quản lý' }, { id: 2, fullName: 'Phạm Văn D', role: 'Bếp' }, { id: 3, fullName: 'Lê Văn C', role: 'Phục vụ' }, { id: 4, fullName: 'Trần Thị B', role: 'Thu ngân' }];
-        return s.filter(x => x.role !== 'Quản lý'); // chỉ xếp ca cho nhân viên làm tại quán
+    // Nhân viên lấy từ API (chỉ Quản lý gọi được). Chấp nhận vài tên trường khác nhau của staff_list().
+    const isManager = x => x.roleKey === 'manager' || x.role === 'Quản lý' || x.roleLabel === 'Quản lý';
+    async function fetchStaff() {
+        const list = await Api.get('staff');
+        return list.filter(x => !isManager(x) && (x.status === undefined || Number(x.status) !== 0))
+            .map(x => ({ id: x.id ?? x.staffId, fullName: x.fullName ?? x.name ?? x.full_name, role: x.role ?? x.roleLabel ?? '' }));
     }
-    const loadShifts = () => { try { const s = JSON.parse(localStorage.getItem(SHIFTS_KEY)); return Array.isArray(s) ? s : []; } catch (e) { return []; } };
-    function saveShifts(list) {
-        try { localStorage.setItem(SHIFTS_KEY, JSON.stringify(list)); return true; }
-        catch (e) { alert('Không lưu được lịch. Kiểm tra lại trình duyệt rồi thử lại.'); return false; }
+    async function fetchShifts() {
+        const list = await Api.get('shifts');
+        try { localStorage.setItem(SHIFTS_KEY, JSON.stringify(list)); } catch (e) {}
+        return list;
     }
-    const nextId = list => list.reduce((m, s) => Math.max(m, Number(s.id) || 0), 0) + 1;
+    async function reload(silent) {
+        try { [staff, shifts] = await Promise.all([fetchStaff(), fetchShifts()]); }
+        catch (e) { if (silent !== true) alert('Không tải được lịch ca: ' + e.message); }
+        render();
+    }
     const overlap = (a, b) => toMin(a.start) < toMin(b.end) && toMin(b.start) < toMin(a.end);
 
     let weekStart = mondayOf(new Date()), staff = [], shifts = [], ed = null;
+    const weekKey = () => dateKey(weekStart);
 
     function render() {
-        staff = loadStaff(); shifts = loadShifts();
         const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
         const today = dateKey(new Date());
         $('shMonth').textContent = `Tháng ${addDays(weekStart, 3).getMonth() + 1}/${addDays(weekStart, 3).getFullYear()}`;
@@ -71,41 +76,41 @@
     }
     const closeModal = () => { $('shModal').classList.remove('active'); ed = null; };
 
-    function submit(e) {
+    async function submit(e) {
         e.preventDefault();
         const start = $('shStart').value, end = $('shEnd').value;
         if (!start || !end) return err('Vui lòng nhập giờ bắt đầu và kết thúc.');
         if (toMin(end) <= toMin(start)) return err('Giờ kết thúc phải sau giờ bắt đầu.');
         if (toMin(start) < OPEN || toMin(end) > CLOSE) return err('Ca phải nằm trong giờ mở cửa 6h30 – 22h.');
-        const list = loadShifts(), cand = { start, end };
-        const clash = list.find(x => x.id !== ed.id && String(x.staffId) === String(ed.staffId) && x.date === ed.date && overlap(x, cand));
+        const cand = { start, end };
+        const clash = shifts.find(x => x.id !== ed.id && String(x.staffId) === String(ed.staffId) && x.date === ed.date && overlap(x, cand));
         if (clash) return err(`Trùng với ca ${clock(toMin(clash.start))} – ${clock(toMin(clash.end))} của người này.`);
-        if (ed.id) { const x = list.find(y => y.id === ed.id); if (x) { x.start = start; x.end = end; } }
-        else list.push({ id: nextId(list), staffId: ed.staffId, date: ed.date, start, end });
-        if (saveShifts(list)) { closeModal(); render(); }
+        try {
+            if (ed.id) await Api.put('shifts&id=' + ed.id, { start, end });
+            else await Api.post('shifts', { staffId: Number(ed.staffId), date: ed.date, start, end });
+        } catch (ex) { return err(ex.message); }   // máy chủ cũng kiểm tra lại các luật trên
+        closeModal();
+        await reload();
     }
 
-    function copyPrev() {
-        const list = loadShifts(), weekKeys = Array.from({ length: 7 }, (_, i) => dateKey(addDays(weekStart, i)));
-        const prev = list.filter(x => weekKeys.includes(dateKey(addDays(new Date(x.date + 'T00:00:00'), 7))));
-        if (!prev.length) return alert('Tuần trước chưa có ca nào để sao chép.');
-        let added = 0, id = nextId(list);
-        prev.forEach(x => {
-            const date = dateKey(addDays(new Date(x.date + 'T00:00:00'), 7)), c = { staffId: x.staffId, date, start: x.start, end: x.end };
-            if (list.some(y => String(y.staffId) === String(c.staffId) && y.date === date && overlap(y, c))) return;
-            list.push({ id: id++, ...c }); added++;
-        });
-        if (saveShifts(list)) { render(); alert(added ? `Đã sao chép ${added} ca.` : 'Các ca tuần này đã có sẵn, không sao chép thêm.'); }
+    async function copyPrev() {
+        try {
+            const r = await Api.post('shifts/copy', { weekStart: weekKey() });
+            await reload();
+            alert(r.added ? `Đã sao chép ${r.added} ca.` : 'Các ca tuần này đã có sẵn, không sao chép thêm.');
+        } catch (ex) { alert(ex.message); }
     }
-    function clearWeek() {
+    async function clearWeek() {
         const keys = Array.from({ length: 7 }, (_, i) => dateKey(addDays(weekStart, i)));
-        const list = loadShifts(), left = list.filter(x => !keys.includes(x.date));
-        if (left.length === list.length) return alert('Tuần này chưa có ca nào.');
-        if (confirm(`Xóa ${list.length - left.length} ca của tuần này?`) && saveShifts(left)) render();
+        const n = shifts.filter(x => keys.includes(x.date)).length;
+        if (!n) return alert('Tuần này chưa có ca nào.');
+        if (!confirm(`Xóa ${n} ca của tuần này?`)) return;
+        try { await Api.post('shifts/clear', { weekStart: weekKey() }); await reload(); }
+        catch (ex) { alert(ex.message); }
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-        render();
+        reload();
         $('shPrev').addEventListener('click', () => { weekStart = addDays(weekStart, -7); render(); });
         $('shNext').addEventListener('click', () => { weekStart = addDays(weekStart, 7); render(); });
         $('shThis').addEventListener('click', () => { weekStart = mondayOf(new Date()); render(); });
@@ -114,13 +119,17 @@
         $('shTable').addEventListener('click', e => {
             const a = e.target.closest('[data-staff]'), s = e.target.closest('[data-edit]');
             if (a) openModal({ id: null, staffId: a.dataset.staff, date: a.dataset.date });
-            else if (s) { const x = loadShifts().find(y => String(y.id) === s.dataset.edit); if (x) openModal({ ...x }); }
+            else if (s) { const x = shifts.find(y => String(y.id) === s.dataset.edit); if (x) openModal({ ...x }); }
         });
         $('shForm').addEventListener('submit', submit);
         $('shCancel').addEventListener('click', closeModal);
-        $('shDelete').addEventListener('click', () => { if (ed && ed.id && saveShifts(loadShifts().filter(x => x.id !== ed.id))) { closeModal(); render(); } });
+        $('shDelete').addEventListener('click', async () => {
+            if (!ed || !ed.id) return;
+            try { await Api.del('shifts&id=' + ed.id); closeModal(); await reload(); }
+            catch (ex) { err(ex.message); }
+        });
         $('shModal').addEventListener('click', e => { if (e.target === $('shModal')) closeModal(); });
         document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
-        window.addEventListener('storage', e => { if (e.key === SHIFTS_KEY || e.key === STAFF_KEY) render(); });
+        setInterval(() => { if (!ed) reload(true); }, 15000); // quản lý khác sửa lịch -> tự cập nhật (không làm gián đoạn lúc đang mở hộp thoại)
     });
 })();
