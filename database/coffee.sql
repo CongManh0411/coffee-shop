@@ -53,3 +53,16 @@ INSERT INTO staff (full_name, username, password, role) VALUES
 ('Lê Văn C','phucvu','$2y$10$.7SswrVHgpBiQXRA6SjzMeuVUJb1Vmt2N12F6G.yoIygBsFstW3jS','waiter'),
 ('Phạm Văn D','bep','$2y$10$.7SswrVHgpBiQXRA6SjzMeuVUJb1Vmt2N12F6G.yoIygBsFstW3jS','kitchen'),
 ('Trần Thị B','thungan','$2y$10$.7SswrVHgpBiQXRA6SjzMeuVUJb1Vmt2N12F6G.yoIygBsFstW3jS','cashier');
+
+INSERT INTO menu_items (item_id, category_id, item_name, description, price) VALUES
+(1,1,'Cà phê sữa đá','Phin truyền thống',29000),
+(2,1,'Cà phê đen đá','Đậm vị, không đường sữa',25000),
+(3,1,'Cà phê đen nóng','Pha phin nóng',25000),
+(7,1,'Cà phê bạc xỉu','Nhiều sữa, ít cà phê',29000),
+(8,1,'Cà phê cappuccino','Espresso, sữa tươi, bọt sữa',45000),
+(4,2,'Trà sữa trân châu','Trân châu đen',35000),
+(5,2,'Trà sữa matcha','Matcha Nhật',39000),
+(9,3,'Trà đào cam sả','Đào miếng, cam, sả',39000),
+(10,3,'Trà vải hoa hồng','Vải, hoa hồng',39000),
+(6,4,'Bánh croissant','Nướng giòn',22000),
+(11,4,'Bánh tiramisu','Lát 1 phần',35000);
