@@ -103,6 +103,7 @@
     }
 
     let weekStart = mondayOf(new Date());
+    let selectedDayIndex = dayIdx(new Date());
     let staff = [], shifts = [], timesheet = [], isDemo = false;
 
     function refreshData() {
@@ -297,6 +298,32 @@
         }).join('');
     }
 
+    function renderDayPicker(todayKey, nowMin) {
+        const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+        const id = meId();
+        const byId = new Map(staff.map(s => [String(s.id), s]));
+        $('schDayTabs').innerHTML = days.map((d, i) => {
+            const key = dateKey(d);
+            const count = new Set(shifts.filter(sh => sh.date === key && byId.has(String(sh.staffId))).map(sh => String(sh.staffId))).size;
+            return `<button type="button" class="sch-day-tab${i === selectedDayIndex ? ' active' : ''}${key === todayKey ? ' today' : ''}" data-day="${i}" aria-pressed="${i === selectedDayIndex}"><span>${DAY_LABELS[i]}</span><small>${pad(d.getDate())}/${pad(d.getMonth() + 1)}</small><em>${count}</em></button>`;
+        }).join('');
+
+        const d = days[selectedDayIndex];
+        const key = dateKey(d);
+        const items = shifts
+            .filter(sh => sh.date === key && byId.has(String(sh.staffId)))
+            .sort((a, b) => (String(b.staffId) === id) - (String(a.staffId) === id) || toMin(a.start) - toMin(b.start))
+            .map(sh => {
+                const e = evalFor(sh, todayKey, nowMin), m = metaOf(e), isMe = String(sh.staffId) === id;
+                return `<div class="sch-li st-${e.state}${isMe ? ' me' : ''}">
+                    <div><b>${esc(byId.get(String(sh.staffId)).fullName)}</b>${isMe ? ' <span class="sch-me-tag">Bạn</span>' : ''}<small class="sch-li-role">${esc(byId.get(String(sh.staffId)).role || '')}</small></div>
+                    <div class="sch-li-time">${fmtClock(e.st)} – ${fmtClock(e.en)} <small>(${fmtDur(e.total)})</small></div>
+                    ${m.text ? `<div class="sch-meta${m.warn ? ' warn' : ''}">${esc(m.text)}</div>` : ''}
+                </div>`;
+            }).join('');
+        $('schList').innerHTML = `<section class="sch-day${key === todayKey ? ' today' : ''}"><h4>${DAY_LABELS[selectedDayIndex]} <small>${fmtDate(d)}</small></h4>${items || '<div class="sch-none">Không có ca.</div>'}</section>`;
+    }
+
     function renderLabels() {
         const mid = addDays(weekStart, 3);
         $('schMonthLabel').textContent = `Tháng ${mid.getMonth() + 1}/${mid.getFullYear()}`;
@@ -314,7 +341,7 @@
         renderMe(todayKey, nowMin);
         renderNow(todayKey, nowMin);
         renderTable(todayKey, nowMin);
-        renderList(todayKey, nowMin);
+        renderDayPicker(todayKey, nowMin);
     }
 
     function init() {
@@ -325,6 +352,12 @@
         $('schPick').addEventListener('change', e => {
             if (!e.target.value) return;
             weekStart = mondayOf(parseKey(e.target.value));
+            render();
+        });
+        $('schDayTabs').addEventListener('click', e => {
+            const tab = e.target.closest('[data-day]');
+            if (!tab) return;
+            selectedDayIndex = Number(tab.dataset.day);
             render();
         });
         setInterval(() => { refreshData(); render(); }, 10000);

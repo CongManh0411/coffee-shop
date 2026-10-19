@@ -36,11 +36,13 @@
     const overlap = (a, b) => toMin(a.start) < toMin(b.end) && toMin(b.start) < toMin(a.end);
 
     let weekStart = mondayOf(new Date()), staff = [], shifts = [], ed = null;
+    let selectedDayIndex = (new Date().getDay() + 6) % 7;
     const weekKey = () => dateKey(weekStart);
 
     function render() {
         const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
         const today = dateKey(new Date());
+        renderMobile(days, today);
         $('shMonth').textContent = `Tháng ${addDays(weekStart, 3).getMonth() + 1}/${addDays(weekStart, 3).getFullYear()}`;
         $('shRange').textContent = `${fmtDate(weekStart)} – ${fmtDate(addDays(weekStart, 6))}`;
 
@@ -60,6 +62,25 @@
             return ids.size ? `<td>${ids.size} người</td>` : '<td class="warn">Chưa có ai</td>';
         }).join('')}<td></td></tr></tfoot>`;
         $('shTable').innerHTML = head + `<tbody>${rows || '<tr><td colspan="9" class="sch-none">Chưa có nhân viên. Thêm ở trang Nhân viên.</td></tr>'}</tbody>` + (staff.length ? foot : '');
+    }
+
+    function renderMobile(days, today) {
+        $('shDayTabs').innerHTML = days.map((d, i) => {
+            const key = dateKey(d);
+            const count = new Set(shifts.filter(x => x.date === key).map(x => String(x.staffId))).size;
+            return `<button type="button" class="shf-day-tab${i === selectedDayIndex ? ' active' : ''}${key === today ? ' today' : ''}" data-day="${i}" aria-pressed="${i === selectedDayIndex}"><span>${DAYS[i]}</span><small>${pad(d.getDate())}/${pad(d.getMonth() + 1)}</small><em>${count}</em></button>`;
+        }).join('');
+
+        const selectedDate = days[selectedDayIndex];
+        const selectedKey = dateKey(selectedDate);
+        const dayStaff = staff.map(s => {
+            const mine = shifts.filter(x => String(x.staffId) === String(s.id) && x.date === selectedKey).sort((a, b) => toMin(a.start) - toMin(b.start));
+            const shiftButtons = mine.map(x => `<button type="button" class="shf-mobile-shift" data-edit="${x.id}"><span>${clock(toMin(x.start))} – ${clock(toMin(x.end))}</span><small>${hours(toMin(x.end) - toMin(x.start))}</small><b aria-hidden="true">›</b></button>`).join('');
+            return `<article class="shf-day-staff"><div class="shf-day-staff-head"><div><b>${esc(s.fullName)}</b><small>${esc(s.role || '')}</small></div><button type="button" class="shf-mobile-add" data-staff="${s.id}" data-date="${selectedKey}">+ Thêm ca</button></div>${shiftButtons || '<p class="shf-no-shift">Chưa xếp ca</p>'}</article>`;
+        }).join('');
+        const count = new Set(shifts.filter(x => x.date === selectedKey).map(x => String(x.staffId))).size;
+        $('shDayList').innerHTML = `<div class="shf-day-summary"><b>${DAYS[selectedDayIndex]}, ${fmtDate(selectedDate)}</b><span>${count} nhân viên có ca</span></div>${dayStaff || '<p class="shf-empty">Chưa có nhân viên. Thêm nhân viên ở mục Nhân viên.</p>'}`;
+        $('shMobileSchedule').hidden = false;
     }
 
     function err(m) { $('shError').textContent = m; $('shError').hidden = !m; }
@@ -120,6 +141,17 @@
             const a = e.target.closest('[data-staff]'), s = e.target.closest('[data-edit]');
             if (a) openModal({ id: null, staffId: a.dataset.staff, date: a.dataset.date });
             else if (s) { const x = shifts.find(y => String(y.id) === s.dataset.edit); if (x) openModal({ ...x }); }
+        });
+        $('shDayTabs').addEventListener('click', e => {
+            const tab = e.target.closest('[data-day]');
+            if (!tab) return;
+            selectedDayIndex = Number(tab.dataset.day);
+            render();
+        });
+        $('shDayList').addEventListener('click', e => {
+            const add = e.target.closest('[data-staff]'), shift = e.target.closest('[data-edit]');
+            if (add) openModal({ id: null, staffId: add.dataset.staff, date: add.dataset.date });
+            else if (shift) { const x = shifts.find(y => String(y.id) === shift.dataset.edit); if (x) openModal({ ...x }); }
         });
         $('shForm').addEventListener('submit', submit);
         $('shCancel').addEventListener('click', closeModal);

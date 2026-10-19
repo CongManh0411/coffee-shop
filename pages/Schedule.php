@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
+    <base href="./">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -58,6 +59,7 @@
             <div class="sch-table-wrap">
                 <table class="sch-table" id="schTable"></table>
             </div>
+            <div class="sch-day-tabs" id="schDayTabs" role="group" aria-label="Chọn ngày trong tuần"></div>
             <div class="sch-list" id="schList"></div>
             <p class="sch-note">Giờ làm việc của quán: 6h30 – 22h. Lịch do quản lý sắp xếp, nhân viên chỉ xem. Ô để trống là không có ca. Giờ làm thật lấy từ chấm công của Phục vụ.</p>
         </div>

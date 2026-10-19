@@ -3,21 +3,21 @@ require_once __DIR__ . '/config/init.php';
 require_once __DIR__ . '/helpers/auth.php';
 
 $routes = array(
-    'login'      => 'Login.html',
-    'tablemanage'=> 'TableManage.html',
-    'menu'       => 'Menu.html',
-    'revenue'    => 'Revenue.html',
-    'history'    => 'History.html',
-    'staff'      => 'Staff.html',
-    'shifts'     => 'Shifts.html',
-    'warehouse'  => 'Warehouse.html',
-    'ops'        => 'Ops.html',
-    'logs'       => 'Logs.html',
-    'tables'     => 'Table.html',
-    'schedule'   => 'Schedule.html',
-    'orders'     => 'Orders.html',
-    'cashshift'  => 'Shift.html',
-    'kitchen'    => 'Kitchen.html',
+    'login'      => 'pages/Login.php',
+    'tablemanage'=> 'pages/TableManage.php',
+    'menu'       => 'pages/Menu.php',
+    'revenue'    => 'pages/Revenue.php',
+    'history'    => 'pages/History.php',
+    'staff'      => 'pages/Staff.php',
+    'shifts'     => 'pages/Shifts.php',
+    'warehouse'  => 'pages/Warehouse.php',
+    'ops'        => 'pages/Ops.php',
+    'logs'        => 'pages/Logs.php',
+    'tables'     => 'pages/Table.php',
+    'schedule'   => 'pages/Schedule.php',
+    'orders'     => 'pages/Orders.php',
+    'cashshift'  => 'pages/Shift.php',
+    'kitchen'    => 'pages/Kitchen.php',
 );
 
 $rolePages = array(

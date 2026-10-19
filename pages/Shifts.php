@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
+    <base href="./">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -28,6 +29,10 @@
             </div>
 
             <div class="sch-table-wrap"><table class="sch-table" id="shTable"></table></div>
+            <section class="shf-mobile-schedule" id="shMobileSchedule" aria-label="Lịch ca theo ngày" hidden>
+                <div class="shf-day-tabs" id="shDayTabs" role="group" aria-label="Chọn ngày trong tuần"></div>
+                <div class="shf-day-list" id="shDayList" aria-live="polite"></div>
+            </section>
             <p class="sch-note">Lịch lưu ngay khi bấm Lưu. Nhân viên (Phục vụ) xem ở mục "Lịch ca làm". Lương chỉ tính cho giờ làm nằm trong ca đã xếp.</p>
         </div>
     </main>
