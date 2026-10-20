@@ -334,3 +334,22 @@ CREATE TABLE IF NOT EXISTS attendance_records (
   CONSTRAINT fk_attendance_shift FOREIGN KEY (shift_id) REFERENCES shifts(shift_id) ON DELETE CASCADE,
   CONSTRAINT fk_attendance_staff FOREIGN KEY (staff_id) REFERENCES staff(staff_id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 1) audit_logs -> staff (xóa nhân viên thì giữ log, staff_id thành NULL)
+UPDATE audit_logs SET staff_id = NULL
+ WHERE staff_id IS NOT NULL AND staff_id NOT IN (SELECT staff_id FROM staff);
+ALTER TABLE audit_logs
+  ADD CONSTRAINT fk_audit_staff FOREIGN KEY (staff_id) REFERENCES staff(staff_id) ON DELETE SET NULL;
+ 
+-- 2) shifts -> staff (xóa nhân viên thì xóa luôn ca làm)
+DELETE FROM shifts WHERE staff_id NOT IN (SELECT staff_id FROM staff);
+ALTER TABLE shifts MODIFY staff_id INT UNSIGNED NOT NULL;
+ALTER TABLE shifts
+  ADD CONSTRAINT fk_shifts_staff FOREIGN KEY (staff_id) REFERENCES staff(staff_id) ON DELETE CASCADE;
+ 
+-- 3) orders -> customers, promotions (2 cột mới, để trống tới khi code ghi vào)
+ALTER TABLE orders
+  ADD COLUMN customer_id  BIGINT UNSIGNED NULL AFTER address,
+  ADD COLUMN promotion_id BIGINT UNSIGNED NULL AFTER voucher,
+  ADD CONSTRAINT fk_orders_customer FOREIGN KEY (customer_id)  REFERENCES customers(customer_id)   ON DELETE SET NULL,
+  ADD CONSTRAINT fk_orders_promo    FOREIGN KEY (promotion_id) REFERENCES promotions(promotion_id) ON DELETE SET NULL;

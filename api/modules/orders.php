@@ -393,15 +393,16 @@ function orders_pay($data, $user)
     $method = $data['paymentMethod'] ?? '';
     $discount = (int) ($data['discount'] ?? 0);
     $expectedSubtotal = (int) ($data['expectedSubtotal'] ?? -1);
+    $voucherCode = strtoupper(trim((string) ($data['voucher'] ?? '')));
     if ($orderId <= 0 || !in_array($method, array('cash', 'qr', 'card', 'ewallet', 'transfer'), true) || $discount < 0) {
         return array(null, 'Thông tin thanh toán không hợp lệ.');
     }
-    if ($user['roleKey'] === 'waiter' && $discount > 0) {
+    if ($user['roleKey'] === 'waiter' && $discount > 0 && $voucherCode === '') {
         return array(null, 'Phục vụ không có quyền áp dụng giảm giá.');
     }
     $snapshot = db()->fetchOne("SELECT table_id FROM orders WHERE order_id = ? AND status = 'open'", array($orderId));
     if (!$snapshot) return array(null, 'Đơn hàng không còn mở.');
-    return db()->transaction(function () use ($orderId, $method, $discount, $expectedSubtotal, $data, $user, $snapshot) {
+    return db()->transaction(function () use ($orderId, $method, $discount, $expectedSubtotal, $data, $user, $snapshot, $voucherCode) {
         if ($snapshot['table_id'] !== null) {
             db()->fetchOne("SELECT table_id FROM dining_tables WHERE table_id = ? FOR UPDATE", array((int) $snapshot['table_id']));
         }
@@ -420,6 +421,33 @@ function orders_pay($data, $user)
         $subtotal = (int) $sum['subtotal'];
         if ($subtotal <= 0 || $discount > $subtotal) return array(null, 'Tổng tiền hoặc mức giảm giá không hợp lệ.');
         if ($expectedSubtotal !== $subtotal) return array(null, 'Đơn hàng vừa thay đổi. Hãy tải lại hóa đơn trước khi thanh toán.');
+        $promotionId = null;
+        if ($voucherCode !== '') {
+            $promotion = db()->fetchOne('SELECT promotion_id, discount_type, discount_value, starts_on, ends_on, max_uses, used_count, hour_from, hour_to, is_active FROM promotions WHERE code = ? FOR UPDATE', array($voucherCode));
+            $type = null;
+            $value = null;
+            if ($promotion) {
+                $now = new DateTime();
+                $today = $now->format('Y-m-d');
+                $hour = (int) $now->format('G');
+                if (!(int) $promotion['is_active']
+                    || ($promotion['starts_on'] && $today < $promotion['starts_on'])
+                    || ($promotion['ends_on'] && $today > $promotion['ends_on'])
+                    || ((int) $promotion['max_uses'] > 0 && (int) $promotion['used_count'] >= (int) $promotion['max_uses'])
+                    || ($promotion['hour_from'] !== null && ($hour < (int) $promotion['hour_from'] || $hour >= (int) $promotion['hour_to']))) {
+                    return array(null, 'Mã khuyến mãi đã hết hạn hoặc không còn áp dụng.');
+                }
+                $type = $promotion['discount_type'];
+                $value = (int) $promotion['discount_value'];
+                $promotionId = (int) $promotion['promotion_id'];
+            } else {
+                $fixedVouchers = array('GIAM10' => array('pct', 10), 'GIAM20' => array('pct', 20), 'GIAM5K' => array('vnd', 5000), 'GIAM20K' => array('vnd', 20000));
+                if (!isset($fixedVouchers[$voucherCode])) return array(null, 'Mã khuyến mãi không hợp lệ.');
+                list($type, $value) = $fixedVouchers[$voucherCode];
+            }
+            $expectedDiscount = min($subtotal, $type === 'pct' ? (int) round($subtotal * $value / 100) : $value);
+            if ($discount !== $expectedDiscount) return array(null, 'Mức giảm giá của mã không hợp lệ. Hãy áp dụng lại mã.');
+        }
         $total = $subtotal - $discount;
         $items = array_map(function ($item) {
             return array(
@@ -435,11 +463,12 @@ function orders_pay($data, $user)
             array($orderId)
         ));
         db()->execute(
-            "UPDATE orders SET status = 'paid', subtotal = ?, discount = ?, total = ?, voucher = ?,
+            "UPDATE orders SET status = 'paid', subtotal = ?, discount = ?, total = ?, voucher = ?, promotion_id = ?,
              payment_method = ?, payment_ref = ?, paid_by = ?, paid_at = NOW() WHERE order_id = ?",
-            array($subtotal, $discount, $total, trim((string) ($data['voucher'] ?? '')) ?: null,
+            array($subtotal, $discount, $total, $voucherCode !== '' ? $voucherCode : null, $promotionId,
                 $method, trim((string) ($data['paymentRef'] ?? '')) ?: null, (int) $user['staffId'], $orderId)
         );
+        if ($promotionId !== null) db()->execute('UPDATE promotions SET used_count = used_count + 1 WHERE promotion_id = ?', array($promotionId));
         $nextOrder = null;
         $drafts = db()->fetchAll("SELECT order_item_id FROM order_items WHERE order_id = ? AND status = 'draft'", array($orderId));
         if ($drafts) {

@@ -1,32 +1,61 @@
 <?php
-require_once __DIR__ . '/config/init.php';
-require_once __DIR__ . '/helpers/auth.php';
+require_once __DIR__ . '/admin/includes/bootstrap.php';
 
-// Mỗi trang là một thư mục pages/<khóa>/ gồm action.php (logic) và index.php (giao diện).
 $routes = array(
-    'login', 'tablemanage', 'menu', 'revenue', 'history', 'staff', 'shifts', 'warehouse',
-    'ops', 'logs', 'tables', 'schedule', 'orders', 'cashshift', 'kitchen',
+    'home' => 'home/index.php',
+    'public-menu' => 'public-menu/index.php',
+    'tables' => 'tables/index.php',
+    'schedule' => 'schedule/index.php',
+    'ops' => 'ops/index.php',
+    'orders' => 'orders/index.php',
+    'cashshift' => 'cashshift/index.php',
+    'kitchen' => 'kitchen/index.php',
 );
-
 $rolePages = array(
-    'manager' => array('tablemanage', 'menu', 'revenue', 'history', 'staff', 'shifts', 'warehouse', 'ops', 'logs'),
-    'waiter'  => array('tables', 'schedule'),
+    'waiter' => array('tables', 'schedule'),
     'cashier' => array('tables', 'ops', 'orders', 'cashshift', 'schedule'),
     'kitchen' => array('kitchen', 'schedule'),
 );
+$user = current_user();
+$page = $_GET['page'] ?? null;
 
-$page = $_GET['page'] ?? 'login';
-if (!is_string($page) || !in_array($page, $routes, true)) {
-    http_response_code(404);
-    header('Content-Type: text/plain; charset=utf-8');
-    echo '404 - Khong tim thay trang.';
-    exit;
+if ($page === null || $page === '') {
+    if ($user) {
+        if ($user['roleKey'] === 'manager') {
+            redirect('admin/index.php?page=tablemanage');
+        }
+        $home = $rolePages[$user['roleKey']][0] ?? null;
+        if ($home) {
+            redirect('index.php?page=' . rawurlencode($home));
+        }
+        redirect('admin/index.php?page=login');
+    }
+    $page = 'home';
 }
 
-$user = current_user();
-if ($page !== 'login') {
+if ($page === 'login') {
+    redirect('admin/index.php?page=login');
+}
+
+if (!is_string($page) || !isset($routes[$page])) {
+    http_response_code(404);
+    $page = '404';
+    $file = __DIR__ . '/pages/404/index.php';
+} else {
+    $file = __DIR__ . '/pages/' . $routes[$page];
+}
+if (!is_file($file)) {
+    http_response_code(404);
+    $page = '404';
+    $file = __DIR__ . '/pages/404/index.php';
+}
+
+if (!in_array($page, array('404', 'home', 'public-menu'), true)) {
     if (!$user) {
-        redirect(url('login'));
+        redirect('admin/index.php?page=login');
+    }
+    if ($page === 'ops' && $user['roleKey'] === 'manager') {
+        redirect('admin/index.php?page=ops');
     }
     $allowed = $rolePages[$user['roleKey']] ?? array();
     if (!in_array($page, $allowed, true)) {
@@ -34,16 +63,15 @@ if ($page !== 'login') {
             http_response_code(403);
             exit('403 - Tai khoan khong co quyen truy cap.');
         }
-        redirect(url($allowed[0]));
+        redirect('index.php?page=' . rawurlencode($allowed[0]));
     }
-} elseif ($user && !empty($rolePages[$user['roleKey']])) {
-    redirect(url($rolePages[$user['roleKey']][0]));
 }
 
-// 1) action.php: xử lý form/redirect, đặt $title, $css, $scripts (chạy trước khi in HTML)
-require __DIR__ . '/pages/' . $page . '/action.php';
-
-// 2) in HTML: header -> giao diện trang -> footer
-require __DIR__ . '/layout/header.php';
-require __DIR__ . '/pages/' . $page . '/index.php';
-require __DIR__ . '/layout/footer.php';
+$isAdmin = false;
+$action = dirname($file) . '/action.php';
+if (is_file($action)) {
+    require $action;
+}
+require __DIR__ . '/layouts/public/header.php';
+require $file;
+require __DIR__ . '/layouts/public/footer.php';

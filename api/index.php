@@ -8,6 +8,8 @@ require_once __DIR__ . '/modules/menu.php';
 require_once __DIR__ . '/modules/tables.php';
 require_once __DIR__ . '/modules/shifts.php';
 require_once __DIR__ . '/modules/orders.php';
+require_once __DIR__ . '/modules/reservations.php';
+require_once __DIR__ . '/modules/ops.php';
 
 $route  = $_GET['route'] ?? '';
 $method = $_SERVER['REQUEST_METHOD'];
@@ -30,6 +32,57 @@ try {
 
         case 'auth/me':
             json_ok(require_login());
+            break;
+        case 'menu/public':
+            if ($method !== 'GET') json_error('Sai phương thức.', 405);
+            $publicMenu = array();
+            foreach (menu_list() as $group) {
+                $visibleItems = array();
+                foreach ($group['items'] as $item) {
+                    if ($item['hidden']) continue;
+                    unset($item['hidden']);
+                    $visibleItems[] = $item;
+                }
+                if ($visibleItems) {
+                    $publicMenu[] = array('category' => $group['category'], 'items' => $visibleItems);
+                }
+            }
+            json_ok($publicMenu);
+            break;
+        case 'reservations/public':
+            if ($method !== 'POST') json_error('Sai phương thức.', 405);
+            list($reservationId, $err) = reservation_create_public(json_input());
+            if ($err) json_error($err, 422);
+            json_ok(array('reservationId' => $reservationId));
+            break;
+        case 'reservations':
+            $me = require_role(array('manager', 'cashier'));
+            if ($method === 'GET') {
+                json_ok(reservations_list());
+            }
+            if ($method === 'POST') {
+                list($reservationId, $err) = reservation_create(json_input(), (int) $me['staffId'], false);
+                if ($err) json_error($err, 422);
+                json_ok(array('reservationId' => $reservationId));
+            }
+            if ($method === 'PUT') {
+                $err = reservation_update((int) ($_GET['id'] ?? 0), json_input());
+                if ($err) json_error($err, 422);
+                json_ok();
+            }
+            json_error('Sai phương thức.', 405);
+            break;
+        case 'ops':
+            $me = require_role(array('manager', 'cashier'));
+            if ($method === 'GET') json_ok(ops_snapshot());
+            $err = ops_action(json_input(), $method, $me);
+            if ($err) json_error($err, 422);
+            json_ok();
+            break;
+        case 'ops/promotions':
+            require_role(array('manager', 'cashier', 'waiter'));
+            if ($method !== 'GET') json_error('Sai phương thức.', 405);
+            json_ok(ops_promotion_list());
             break;
         case 'staff':
             $me = require_role(array('manager'));

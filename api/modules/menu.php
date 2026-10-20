@@ -62,17 +62,19 @@ function menu_check_image($img)
 function menu_create($d)
 {
     $name = trim($d['name'] ?? '');
+    $description = trim((string) ($d['desc'] ?? ''));
     list($catId, $err) = menu_resolve_category($d);
     if ($err) return array(null, $err);
     $err = menu_validate($name, $d['price'] ?? '', $catId);
     if ($err) return array(null, $err);
+    if (mb_strlen($description, 'UTF-8') > 255) return array(null, 'Mô tả tối đa 255 ký tự.');
     $img = ($d['img'] ?? '') !== '' ? $d['img'] : null;
     $err = menu_check_image($img);
     if ($err) return array(null, $err);
 
     db()->execute(
-        "INSERT INTO menu_items (category_id, item_name, price, image) VALUES (?, ?, ?, ?)",
-        array($catId, $name, (int) $d['price'], $img)
+        "INSERT INTO menu_items (category_id, item_name, description, price, image) VALUES (?, ?, ?, ?, ?)",
+        array($catId, $name, $description !== '' ? $description : null, (int) $d['price'], $img)
     );
     return array(db()->insertId(), '');
 }
@@ -84,6 +86,7 @@ function menu_update($id, $d)
     if (!$cur) return 'Không tìm thấy món.';
 
     $name  = array_key_exists('name', $d) ? trim($d['name']) : $cur['item_name'];
+    $description = array_key_exists('desc', $d) ? trim((string) $d['desc']) : ($cur['description'] ?? '');
     $price = array_key_exists('price', $d) ? $d['price'] : $cur['price'];
     $catId = (int) $cur['category_id'];
     if (trim($d['newCategory'] ?? '') !== '' || trim($d['category'] ?? '') !== '') {
@@ -92,6 +95,7 @@ function menu_update($id, $d)
     }
     $err = menu_validate($name, $price, $catId, $id);
     if ($err) return $err;
+    if (mb_strlen($description, 'UTF-8') > 255) return 'Mô tả tối đa 255 ký tự.';
 
     $img = array_key_exists('img', $d) ? ($d['img'] !== '' ? $d['img'] : null) : $cur['image'];
     $err = menu_check_image($img);
@@ -99,8 +103,8 @@ function menu_update($id, $d)
     $hidden = array_key_exists('hidden', $d) ? ($d['hidden'] ? 1 : 0) : (int) $cur['is_hidden'];
 
     db()->execute(
-        "UPDATE menu_items SET category_id = ?, item_name = ?, price = ?, image = ?, is_hidden = ? WHERE item_id = ?",
-        array($catId, $name, (int) $price, $img, $hidden, (int) $id)
+        "UPDATE menu_items SET category_id = ?, item_name = ?, description = ?, price = ?, image = ?, is_hidden = ? WHERE item_id = ?",
+        array($catId, $name, $description !== '' ? $description : null, (int) $price, $img, $hidden, (int) $id)
     );
     return '';
 }

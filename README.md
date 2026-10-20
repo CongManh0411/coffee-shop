@@ -1,37 +1,48 @@
-# Quản lý quán cà phê — frontend (thêm vai trò THU NGÂN)
+# Coffee Shop
 
-Chạy: cần Apache + PHP + MySQL (XAMPP), mở `http://localhost/coffee-shop/` (router `index.php?page=...`).
+Ứng dụng quản lý quán cà phê bằng PHP, MySQL và JavaScript, chạy cục bộ với XAMPP.
 
-Tài khoản thử (mật khẩu 123456): quanly, phucvu, bep, **thungan** (Thu ngân).
+## Cài đặt cục bộ
 
-## Thu ngân có gì
-| Trang | Chức năng |
+1. Đặt thư mục dự án tại `C:\xampp\htdocs\coffee-shop`.
+2. Mở Apache và MySQL trong XAMPP.
+3. Dùng phpMyAdmin để nhập `database/coffee.sql`. Tệp này tạo database `coffee_shop` và dữ liệu mẫu. Chỉ nhập trên database mới; script hiện không phải migration có thể chạy lặp lại.
+4. Mở `http://localhost/coffee-shop/`.
+
+Database mặc định trong `config/database.php` dùng `127.0.0.1:3306`, database `coffee_shop`, user `root`, mật khẩu trống theo cấu hình XAMPP thường gặp. Có thể cấu hình bằng các biến môi trường `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`; đặt chúng ở cấu hình máy chủ, không commit mật khẩu vào Git.
+
+## Tài khoản dữ liệu mẫu
+
+Sau khi nhập SQL, tài khoản thử nghiệm dùng mật khẩu `123456`:
+
+| Vai trò | Tên đăng nhập |
 |---|---|
-| Bán hàng (Table.html) | Tạo đơn tại bàn / **mang đi / giao hàng** (đơn không gắn bàn), ghi chú món, báo **hết món**, gửi bếp |
-| Thanh toán (popup) | Tiền mặt / QR / thẻ / ví, tính tiền thừa, **mã khuyến mãi + giảm giá**, hủy món (kể cả đã làm, bắt buộc lý do), **in / gửi hóa đơn** |
-| Đơn hàng (Orders.html) | Đang xử lý (trạng thái pha chế), đã hoàn thành (in, hoàn tiền), đã hủy |
-| Ca & Quỹ (Shift.html) | Mở ca (tiền đầu ca), thu/chi, báo cáo cá nhân, kết ca (lệch tiền → bắt buộc lý do), in báo cáo kết ca |
-| Lịch ca (Schedule.html) | Xem ca + **đăng ký ca** (chọn khung trống, hệ thống tự xếp) |
-| Chấm công | Vào ca tự động, "Giao ca" ở sidebar |
+| Quản lý | `quanly` |
+| Phục vụ | `phucvu` |
+| Bếp | `bep` |
+| Thu ngân | `thungan` |
 
-Phục vụ vẫn thanh toán được (tiền mặt/QR/thẻ/ví) nhưng không giảm giá.
-Thao tác nhạy cảm Thu ngân tự làm, **không cần duyệt**, mọi thứ ghi vào Nhật ký.
-Quản lý xem ở **Nhật ký** (Logs.html): nhật ký thao tác + báo cáo kết ca.
+Đây là tài khoản demo. Đổi mật khẩu và tạo tài khoản database riêng trước khi triển khai ra Internet.
 
-## File mới / đã sửa
-- Mới: `asset/js/cashier-core.js` (lõi: ca, quỹ, log, voucher, in), `waiter-pay.js` (popup thanh toán, tách khỏi notifications.js), `orders.js`, `shift.js`, `logs.js`, `shift-register.js`, `asset/css/cashier.css`, `Orders.html`, `Shift.html`, `Logs.html`
-- Sửa: `auth.js` (vai trò + menu), `table-order.js`, `notifications.js`, `schedule.js`, `staff.js`, `shifts.js`, `table-manage.js`, `Table.html`, `Schedule.html`, `Staff.html`, `Login.html`
+## Các trang chính
 
-## Chỉnh nhanh (đầu file cashier-core.js)
-`VOUCHERS` (mã khuyến mãi), `LARGE_DISCOUNT_PCT / _VND` (ngưỡng giảm giá lớn), `BIG_ADJUST_VND` (ngưỡng thu/chi lớn).
-Đăng ký ca: `SLOTS`, `MAX_CASHIER_PER_SLOT` ở đầu `shift-register.js`.
+- Trang giới thiệu khách: `/` hoặc `index.php?page=home`.
+- Thực đơn công khai: `index.php?page=public-menu`.
+- Đăng nhập nhân viên: `admin/index.php?page=login`.
+- Router nhân viên: `index.php?page=tables`, `schedule`, `ops`, `orders`, `cashshift`, `kitchen`.
+- Router quản lý: `admin/index.php?page=tablemanage`, `menu`, `revenue`, `history`, `staff`, `shifts`, `warehouse`, `ops`, `logs`.
 
-## Cập nhật mới
-- **Thực đơn** (đổi tên từ "Menu"): mỗi món có **ảnh** (Quản lý tải ảnh ở tab Thêm/Sửa món; món chưa có ảnh dùng ảnh minh họa mặc định), tìm theo tên/mô tả/danh mục.
-- **Bán hàng**: thêm **ô tìm kiếm món** (gõ không dấu cũng tìm được); đồ uống bấm "+ Thêm" sẽ mở **popup chọn Size / Đường / Đá / Topping / Ghi chú**, giá tự cộng phụ thu (Size M +5k, L +10k; topping 5–10k). Bánh thêm thẳng không hỏi.
-- **Đồng nhất tên gọi**: Thực đơn, Bàn, Sơ đồ bàn, Lịch ca, Kho, Lịch sử; danh mục chuẩn: Cà phê / Trà sữa / Trà trái cây / Bánh; tên món theo dạng "Loại + tên".
-- File mới: `asset/js/menu-data.js` (menu mặc định, ảnh, tùy chọn — sửa phụ thu ở `OPTION_CONFIG`). Key lưu menu đổi thành `coffee_menu_data_v2` (menu mẫu mới thay menu cũ).
-- **Tách / gộp / chuyển bàn**: 3 nút dưới tiêu đề hóa đơn ở trang Bàn.
-- **Trang Vận hành** (Quản lý, Thu ngân): Đặt bàn & hàng chờ, Khách thân thiết (điểm, hạng, sinh nhật), Khuyến mãi (hạn dùng, giới hạn lượt, happy hour — dùng được ngay ở màn thanh toán), Kho nâng cao (NCC, phiếu nhập/xuất/hao hụt, hạn dùng, giá vốn bình quân, đồng bộ tồn kho), Giao hàng (Grab/Shopee/Be, nhập tay, hoàn tất → vào Doanh thu).
-- **Doanh thu → Báo cáo chuyên sâu**: biểu đồ giờ cao điểm, top món, so sánh 7 ngày, kênh bán, lợi nhuận gộp ước tính (chỉnh % giá vốn), xuất Excel (CSV) / PDF (in).
-- Chưa làm: combo/mua 1 tặng 1, kết nối API thật của Grab/Shopee/Be, tự cộng điểm khách khi thanh toán (hiện cộng thủ công).
+## Dữ liệu
+
+Tài khoản, thực đơn, bàn, ca làm, đơn hàng, đặt bàn, hàng chờ, khách hàng, khuyến mãi, nhà cung cấp, vật tư kho và đơn giao hàng được lưu ở MySQL. Trạng thái ca tiền mặt, nhật ký giao diện, món tạm hết và tồn kho thành phẩm trên màn bán hàng vẫn còn lưu phía trình duyệt; chúng chưa đồng bộ đầy đủ giữa các thiết bị. Dữ liệu cũ trong localStorage không tự chuyển sang database.
+
+Đơn giao hàng nhập tay được lưu vào database. Kết nối webhook GrabFood, ShopeeFood và BeFood chưa có. Đơn giao hàng chưa tự tạo hóa đơn doanh thu khi hoàn tất.
+
+## Cấu trúc thư mục
+
+- `admin/`: router, trang và giao diện quản trị.
+- `pages/`: home khách và các trang nhân viên.
+- `api/`: JSON API và module thao tác database.
+- `config/`, `helpers/`, `classes/`: cấu hình và lớp dùng chung.
+- `layouts/`, `assets/`: giao diện, CSS, JavaScript và ảnh.
+- `database/coffee.sql`: schema và dữ liệu mẫu ban đầu.
