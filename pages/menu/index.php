@@ -1,17 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <base href="./">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="asset/css/style.css">
-    <link rel="stylesheet" href="asset/css/menu.css">
-    <title>Thực đơn</title>
-</head>
-<body data-page="menu">
-    <div id="sidebar-container"></div>
+<!-- pages/menu/index.php — giao diện trang "Thực đơn" (header/footer do index.php gốc in) -->
  
     <!-- Nội dung chính -->
     <main class="main">
@@ -26,7 +13,7 @@
             <div class="tab-panel active" id="panel-edit">
                 <div class="menu-page-header">
                     <h2>Thực đơn</h2>
-                    <p>Thêm, sửa, ẩn món trực tiếp. Số lượng tồn kho quản lý ở trang <a href="Warehouse.html">Kho</a>.</p>
+                    <p>Thêm, sửa, ẩn món trực tiếp. Số lượng tồn kho quản lý ở trang <a href="<?= e(url('warehouse')) ?>">Kho</a>.</p>
                 </div>
  
                 <div class="menu-toolbar">
@@ -85,14 +72,3 @@
             </div>
         </div>
     </main>
- 
-    <!-- auth.js PHẢI nạp trước script.js: chặn trang nếu chưa đăng nhập / sai quyền -->
-    <script src="asset/js/api.js"></script>
-    <script src="asset/js/auth.js"></script>
-    <script src="asset/js/portable-shim.js"></script>
-    <script src="asset/js/common.js"></script>
-    <script src="asset/js/menu-data.js"></script>
-    <script src="asset/js/inventory.js"></script>
-    <script src="asset/js/menu.js"></script>
-</body>
-</html>

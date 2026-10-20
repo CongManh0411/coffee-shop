@@ -1,6 +1,3 @@
-<!-- File này chỉ chứa sidebar, sẽ được nạp vào mọi trang bằng JS (xem script.js).
-     Muốn đổi logo, tên... chỉ cần sửa DUY NHẤT file này.
-     Riêng các mục menu được script.js vẽ theo vai trò (xem MENU_ITEMS_BY_ROLE trong script.js). -->
 <aside class="sidebar">
     <!-- Logo + tên quán -->
     <div class="sidebar-shop">
@@ -28,23 +25,3 @@
         </button>
     </div>
 </aside>
- 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -1,19 +1,4 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <base href="./">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="asset/css/style.css">
-    <link rel="stylesheet" href="asset/css/history.css">
-    <link rel="stylesheet" href="asset/css/cashier.css">
-    <title>Nhật ký</title>
-</head>
-<body data-page="logs">
-    <div id="sidebar-container"></div>
-
+<!-- pages/logs/index.php — giao diện trang "Nhật ký" (header/footer do index.php gốc in) -->
     <main class="main">
         <nav class="topnav" id="lgTabs">
             <button class="topnav-item active" data-tab="logs">Nhật ký thao tác</button>
@@ -52,14 +37,3 @@
             </div>
         </div>
     </div>
-
-    <script src="asset/js/api.js"></script>
-    <script src="asset/js/auth.js"></script>
-    <script src="asset/js/portable-shim.js"></script>
-    <script src="asset/js/common.js"></script>
-    <script src="asset/js/cashier-core.js"></script>
-    <script src="asset/js/menu-data.js"></script>
-    <script src="asset/js/inventory.js"></script>
-    <script src="asset/js/logs.js"></script>
-</body>
-</html>

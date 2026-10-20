@@ -2,22 +2,10 @@
 require_once __DIR__ . '/config/init.php';
 require_once __DIR__ . '/helpers/auth.php';
 
+// Mỗi trang là một thư mục pages/<khóa>/ gồm action.php (logic) và index.php (giao diện).
 $routes = array(
-    'login'      => 'pages/Login.php',
-    'tablemanage'=> 'pages/TableManage.php',
-    'menu'       => 'pages/Menu.php',
-    'revenue'    => 'pages/Revenue.php',
-    'history'    => 'pages/History.php',
-    'staff'      => 'pages/Staff.php',
-    'shifts'     => 'pages/Shifts.php',
-    'warehouse'  => 'pages/Warehouse.php',
-    'ops'        => 'pages/Ops.php',
-    'logs'        => 'pages/Logs.php',
-    'tables'     => 'pages/Table.php',
-    'schedule'   => 'pages/Schedule.php',
-    'orders'     => 'pages/Orders.php',
-    'cashshift'  => 'pages/Shift.php',
-    'kitchen'    => 'pages/Kitchen.php',
+    'login', 'tablemanage', 'menu', 'revenue', 'history', 'staff', 'shifts', 'warehouse',
+    'ops', 'logs', 'tables', 'schedule', 'orders', 'cashshift', 'kitchen',
 );
 
 $rolePages = array(
@@ -28,7 +16,7 @@ $rolePages = array(
 );
 
 $page = $_GET['page'] ?? 'login';
-if (!is_string($page) || !isset($routes[$page])) {
+if (!is_string($page) || !in_array($page, $routes, true)) {
     http_response_code(404);
     header('Content-Type: text/plain; charset=utf-8');
     echo '404 - Khong tim thay trang.';
@@ -38,8 +26,7 @@ if (!is_string($page) || !isset($routes[$page])) {
 $user = current_user();
 if ($page !== 'login') {
     if (!$user) {
-        header('Location: index.php?page=login');
-        exit;
+        redirect(url('login'));
     }
     $allowed = $rolePages[$user['roleKey']] ?? array();
     if (!in_array($page, $allowed, true)) {
@@ -47,12 +34,16 @@ if ($page !== 'login') {
             http_response_code(403);
             exit('403 - Tai khoan khong co quyen truy cap.');
         }
-        header('Location: index.php?page=' . rawurlencode($allowed[0]));
-        exit;
+        redirect(url($allowed[0]));
     }
 } elseif ($user && !empty($rolePages[$user['roleKey']])) {
-    header('Location: index.php?page=' . rawurlencode($rolePages[$user['roleKey']][0]));
-    exit;
+    redirect(url($rolePages[$user['roleKey']][0]));
 }
 
-require __DIR__ . '/' . $routes[$page];
+// 1) action.php: xử lý form/redirect, đặt $title, $css, $scripts (chạy trước khi in HTML)
+require __DIR__ . '/pages/' . $page . '/action.php';
+
+// 2) in HTML: header -> giao diện trang -> footer
+require __DIR__ . '/layout/header.php';
+require __DIR__ . '/pages/' . $page . '/index.php';
+require __DIR__ . '/layout/footer.php';

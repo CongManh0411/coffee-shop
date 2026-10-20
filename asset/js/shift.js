@@ -12,8 +12,8 @@
     'use strict';
     const C = window.Cashier;
     const session = AuthAPI.getSession();
-    if (!session) { window.location.replace('Login.html'); return; }
-    if (session.roleKey !== 'cashier') { const p = PAGES_BY_ROLE[session.roleKey]; window.location.replace(p ? p[0].path : 'Login.html'); return; }
+    if (!session) { window.location.replace('index.php?page=login'); return; }
+    if (session.roleKey !== 'cashier') { const p = PAGES_BY_ROLE[session.roleKey]; window.location.replace(p ? p[0].path : 'index.php?page=login'); return; }
 
     const $ = id => document.getElementById(id);
     const { esc, money, fmtTime, fmtDT } = C;

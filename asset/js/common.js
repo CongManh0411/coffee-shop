@@ -13,9 +13,7 @@
 })();
  
 // ============================================================
-// 1) NẠP SIDEBAR DÙNG CHUNG TỪ sidebar.html
-//    Mọi trang (Menu.html, Table.html, Revenue.html...) đều
-//    chạy đoạn này để lấy sidebar giống nhau, không cần copy-paste.
+// 1) SIDEBAR DÙNG CHUNG — layout/sidebar.php (PHP in sẵn cho mọi trang trừ đăng nhập)
 // ============================================================
 // ============================================================
 // 0) AuthAPI / UserAPI / PHÂN QUYỀN (ROLE_LABELS, PAGES_BY_ROLE)
@@ -32,19 +30,15 @@ function getProfileOnce() {
     return profilePromise;
 }
  
-fetch('sidebar.html')
-    .then(res => res.text())
-    .then(html => {
-        const sbc = document.getElementById('sidebar-container');
-        if (!sbc) return; // trang không có sidebar (vd Login.html)
-        sbc.innerHTML = html;
-        // Sau khi sidebar đã có trong trang: gắn nút đăng xuất, đổ thông tin người dùng,
-        // rồi vẽ menu theo vai trò (vẽ xong mới đánh dấu mục active — nằm trong initSidebarMenu)
-        initSidebarLogout();
-        initSidebarProfile();
-        initSidebarMenu();
-    })
-    .catch(err => console.error('Không tải được sidebar.html:', err));
+// Sidebar do PHP in sẵn trong #sidebar-container (layout/sidebar.php). Chờ script
+// chạy xong (để các hàm/biến bên dưới sẵn sàng) rồi gắn đăng xuất, thông tin user, menu.
+Promise.resolve().then(() => {
+    const sbc = document.getElementById('sidebar-container');
+    if (!sbc) return; // trang không có sidebar (vd trang đăng nhập)
+    initSidebarLogout();
+    initSidebarProfile();
+    initSidebarMenu();
+});
  
 // ============================================================
 // 1b) MOBILE: thanh topbar (nút ☰) + sidebar dạng drawer

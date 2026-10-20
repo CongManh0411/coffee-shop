@@ -1,21 +1,4 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <base href="./">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="asset/css/style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="asset/css/notifications.css">
-    <link rel="stylesheet" href="asset/css/schedule.css">
-    <link rel="stylesheet" href="asset/css/cashier.css">
-    <title>Lịch ca</title>
-</head>
-<body data-page="schedule">
-    <div id="sidebar-container"></div>
-
+<!-- pages/schedule/index.php — giao diện trang "Lịch ca" (header/footer do index.php gốc in) -->
     <main class="main">
         <div id="schedule-app">
             <h2 class="sch-title">Lịch ca</h2>
@@ -64,31 +47,3 @@
             <p class="sch-note">Giờ làm việc của quán: 6h30 – 22h. Lịch do quản lý sắp xếp, nhân viên chỉ xem. Ô để trống là không có ca. Giờ làm thật lấy từ chấm công của Phục vụ.</p>
         </div>
     </main>
-
-    <script src="asset/js/api.js"></script>
-    <script src="asset/js/auth.js"></script>
-    <script src="asset/js/portable-shim.js"></script>
-    <script src="asset/js/common.js"></script>
-    <!-- Phục vụ / Thu ngân: có nút Thanh toán trong sidebar nên cần kho + lõi thu ngân.
-         Bếp chỉ có nút Giao ca. -->
-    <script>
-        (function () {
-            var ss = AuthAPI.getSession();
-            if (!ss) return;
-            if (ss.roleKey === 'cashier' || ss.roleKey === 'waiter') {
-                document.write('<script src="asset/js/menu-data.js"><\/script><script src="asset/js/inventory.js"><\/script><script src="asset/js/cashier-core.js"><\/script><script src="asset/js/notifications.js"><\/script>');
-            } else if (ss.roleKey === 'kitchen') {
-                document.write('<script src="asset/js/notifications.js"><\/script>');
-            }
-        })();
-    </script>
-    <script src="asset/js/schedule.js"></script>
-    <!-- Thu ngân: đăng ký ca (chạy sau schedule.js để có #schMe làm mốc chèn) -->
-    <script>
-        (function () {
-            var ss = AuthAPI.getSession();
-            if (ss && ss.roleKey === 'cashier') document.write('<script src="asset/js/shift-register.js"><\/script>');
-        })();
-    </script>
-</body>
-</html>
