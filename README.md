@@ -1,6 +1,6 @@
 # Quản lý quán cà phê — frontend (thêm vai trò THU NGÂN)
 
-Chạy: bấm đúp `Login.html` (không cần server).
+Chạy: cần Apache + PHP + MySQL (XAMPP), mở `http://localhost/coffee-shop/` (router `index.php?page=...`).
 
 Tài khoản thử (mật khẩu 123456): quanly, phucvu, bep, **thungan** (Thu ngân).
 

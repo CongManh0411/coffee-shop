@@ -1,20 +1,4 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <base href="./">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="asset/css/style.css">
-    <link rel="stylesheet" href="asset/css/history.css">
-    
-    <title>Lịch sử</title>
-</head>
-<body data-page="history">
-    <!-- Sidebar sẽ được JS nạp vào đây (xem sidebar.html + script.js) -->
-    <div id="sidebar-container"></div>
-
+<!-- pages/history/index.php — giao diện trang "Lịch sử" (header/footer do index.php gốc in) -->
     <main class="main">
         <nav class="topnav period-filter-bar" id="statusFilterBar" style="padding:16px 24px 0; border-bottom:none;">
             <button class="topnav-item active" data-status="all">Tất cả</button>
@@ -85,12 +69,3 @@
             </div>
         </div>
     </div>
-
-    <!-- auth.js PHẢI nạp trước script.js: chặn trang nếu chưa đăng nhập / sai quyền -->
-    <script src="asset/js/api.js"></script>
-    <script src="asset/js/auth.js"></script>
-    <script src="asset/js/portable-shim.js"></script>
-    <script src="asset/js/common.js"></script>
-    <script src="asset/js/history.js"></script>
-</body>
-</html>

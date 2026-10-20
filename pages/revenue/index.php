@@ -1,20 +1,4 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <base href="./">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="asset/css/style.css">
-    <link rel="stylesheet" href="asset/css/revenue.css">
-    <link rel="stylesheet" href="asset/css/dashboard.css">
-    <title>Doanh thu</title>
-</head>
-<body data-page="revenue">
-    <!-- Sidebar sẽ được JS nạp vào đây (xem sidebar.html + script.js) -->
-    <div id="sidebar-container"></div>
-
+<!-- pages/revenue/index.php — giao diện trang "Doanh thu" (header/footer do index.php gốc in) -->
     <main class="main">
         <nav class="topnav period-filter-bar" id="periodFilterBar" style="padding:16px 24px 0; border-bottom:none;">
             <button class="topnav-item active" data-period="today">Hôm nay</button>
@@ -100,13 +84,3 @@
             <p class="sync-hint">Dữ liệu được đồng bộ tự động từ các hóa đơn do Nhân viên xác nhận thanh toán (lưu trong trình duyệt). Mở lại trang để cập nhật số liệu mới nhất.</p>
         </div>
     </main>
-
-    <!-- auth.js PHẢI nạp trước script.js: chặn trang nếu chưa đăng nhập / sai quyền -->
-    <script src="asset/js/api.js"></script>
-    <script src="asset/js/auth.js"></script>
-    <script src="asset/js/portable-shim.js"></script>
-<script src="asset/js/common.js"></script>
-    <script src="asset/js/revenue.js"></script>
-    <script src="asset/js/dashboard.js"></script>
-</body>
-</html>

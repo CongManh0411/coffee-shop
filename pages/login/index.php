@@ -1,18 +1,4 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <base href="./">
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Đăng nhập</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="asset/css/style.css">
-  <link rel="stylesheet" href="asset/css/login.css">
-</head>
-<body class="login-page" data-page="login">
-
+<!-- pages/login/index.php — giao diện trang "Đăng nhập" (header/footer do index.php gốc in) -->
   <main class="login-card">
     <div class="login-logo" aria-hidden="true">☕</div>
     <h1 class="login-title">Đăng nhập</h1>
@@ -47,11 +33,3 @@
       </ul>
     </div>
   </main>
-
-  <!-- auth.js xử lý đăng nhập trên chính trang này (gắn vào #loginForm) -->
-  <script src="asset/js/api.js"></script>
-  <script src="asset/js/auth.js"></script>
-  <script src="asset/js/portable-shim.js"></script>
-<script src="asset/js/common.js"></script>
-</body>
-</html>

@@ -1,18 +1,4 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <base href="./">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="asset/css/style.css">
-    <link rel="stylesheet" href="asset/css/table-manage.css">
-    <title>Bàn</title>
-</head>
-<body data-page="tablemanage">
-    <div id="sidebar-container"></div>
-
+<!-- pages/tablemanage/index.php — giao diện trang "Bàn" (header/footer do index.php gốc in) -->
     <main class="main">
         <div class="main-content">
             <div class="menu-page-header">
@@ -73,12 +59,3 @@
             </div>
         </div>
     </div>
-
-    <!-- auth.js PHẢI nạp trước common.js: chặn trang nếu chưa đăng nhập / sai quyền -->
-    <script src="asset/js/api.js"></script>
-    <script src="asset/js/auth.js"></script>
-    <script src="asset/js/portable-shim.js"></script>
-    <script src="asset/js/common.js"></script>
-    <script src="asset/js/table-manage.js"></script>
-</body>
-</html>

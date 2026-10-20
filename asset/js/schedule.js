@@ -27,10 +27,10 @@
 
     // ---------- Chặn người chưa đăng nhập / không phải Phục vụ hoặc Bếp ----------
     const session = AuthAPI.getSession();
-    if (!session) { window.location.replace('Login.html'); return; }
+    if (!session) { window.location.replace('index.php?page=login'); return; }
     if (session.roleKey !== 'waiter' && session.roleKey !== 'kitchen' && session.roleKey !== 'cashier') {
         const pages = PAGES_BY_ROLE[session.roleKey];
-        window.location.replace(pages ? pages[0].path : 'Login.html');
+        window.location.replace(pages ? pages[0].path : 'index.php?page=login');
         return;
     }
 

@@ -163,18 +163,15 @@ const UserAPI = {
 
 // ============================================================
 // 6) XỬ LÝ FORM ĐĂNG NHẬP — chỉ chạy khi trang có #loginForm
-//    (tức là chỉ có tác dụng trên Login.html, các trang khác bỏ qua)
+//    (tức là chỉ có tác dụng trên trang đăng nhập, các trang khác bỏ qua)
 // ============================================================
 document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('loginForm');
     if (!form) return;
 
-    // Nếu đã đăng nhập sẵn mà lại mở Login.html -> vào thẳng trang mặc định
-    const existing = AuthAPI.getSession();
-    if (existing && PAGES_BY_ROLE[existing.roleKey]) {
-        window.location.replace(PAGES_BY_ROLE[existing.roleKey][0].path);
-        return;
-    }
+    // Router PHP đã tự chuyển người đã đăng nhập khỏi trang này, nên nếu còn ở đây
+    // nghĩa là server chưa có phiên -> xóa phiên cũ trong localStorage (tránh vòng lặp chuyển trang).
+    try { localStorage.removeItem(AUTH_STORAGE_KEY); } catch (err) {}
 
     const userEl = document.getElementById('username');
     const passEl = document.getElementById('password');
