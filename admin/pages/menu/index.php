@@ -9,6 +9,12 @@
         </nav>
  
         <div class="main-content">
+            <?php if ($menuSavedMessage !== ''): ?>
+                <p class="menu-success-state" role="status"><?= e($menuSavedMessage) ?></p>
+            <?php endif; ?>
+            <?php if ($menuFormError !== ''): ?>
+                <p class="menu-error-state" role="alert"><?= e($menuFormError) ?></p>
+            <?php endif; ?>
             <!-- ============ PANEL: Sửa món ============ -->
             <div class="tab-panel active" id="panel-edit">
                 <div class="menu-page-header">
@@ -35,34 +41,36 @@
                     <h2>Thêm món mới</h2>
                 </div>
  
-                <form class="add-item-form">
-                    <input type="hidden" id="editItemId" value="">
+                <form class="add-item-form" method="POST" action="index.php?page=menu">
+                    <input type="hidden" name="save_menu_item" value="1">
+                    <input type="hidden" id="editItemId" name="id" value="">
+                    <input type="hidden" id="itemImageData" value="">
                     <div class="form-row">
                         <div class="form-group">
                             <label for="itemCategory">Danh mục</label>
-                            <select id="itemCategory">
+                            <select id="itemCategory" name="category">
                                 <option value="">-- Chọn danh mục --</option>
                             </select>
                         </div>
                         <div class="form-group">
                             <label for="newCategory">Hoặc tạo danh mục mới</label>
-                            <input type="text" id="newCategory" placeholder="Ví dụ: Trà trái cây">
+                            <input type="text" id="newCategory" name="newCategory" placeholder="Ví dụ: Trà trái cây">
                         </div>
                     </div>
  
                     <div class="form-group">
                         <label for="itemPrice">Giá (đ)</label>
-                        <input type="number" id="itemPrice" placeholder="Ví dụ: 35000">
+                        <input type="number" id="itemPrice" name="price" placeholder="Ví dụ: 35000">
                     </div>
  
                     <div class="form-group">
                         <label for="itemName">Tên món</label>
-                        <input type="text" id="itemName" placeholder="Ví dụ: Trà đào cam sả">
+                        <input type="text" id="itemName" name="name" placeholder="Ví dụ: Trà đào cam sả">
                     </div>
 
                     <div class="form-group">
                         <label for="itemDescription">Mô tả món (không bắt buộc)</label>
-                        <textarea id="itemDescription" maxlength="255" rows="3" placeholder="Ví dụ: Trà đào, cam tươi và sả"></textarea>
+                        <textarea id="itemDescription" name="desc" maxlength="255" rows="3" placeholder="Ví dụ: Trà đào, cam tươi và sả"></textarea>
                     </div>
  
                     <div class="form-group">

@@ -353,3 +353,31 @@ ALTER TABLE orders
   ADD COLUMN promotion_id BIGINT UNSIGNED NULL AFTER voucher,
   ADD CONSTRAINT fk_orders_customer FOREIGN KEY (customer_id)  REFERENCES customers(customer_id)   ON DELETE SET NULL,
   ADD CONSTRAINT fk_orders_promo    FOREIGN KEY (promotion_id) REFERENCES promotions(promotion_id) ON DELETE SET NULL;
+
+
+-- 4) Cài đặt Website & Trang chủ
+CREATE TABLE IF NOT EXISTS site_settings (
+  setting_key VARCHAR(100) NOT NULL PRIMARY KEY,
+  setting_value TEXT NULL,
+  setting_label VARCHAR(255) NULL,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT IGNORE INTO site_settings (setting_key, setting_value, setting_label) VALUES
+('brand_name', 'Góc Nhỏ', 'Tên thương hiệu quán'),
+('brand_tagline', 'COFFEE & TEA • EST. 2024', 'Khẩu hiệu dưới logo'),
+('hero_badge', 'CHÀO MỪNG BẠN ĐẾN VỚI GÓC NHỎ', 'Huy hiệu mở đầu Hero'),
+('hero_title', 'Cà phê thơm đượm vị.', 'Tiêu đề chính Hero dòng 1'),
+('hero_subtitle', 'Chuyện trò thật an yên.', 'Tiêu đề chính Hero dòng 2'),
+('hero_lede', 'Một chiếc bàn thân quen ngập tràn ánh nắng, tách cà phê rang mộc chuẩn gu và những khoảng thời gian thư thái dành riêng cho bạn. Ghé Góc Nhỏ để tìm lại nhịp thở chậm giữa phố thị tất bật.', 'Đoạn giới thiệu ngắn Hero'),
+('hero_suggestion', 'Cà phê sữa đá phin', 'Món gợi ý hôm nay'),
+('hero_suggestion_desc', 'Phin truyền thống đậm đà, ngọt béo.', 'Mô tả ngắn món gợi ý'),
+('story_title', 'Đến vì hương vị cà phê,', 'Tiêu đề câu chuyện dòng 1'),
+('story_subtitle', 'ở lại vì cảm giác thân quen.', 'Tiêu đề câu chuyện dòng 2'),
+('story_quote', '“Chúng tôi tin rằng ly cà phê tuyệt vời nhất là ly cà phê được thưởng thức trong sự an yên, thoải mái và trọn vẹn nhất.”', 'Trích dẫn triết lý quán'),
+('story_desc', 'Góc Nhỏ được xây dựng từ niềm đam mê với những hạt cà phê Việt Nam và khát khao tạo ra một không gian dừng chân ấm áp. Từng góc bàn, chậu cây cho đến từng giai điệu lofi êm dịu đều được chăm chút kỹ lưỡng để mang lại cảm giác thân quen như trở về nhà.', 'Đoạn văn câu chuyện quán'),
+('shop_address', '123 Đường Cà Phê, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh', 'Địa chỉ quán'),
+('shop_phone', '0901 234 567', 'Số điện thoại hotline đặt bàn'),
+('shop_email', 'contact@gocnhocoffee.vn', 'Email liên hệ'),
+('shop_hours', '07:00 – 22:30', 'Giờ mở cửa ngày thường'),
+('shop_hours_weekend', '06:30 – 23:00', 'Giờ mở cửa cuối tuần');

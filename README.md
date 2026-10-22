@@ -27,7 +27,7 @@ Sau khi nhập SQL, tài khoản thử nghiệm dùng mật khẩu `123456`:
 ## Các trang chính
 
 - Trang giới thiệu khách: `/` hoặc `index.php?page=home`.
-- Thực đơn công khai: `index.php?page=public-menu`.
+- Thực đơn nổi bật: hiển thị ngay trên trang chủ tại `index.php?page=home#menu`.
 - Đăng nhập nhân viên: `admin/index.php?page=login`.
 - Router nhân viên: `index.php?page=tables`, `schedule`, `ops`, `orders`, `cashshift`, `kitchen`.
 - Router quản lý: `admin/index.php?page=tablemanage`, `menu`, `revenue`, `history`, `staff`, `shifts`, `warehouse`, `ops`, `logs`.

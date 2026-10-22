@@ -1,4 +1,3 @@
-
 const ROLE_LABELS = {
     manager: 'Quản lý',
     waiter: 'Phục vụ',
@@ -17,6 +16,7 @@ const PAGES_BY_ROLE = {
         { path: 'index.php?page=warehouse', label: 'Kho', view: 'warehouse', id: 'navWarehouse' },
         { path: 'index.php?page=ops', label: 'Vận hành', view: 'ops', id: 'navOps' },
         { path: 'index.php?page=logs', label: 'Nhật ký', view: 'logs', id: 'navLogs' },
+        { path: 'index.php?page=settings', label: 'Cài đặt Web', view: 'settings', id: 'navSettings' },
     ],
     waiter: [
         { path: 'index.php?page=tables', label: 'Bàn', view: 'tables' },

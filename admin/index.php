@@ -12,10 +12,11 @@ $routes = array(
     'warehouse' => 'warehouse/index.php',
     'ops' => '../../pages/ops/index.php',
     'logs' => 'logs/index.php',
+    'settings' => 'settings/index.php',
 );
 
 $rolePages = array(
-    'manager' => array('tablemanage', 'menu', 'revenue', 'history', 'staff', 'shifts', 'warehouse', 'ops', 'logs'),
+    'manager' => array('tablemanage', 'menu', 'revenue', 'history', 'staff', 'shifts', 'warehouse', 'ops', 'logs', 'settings'),
     'waiter' => array('tables', 'schedule'),
     'cashier' => array('tables', 'ops', 'orders', 'cashshift', 'schedule'),
     'kitchen' => array('kitchen', 'schedule'),

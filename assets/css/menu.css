@@ -40,6 +40,15 @@
     border: 1px dashed #e3b3a4;
     border-radius: 12px;
 }
+.menu-success-state {
+    margin: 0 0 18px;
+    padding: 12px 16px;
+    color: #23683a;
+    background: #e8f5e9;
+    border: 1px solid #b9dfc0;
+    border-radius: 8px;
+    font-size: 13px;
+}
 
 /* ---- Danh mục ---- */
 .menu-category { margin-bottom: 32px; }

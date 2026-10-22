@@ -32,4 +32,5 @@
         <li>bep / 123456 — Bếp</li>
       </ul>
     </div>
+    <a class="login-home-link" href="../index.php?page=home">← Về trang chủ</a>
   </main>

@@ -362,39 +362,17 @@ if (addItemFormEl) {
             return;
         }
 
-        const submitBtn = addItemFormEl.querySelector('.btn-submit');
-        const originalBtnText = submitBtn ? submitBtn.textContent : '';
-        if (submitBtn) {
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'Đang lưu...';
+        itemCategorySelectEl.value = result.cleanCategory;
+        document.getElementById('newCategory').value = result.cleanNewCategory;
+        const imageDataEl = document.getElementById('itemImageData');
+        if (pendingImg) {
+            imageDataEl.name = 'img';
+            imageDataEl.value = pendingImg;
+        } else {
+            imageDataEl.removeAttribute('name');
+            imageDataEl.value = '';
         }
-
-        try {
-            const payload = {
-                category: result.cleanCategory,
-                newCategory: result.cleanNewCategory,
-                name: result.cleanName,
-                desc: description.trim(),
-                price: result.cleanPrice,
-                img: pendingImg,
-            };
-            if (editId) {
-                await MenuAPI.updateItem(editId, payload);
-            } else {
-                await MenuAPI.addItem(payload);
-            }
-            resetAddFormToAddMode();
-            await reloadMenu();
-            document.querySelector('.topnav-item[data-action="edit"]').click();
-        } catch (err) {
-            console.error('Không lưu được món:', err);
-            alert(err.message || 'Có lỗi xảy ra, không lưu được món. Vui lòng thử lại.');
-        } finally {
-            if (submitBtn) {
-                submitBtn.disabled = false;
-                submitBtn.textContent = originalBtnText;
-            }
-        }
+        addItemFormEl.submit();
     });
 }
 

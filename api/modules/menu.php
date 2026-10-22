@@ -24,7 +24,6 @@ function menu_list()
     return $out;
 }
 
-// Tìm danh mục theo tên, hoặc tạo mới nếu người dùng nhập "danh mục mới"
 function menu_resolve_category($d)
 {
     $new  = trim($d['newCategory'] ?? '');

@@ -2,14 +2,7 @@
 require_once __DIR__ . '/../config/init.php';
 require_once __DIR__ . '/../helpers/response.php';
 require_once __DIR__ . '/../helpers/auth.php';
-require_once __DIR__ . '/modules/auth.php';
-require_once __DIR__ . '/modules/staff.php';
-require_once __DIR__ . '/modules/menu.php';
-require_once __DIR__ . '/modules/tables.php';
-require_once __DIR__ . '/modules/shifts.php';
-require_once __DIR__ . '/modules/orders.php';
-require_once __DIR__ . '/modules/reservations.php';
-require_once __DIR__ . '/modules/ops.php';
+require_once __DIR__ . '/../functions.php';
 
 $route  = $_GET['route'] ?? '';
 $method = $_SERVER['REQUEST_METHOD'];
