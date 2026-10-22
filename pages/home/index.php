@@ -295,7 +295,7 @@ function get_item_badge($index, $catFilter, $price) {
                     list($badgeText, $badgeClass) = get_item_badge($idx, $catFilter, (int) $item['price']);
                     $imgSrc = menu_item_image($item);
                 ?>
-                <article class="menu-card" data-category="<?= e($catFilter) ?>" <?= $idx >= 6 ? 'hidden' : '' ?>>
+                <article class="menu-card" data-category="<?= e($catFilter) ?>">
                     <div class="menu-photo">
                         <img src="<?= e($imgSrc) ?>" alt="<?= e($item['item_name']) ?>" loading="lazy">
                         <span class="menu-badge<?= $badgeClass ? ' ' . e($badgeClass) : '' ?>"><?= e($badgeText) ?></span>
@@ -322,10 +322,7 @@ function get_item_badge($index, $catFilter, $price) {
         </div>
 
         <div class="menu-section-cta">
-            <button class="button button-dark menu-show-more" type="button" id="menuShowMore" <?= count($dbMenuItems) <= 6 ? 'hidden' : '' ?>>
-                <span id="menuShowMoreLabel">Xem thêm</span>
-                <span aria-hidden="true">↓</span>
-            </button>
+            <a class="button button-outline" href="index.php?page=menu">Xem toàn bộ thực đơn</a>
             <p>Giá niêm yết rõ ràng, đồng bộ trực tiếp từ quầy thu ngân và quản trị quán.</p>
         </div>
     </section>

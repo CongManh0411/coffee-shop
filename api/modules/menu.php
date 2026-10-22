@@ -62,13 +62,19 @@ function menu_create($d)
 {
     $name = trim($d['name'] ?? '');
     $description = trim((string) ($d['desc'] ?? ''));
-    list($catId, $err) = menu_resolve_category($d);
-    if ($err) return array(null, $err);
-    $err = menu_validate($name, $d['price'] ?? '', $catId);
-    if ($err) return array(null, $err);
+    $price = $d['price'] ?? '';
+    if ($name === '') return array(null, 'Vui lòng nhập tên món.');
+    if (!(is_int($price) || (is_string($price) && preg_match('/^[0-9]+$/', $price))) || (int) $price <= 0) {
+        return array(null, 'Giá món phải là số nguyên lớn hơn 0.');
+    }
     if (mb_strlen($description, 'UTF-8') > 255) return array(null, 'Mô tả tối đa 255 ký tự.');
     $img = ($d['img'] ?? '') !== '' ? $d['img'] : null;
     $err = menu_check_image($img);
+    if ($err) return array(null, $err);
+
+    list($catId, $err) = menu_resolve_category($d);
+    if ($err) return array(null, $err);
+    $err = menu_validate($name, $price, $catId);
     if ($err) return array(null, $err);
 
     db()->execute(
@@ -87,6 +93,11 @@ function menu_update($id, $d)
     $name  = array_key_exists('name', $d) ? trim($d['name']) : $cur['item_name'];
     $description = array_key_exists('desc', $d) ? trim((string) $d['desc']) : ($cur['description'] ?? '');
     $price = array_key_exists('price', $d) ? $d['price'] : $cur['price'];
+    if ($name === '') return 'Vui lòng nhập tên món.';
+    if (!(is_int($price) || (is_string($price) && preg_match('/^[0-9]+$/', (string) $price))) || (int) $price <= 0) {
+        return 'Giá món phải là số nguyên lớn hơn 0.';
+    }
+    if (mb_strlen($description, 'UTF-8') > 255) return 'Mô tả tối đa 255 ký tự.';
     $catId = (int) $cur['category_id'];
     if (trim($d['newCategory'] ?? '') !== '' || trim($d['category'] ?? '') !== '') {
         list($catId, $err) = menu_resolve_category($d);

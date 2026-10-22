@@ -2,7 +2,7 @@
 require_once __DIR__ . '/../../functions.php';
 $dbMenuItems = array();
 try {
-    $dbMenuItems = public_menu_items();
+    $dbMenuItems = public_featured_menu_items(6);
 } catch (Throwable $e) {
     $dbMenuItems = array();
 }

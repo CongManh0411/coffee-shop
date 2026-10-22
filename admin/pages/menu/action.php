@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../../../functions.php';
+$adminMenuItems = admin_menu_items();
 $menuFormError = '';
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && isset($_POST['save_menu_item'])) {
     $menuData = array(

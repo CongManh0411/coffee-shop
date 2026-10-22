@@ -8,7 +8,7 @@ $assetPrefix = 'assets/';
 $rootPrefix = !empty($isAdmin) ? '../' : './';
 ?>
 <!DOCTYPE html>
-<html lang="vi"<?= in_array($page, array('home', '404'), true) ? ' class="marketing-document"' : '' ?>>
+<html lang="vi"<?= in_array($page, array('home', 'menu', 'menu-detail', '404'), true) ? ' class="marketing-document"' : '' ?>>
 <head>
     <base href="./">
     <meta charset="UTF-8">
@@ -24,7 +24,7 @@ $rootPrefix = !empty($isAdmin) ? '../' : './';
 <?php endforeach; ?>
 </head>
 <body<?= $bodyClass !== '' ? ' class="' . e($bodyClass) . '"' : '' ?> data-page="<?= e($page) ?>">
-<?php if (!in_array($page, array('login', '404', 'home'), true)): ?>
+<?php if (!in_array($page, array('login', '404', 'home', 'menu', 'menu-detail'), true)): ?>
     <div id="sidebar-container">
 <?php require __DIR__ . '/sidebar.php'; ?>
     </div>

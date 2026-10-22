@@ -110,25 +110,17 @@
     // ----------------------------------------------------
     const filterTabs = document.querySelectorAll('.filter-tab');
     const menuCards = document.querySelectorAll('.menu-card');
-    const menuShowMore = document.getElementById('menuShowMore');
-    const menuShowMoreLabel = document.getElementById('menuShowMoreLabel');
-    const menuInitialCount = 6;
-    let menuVisibleLimit = menuInitialCount;
     let activeMenuCategory = 'all';
 
     function updateMenuCards() {
         const matchingCards = Array.from(menuCards).filter(card =>
             activeMenuCategory === 'all' || card.dataset.category === activeMenuCategory
         );
-        const visibleCount = Math.min(menuVisibleLimit, matchingCards.length);
+        const visibleCount = matchingCards.length;
         matchingCards.forEach((card, index) => { card.hidden = index >= visibleCount; });
         menuCards.forEach(card => {
             if (!matchingCards.includes(card)) card.hidden = true;
         });
-        if (menuShowMore) {
-            menuShowMore.hidden = matchingCards.length <= visibleCount;
-            if (menuShowMoreLabel) menuShowMoreLabel.textContent = 'Xem thêm';
-        }
     }
 
     filterTabs.forEach(tab => {
@@ -142,12 +134,6 @@
         });
     });
 
-    if (menuShowMore) {
-        menuShowMore.addEventListener('click', () => {
-            menuVisibleLimit += menuInitialCount;
-            updateMenuCards();
-        });
-    }
     updateMenuCards();
 
     // ----------------------------------------------------

@@ -3,7 +3,7 @@
 // Trang nào cần thứ tự/điều kiện riêng thì tạo pages/<trang>/scripts.php thay cho $scripts.
 $scripts = isset($scripts) ? $scripts : array();
 ?>
-<?php if (!in_array($page, array('home', '404'), true) && !empty($user)): ?>
+<?php if (!in_array($page, array('home', 'menu', 'menu-detail', '404'), true) && !empty($user)): ?>
     <script>
         // Server là nơi quyết định ai đang đăng nhập -> đồng bộ sang localStorage cho auth.js/common.js đọc
         try { localStorage.setItem('coffee_auth_session_v1', <?= json_encode(json_encode($user), JSON_HEX_TAG | JSON_HEX_AMP) ?>); } catch (e) {}
@@ -12,7 +12,7 @@ $scripts = isset($scripts) ? $scripts : array();
 <?php if ($page !== '404'): ?>
     <script src="<?= e($assetPrefix) ?>js/api.js"></script>
 <?php endif; ?>
-<?php if (!in_array($page, array('home', '404'), true)): ?>
+<?php if (!in_array($page, array('home', 'menu', 'menu-detail', '404'), true)): ?>
     <script src="<?= e($assetPrefix) ?>js/auth.js"></script>
     <script src="<?= e($assetPrefix) ?>js/common.js"></script>
 <?php endif; ?>
