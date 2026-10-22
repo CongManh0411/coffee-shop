@@ -105,10 +105,10 @@ function orders_refund_paid($orderId, $reason, $user)
 function orders_cancel_paid($orderId, $reason, $user)
 {
     $reason = trim((string) $reason);
-    if ($orderId <= 0 || $reason === '' || strlen($reason) > 500) return 'Cáº§n mÃ£ hÃ³a Ä‘Æ¡n vÃ  lÃ½ do há»§y (tá»‘i Ä‘a 500 kÃ½ tá»±).';
+    if ($orderId <= 0 || $reason === '' || strlen($reason) > 500) return 'Cần mã hóa đơn và lý do hủy (tối đa 500 ký tự).';
     return db()->transaction(function () use ($orderId, $reason, $user) {
         $order = db()->fetchOne("SELECT order_id FROM orders WHERE order_id = ? AND status = 'paid' FOR UPDATE", array($orderId));
-        if (!$order) return 'KhÃ´ng tÃ¬m tháº¥y hÃ³a Ä‘Æ¡n cÃ²n hiá»‡u lá»±c.';
+        if (!$order) return 'Không tìm thấy hóa đơn còn hiệu lực.';
         db()->execute("UPDATE orders SET status = 'cancelled' WHERE order_id = ?", array($orderId));
         db()->execute("INSERT INTO order_cancellations (order_id, reason, cancelled_by) VALUES (?, ?, ?)",
             array($orderId, $reason, (int) $user['staffId']));

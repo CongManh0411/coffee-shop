@@ -195,14 +195,14 @@ try {
             break;
         case 'orders/invoices':
             $me = require_role(array('manager', 'cashier'));
-            if ($method !== 'GET') json_error('Sai phÆ°Æ¡ng thá»©c.', 405);
+            if ($method !== 'GET') json_error('Sai phương thức.', 405);
             $status = $_GET['status'] ?? 'all';
-            if (!in_array($status, array('all', 'paid', 'cancelled'), true)) json_error('Tráº¡ng thÃ¡i hÃ³a Ä‘Æ¡n khÃ´ng há»£p lá»‡.');
+            if (!in_array($status, array('all', 'paid', 'cancelled'), true)) json_error('Trạng thái hóa đơn không hợp lệ.');
             json_ok(orders_invoice_list($status));
             break;
         case 'orders/invoices/cancel':
             $me = require_role(array('manager'));
-            if ($method !== 'POST') json_error('Sai phÆ°Æ¡ng thá»©c.', 405);
+            if ($method !== 'POST') json_error('Sai phương thức.', 405);
             $in = json_input();
             $err = orders_cancel_paid((int) ($in['orderId'] ?? 0), $in['reason'] ?? '', $me);
             if ($err) json_error($err);
@@ -210,7 +210,7 @@ try {
             break;
         case 'orders/invoices/refund':
             $me = require_role(array('manager', 'cashier'));
-            if ($method !== 'POST') json_error('Sai phÆ°Æ¡ng thá»©c.', 405);
+            if ($method !== 'POST') json_error('Sai phương thức.', 405);
             $in = json_input();
             $err = orders_refund_paid((int) ($in['orderId'] ?? 0), $in['reason'] ?? '', $me);
             if ($err) json_error($err);
