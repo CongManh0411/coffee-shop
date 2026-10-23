@@ -43,7 +43,6 @@ function get_item_badge($index, $catFilter, $price) {
         <a href="#story">Về <?= e($brandName) ?></a>
         <a href="#space">Không gian</a>
         <a href="#menu">Thực đơn</a>
-        <a href="#reviews">Đánh giá</a>
         <a href="#booking">Đặt bàn</a>
         <a href="#contact">Liên hệ</a>
     </nav>
@@ -85,7 +84,6 @@ function get_item_badge($index, $catFilter, $price) {
         <a href="#space">Không gian quán <span aria-hidden="true">→</span></a>
         <a href="#menu">Thực đơn <span aria-hidden="true">→</span></a>
         <a href="#menu">Thực đơn <span aria-hidden="true">↗</span></a>
-        <a href="#reviews">Đánh giá của khách <span aria-hidden="true">→</span></a>
         <a href="#booking">Đặt bàn trước <span aria-hidden="true">→</span></a>
         <a href="#contact">Địa chỉ &amp; Giờ mở cửa <span aria-hidden="true">→</span></a>
     </nav>
@@ -122,20 +120,7 @@ function get_item_badge($index, $catFilter, $price) {
                 </a>
             </div>
 
-            <div class="hero-stats-row">
-                <div class="hero-stat-item">
-                    <div class="hero-stat-num">4.9<span>★</span></div>
-                    <div class="hero-stat-label">Google Reviews</div>
-                </div>
-                <div class="hero-stat-item">
-                    <div class="hero-stat-num">100<span>%</span></div>
-                    <div class="hero-stat-label">Hạt mộc nguyên chất</div>
-                </div>
-                <div class="hero-stat-item">
-                    <div class="hero-stat-num"><?= e($shopHours) ?></div>
-                    <div class="hero-stat-label">Mở cửa mỗi ngày</div>
-                </div>
-            </div>
+            
         </div>
 
         <div class="landing-visual">
@@ -152,12 +137,12 @@ function get_item_badge($index, $catFilter, $price) {
 
             <!-- Main Arched Image -->
             <div class="hero-image-main">
-                <img src="assets/images/menu/01-ca-phe-sua-da.jpg" alt="Ly cà phê sữa đá phin truyền thống tại <?= e($brandName) ?>">
+                <img src="<?= e(setting('hero_main_image', 'assets/images/menu/01-ca-phe-sua-da.jpg')) ?>" alt="Ly cà phê sữa đá phin truyền thống tại <?= e($brandName) ?>">
             </div>
 
             <!-- Overlaid Secondary Image -->
             <div class="hero-image-small">
-                <img src="assets/images/menu/08-tra-dao-cam-sa.jpg" alt="Trà đào cam sả tươi mát">
+                <img src="<?= e(setting('hero_small_image', 'assets/images/menu/08-tra-dao-cam-sa.jpg')) ?>" alt="Trà đào cam sả tươi mát">
             </div>
 
             <!-- Floating Product Note -->
@@ -169,45 +154,11 @@ function get_item_badge($index, $catFilter, $price) {
         </div>
     </section>
 
-    <!-- Section 2: Core Qualities / Value Proposition -->
-    <section class="qualities-section" aria-label="Điểm nổi bật của quán">
-        <div class="qualities-grid">
-            <div class="quality-card">
-                <div class="quality-icon-wrap" aria-hidden="true">☕</div>
-                <div class="quality-text">
-                    <b>Hạt Cà Phê Tuyển Chọn</b>
-                    <p>100% Robusta &amp; Arabica mộc rang xay thủ công, đậm đà chuẩn vị.</p>
-                </div>
-            </div>
-            <div class="quality-card">
-                <div class="quality-icon-wrap" aria-hidden="true">🌿</div>
-                <div class="quality-text">
-                    <b>Không Gian Thư Giãn</b>
-                    <p>Nhiều cây xanh, góc làm việc yên tĩnh và view ngắm phố thoáng mát.</p>
-                </div>
-            </div>
-            <div class="quality-card">
-                <div class="quality-icon-wrap" aria-hidden="true">🍰</div>
-                <div class="quality-text">
-                    <b>Bánh Tươi &amp; Trà Mát</b>
-                    <p>Bánh làm mới mỗi ngày, trà trái cây 100% nguyên liệu tự nhiên tươi sạch.</p>
-                </div>
-            </div>
-            <div class="quality-card">
-                <div class="quality-icon-wrap" aria-hidden="true">🛎️</div>
-                <div class="quality-text">
-                    <b>Đặt Bàn Thuận Tiện</b>
-                    <p>Giữ chỗ nhanh chóng trong 30 giây, không cần trả trước hay đặt cọc.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
     <!-- Section 3: Story Section -->
     <section class="story-section" id="story">
         <div class="story-visual-wrap">
             <div class="story-image-wrap">
-                <img src="assets/images/menu/10-banh-tiramisu.jpg" alt="Bánh Tiramisu và không gian quán <?= e($brandName) ?>">
+                <img src="<?= e(setting('story_image', 'assets/images/menu/10-banh-tiramisu.jpg')) ?>" alt="Bánh Tiramisu và không gian quán <?= e($brandName) ?>">
             </div>
             <div class="story-image-tag">
                 <span class="story-tag-title">A GOOD PLACE TO SLOW DOWN</span>
@@ -331,115 +282,37 @@ function get_item_badge($index, $catFilter, $price) {
     <section class="space-section" id="space">
         <div class="section-heading">
             <div>
-                <p class="eyebrow">KHÔNG GIAN TẠI <?= mb_strtoupper(e($brandName), 'UTF-8') ?></p>
-                <h2>Tìm góc ngồi dành riêng cho bạn.</h2>
+                <p class="eyebrow"><?= e(setting('space_eyebrow', 'KHÔNG GIAN TẠI ' . mb_strtoupper($brandName, 'UTF-8'))) ?></p>
+                <h2><?= e(setting('space_title', 'Tìm góc ngồi dành riêng cho bạn.')) ?></h2>
             </div>
-            <p>Dù bạn đi một mình, đi cùng người thương hay họp mặt nhóm bạn thân, luôn có một vị trí thoải mái nhất chờ bạn.</p>
+            <p><?= e(setting('space_description', 'Dù bạn đi một mình, đi cùng người thương hay họp mặt nhóm bạn thân, luôn có một vị trí thoải mái nhất chờ bạn.')) ?></p>
         </div>
-
+        <?php
+        $spaceCards = array(
+            array('garden', 'Góc Sân Vườn Xanh Mát', 'Bàn ghế gỗ mộc dưới tán cây râm mát, đón nắng sớm ban mai và gió trời dễ chịu. Rất thích hợp cho buổi sáng thư giãn ngắm phố.', 'assets/images/menu/08-tra-dao-cam-sa.jpg', '🌿 NGOÀI TRỜI THOÁNG ĐÃNG', 'Góc sân vườn thoáng mát', array('Bóng cây mát rượi', 'Gió trời tự nhiên', 'Được mang thú cưng')),
+            array('work', 'Góc Làm Việc & Đọc Sách', 'Không gian máy lạnh êm ái, bàn dài rộng rãi, trang bị ổ cắm điện cho từng vị trí và wifi cáp quang tốc độ cao 200Mbps.', 'assets/images/menu/05-ca-phe-cappuccino.jpg', '💼 YÊN TĨNH MÁY LẠNH', 'Không gian làm việc yên tĩnh', array('Ổ cắm từng bàn', 'Wifi tốc độ cao', 'Nhạc lofi tập trung')),
+            array('sofa', 'Khu Vực Sofa & Trò Chuyện', 'Những chiếc ghế sofa êm ái, ánh đèn vàng ấm áp và góc decor phong cách mộc mạc. Điểm hẹn lý tưởng cho những câu chuyện không vội vã.', 'assets/images/menu/01-ca-phe-sua-da.jpg', '🛋️ ẤM CÚNG & HẸN HÒ', 'Khu vực sofa ấm cúng', array('Sofa êm ái', 'Ánh sáng vàng ấm', 'Góc check-in xinh'))
+        );
+        ?>
         <div class="space-grid">
+            <?php foreach ($spaceCards as $card):
+                list($key, $defaultTitle, $defaultDescription, $defaultImage, $defaultTag, $defaultAlt, $defaultPerks) = $card;
+                $perks = preg_split('/\r\n|\r|\n/', setting('space_' . $key . '_perks', implode("\n", $defaultPerks)));
+            ?>
             <div class="space-card">
                 <div class="space-photo">
-                    <img src="assets/images/menu/08-tra-dao-cam-sa.jpg" alt="Góc sân vườn thoáng mát" loading="lazy">
-                    <span class="space-tag">🌿 NGOÀI TRỜI THOÁNG ĐÃNG</span>
+                    <img src="<?= e(setting('space_' . $key . '_image', $defaultImage)) ?>" alt="<?= e(setting('space_' . $key . '_alt', $defaultAlt)) ?>" loading="lazy">
+                    <span class="space-tag"><?= e(setting('space_' . $key . '_tag', $defaultTag)) ?></span>
                 </div>
                 <div class="space-body">
-                    <h3>Góc Sân Vườn Xanh Mát</h3>
-                    <p>Bàn ghế gỗ mộc dưới tán cây râm mát, đón nắng sớm ban mai và gió trời dễ chịu. Rất thích hợp cho buổi sáng thư giãn ngắm phố.</p>
+                    <h3><?= e(setting('space_' . $key . '_title', $defaultTitle)) ?></h3>
+                    <p><?= e(setting('space_' . $key . '_description', $defaultDescription)) ?></p>
                     <ul class="space-perks">
-                        <li>Bóng cây mát rượi</li>
-                        <li>Gió trời tự nhiên</li>
-                        <li>Được mang thú cưng</li>
+                        <?php foreach ($perks as $perk): if (trim($perk) !== ''): ?><li><?= e(trim($perk)) ?></li><?php endif; endforeach; ?>
                     </ul>
                 </div>
             </div>
-
-            <div class="space-card">
-                <div class="space-photo">
-                    <img src="assets/images/menu/05-ca-phe-cappuccino.jpg" alt="Không gian làm việc yên tĩnh" loading="lazy">
-                    <span class="space-tag">💼 YÊN TĨNH MÁY LẠNH</span>
-                </div>
-                <div class="space-body">
-                    <h3>Góc Làm Việc &amp; Đọc Sách</h3>
-                    <p>Không gian máy lạnh êm ái, bàn dài rộng rãi, trang bị ổ cắm điện cho từng vị trí và wifi cáp quang tốc độ cao 200Mbps.</p>
-                    <ul class="space-perks">
-                        <li>Ổ cắm từng bàn</li>
-                        <li>Wifi tốc độ cao</li>
-                        <li>Nhạc lofi tập trung</li>
-                    </ul>
-                </div>
-            </div>
-
-            <div class="space-card">
-                <div class="space-photo">
-                    <img src="assets/images/menu/01-ca-phe-sua-da.jpg" alt="Khu vực sofa ấm cúng" loading="lazy">
-                    <span class="space-tag">🛋️ ẤM CÚNG &amp; HẸN HÒ</span>
-                </div>
-                <div class="space-body">
-                    <h3>Khu Vực Sofa &amp; Trò Chuyện</h3>
-                    <p>Những chiếc ghế sofa êm ái, ánh đèn vàng ấm áp và góc decor phong cách mộc mạc. Điểm hẹn lý tưởng cho những câu chuyện không vội vã.</p>
-                    <ul class="space-perks">
-                        <li>Sofa êm ái</li>
-                        <li>Ánh sáng vàng ấm</li>
-                        <li>Góc check-in xinh</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Section 6: Customer Reviews -->
-    <section class="reviews-section" id="reviews">
-        <div class="section-heading" style="margin-bottom: 24px;">
-            <div>
-                <p class="eyebrow">CẢM NHẬN TỪ KHÁCH HÀNG</p>
-                <h2>Những khoảnh khắc đáng quý.</h2>
-            </div>
-            <p>Niềm vui lớn nhất của <?= e($brandName) ?> là nhìn thấy nụ cười hài lòng của bạn sau mỗi lần ghé quán.</p>
-        </div>
-
-        <div class="reviews-grid">
-            <div class="review-card">
-                <div>
-                    <div class="review-stars">★★★★★</div>
-                    <p class="review-quote">“Cà phê sữa đá ở đây đậm đà đúng gu mình thích. Quán mở nhạc lofi rất dễ chịu, mình hay ngồi làm việc ở đây từ sáng đến chiều. Không gian thoáng và nhân viên rất dễ thương!”</p>
-                </div>
-                <div class="review-author">
-                    <div class="author-avatar">N</div>
-                    <div class="author-meta">
-                        <b>Nguyễn Hoàng Nam</b>
-                        <small>Freelance Designer · Khách quen</small>
-                    </div>
-                </div>
-            </div>
-
-            <div class="review-card">
-                <div>
-                    <div class="review-stars">★★★★★</div>
-                    <p class="review-quote">“Trà đào cam sả cực ngon, thơm lừng mùi sả tươi. Đặt bàn trước qua trang web rất tiện, tới nơi đã được giữ sẵn bàn view cửa sổ cực xinh cho nhóm mình. 10/10 điểm!”</p>
-                </div>
-                <div class="review-author">
-                    <div class="author-avatar">T</div>
-                    <div class="author-meta">
-                        <b>Trần Mai Anh</b>
-                        <small>Nhân viên văn phòng · Ghé dịp cuối tuần</small>
-                    </div>
-                </div>
-            </div>
-
-            <div class="review-card">
-                <div>
-                    <div class="review-stars">★★★★★</div>
-                    <p class="review-quote">“Bánh Tiramisu mềm mịn và thơm nức mùi cà phê! Bàn ghế sạch sẽ, chậu cây xanh mát mắt, góc nào chụp ảnh cũng ra hình thơ mộng. Chắc chắn sẽ rủ bạn bè ghé lại thường xuyên.”</p>
-                </div>
-                <div class="review-author">
-                    <div class="author-avatar">P</div>
-                    <div class="author-meta">
-                        <b>Lê Minh Phong</b>
-                        <small>Nhiếp ảnh gia tự do · Khách hàng</small>
-                    </div>
-                </div>
-            </div>
+            <?php endforeach; ?>
         </div>
     </section>
 
@@ -633,7 +506,6 @@ function get_item_badge($index, $catFilter, $price) {
                 <li><a href="#space">Không gian quán</a></li>
                 <li><a href="#menu">Món uống signature</a></li>
                 <li><a href="#menu">Thực đơn</a></li>
-                <li><a href="#reviews">Đánh giá khách hàng</a></li>
             </ul>
         </div>
 

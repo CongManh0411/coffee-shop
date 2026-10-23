@@ -6,23 +6,30 @@
 
 1. Đặt thư mục dự án tại `C:\xampp\htdocs\coffee-shop`.
 2. Mở Apache và MySQL trong XAMPP.
-3. Dùng phpMyAdmin để nhập `database/coffee.sql`. Tệp này tạo database `coffee_shop` và dữ liệu mẫu. Chỉ nhập trên database mới; script hiện không phải migration có thể chạy lặp lại.
-4. Mở `http://localhost/coffee-shop/`.
+3. Dùng phpMyAdmin để nhập `database/coffee.sql`. Tệp này tạo database `coffee_shop` và dữ liệu menu mẫu. Chỉ nhập trên database mới; script hiện không phải migration có thể chạy lặp lại.
+4. Tạo mật khẩu quản lý ban đầu trong PowerShell rồi chạy trình khởi tạo:
+   ```powershell
+   $env:INITIAL_MANAGER_PASSWORD = Read-Host "Mật khẩu quản lý mới (ít nhất 12 ký tự)"
+   C:\xampp\php\php.exe database/create_manager.php
+   Remove-Item Env:\INITIAL_MANAGER_PASSWORD
+   ```
+5. Mở `http://localhost/coffee-shop/`. Tạo tài khoản nhân viên tiếp theo trong Admin → Nhân viên.
 
-Database mặc định trong `config/database.php` dùng `127.0.0.1:3306`, database `coffee_shop`, user `root`, mật khẩu trống theo cấu hình XAMPP thường gặp. Có thể cấu hình bằng các biến môi trường `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`; đặt chúng ở cấu hình máy chủ, không commit mật khẩu vào Git.
+### Nâng cấp bản đã cài từ trước
 
-## Tài khoản dữ liệu mẫu
+Nếu database đang dùng tài khoản mẫu cũ, hãy tạo quản lý mới và vô hiệu hóa các tài khoản còn dùng mật khẩu mẫu bằng PowerShell:
 
-Sau khi nhập SQL, tài khoản thử nghiệm dùng mật khẩu `123456`:
+```powershell
+$env:INITIAL_MANAGER_PASSWORD = Read-Host "Mật khẩu quản lý mới (ít nhất 12 ký tự)"
+C:\xampp\php\php.exe database/replace_demo_accounts.php
+Remove-Item Env:\INITIAL_MANAGER_PASSWORD
+```
 
-| Vai trò | Tên đăng nhập |
-|---|---|
-| Quản lý | `quanly` |
-| Phục vụ | `phucvu` |
-| Bếp | `bep` |
-| Thu ngân | `thungan` |
+Script chỉ chạy bằng CLI. Nó tạo tài khoản quản lý mới trước, sau đó vô hiệu hóa các tài khoản có mật khẩu mẫu cũ; tài khoản và dữ liệu khác được giữ nguyên.
 
-Đây là tài khoản demo. Đổi mật khẩu và tạo tài khoản database riêng trước khi triển khai ra Internet.
+## Cấu hình database
+
+Cấu hình localhost mặc định dùng user `root` và mật khẩu trống để phù hợp XAMPP. Khi triển khai, đặt `APP_ENV=production` cùng `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`; ứng dụng sẽ từ chối chạy production với user `root` hoặc mật khẩu database trống.
 
 ## Các trang chính
 
@@ -36,7 +43,7 @@ Sau khi nhập SQL, tài khoản thử nghiệm dùng mật khẩu `123456`:
 
 ## Dữ liệu
 
-Đây là ứng dụng mô phỏng phục vụ bài tập, chạy trên localhost/XAMPP; chưa triển khai dịch vụ thật. Tài khoản quản lý mẫu để chấm bài: `quanly` / `123456`.
+Đây là ứng dụng mô phỏng phục vụ bài tập, chạy trên localhost/XAMPP; cần cấu hình riêng và rà soát bảo mật trước khi triển khai dịch vụ thật.
 
 Tài khoản, thực đơn, bàn, ca làm, đơn hàng, đặt bàn, hàng chờ, khách hàng, khuyến mãi, nhà cung cấp, vật tư kho và đơn giao hàng được lưu ở MySQL. Trạng thái ca tiền mặt, nhật ký giao diện, món tạm hết và tồn kho thành phẩm trên màn bán hàng vẫn còn lưu phía trình duyệt; chúng chưa đồng bộ đầy đủ giữa các thiết bị. Dữ liệu cũ trong localStorage không tự chuyển sang database.
 
@@ -49,4 +56,6 @@ Tài khoản, thực đơn, bàn, ca làm, đơn hàng, đặt bàn, hàng chờ
 - `api/`: JSON API và module thao tác database.
 - `config/`, `helpers/`, `classes/`: cấu hình và lớp dùng chung.
 - `layouts/`, `assets/`: giao diện, CSS, JavaScript và ảnh.
-- `database/coffee.sql`: schema và dữ liệu mẫu ban đầu.
+- `database/coffee.sql`: schema và dữ liệu menu mẫu ban đầu.
+- `database/create_manager.php`: tạo quản lý đầu tiên, chỉ chạy được từ CLI.
+- `database/replace_demo_accounts.php`: thay tài khoản mẫu cũ trên database đang dùng, chỉ chạy được từ CLI.

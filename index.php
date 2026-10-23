@@ -18,6 +18,7 @@ $rolePages = array(
     'kitchen' => array('kitchen', 'schedule'),
 );
 $user = current_user();
+if ($user) header('Cache-Control: no-store, private');
 $page = $_GET['page'] ?? null;
 
 if ($page === null || $page === '') {

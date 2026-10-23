@@ -45,9 +45,9 @@
                     <div class="settings-logo-upload-controls">
                         <label class="custom-file-upload">
                             <span aria-hidden="true">📁</span> Chọn ảnh logo
-                            <input type="file" id="shop_logo_file" name="shop_logo_file" accept="image/jpeg,image/png,image/webp,image/svg+xml,image/gif">
+                            <input type="file" id="shop_logo_file" name="shop_logo_file" accept="image/jpeg,image/png,image/webp,image/gif">
                         </label>
-                        <span class="logo-file-name" id="shop-logo-file-name">JPG, PNG, WEBP, SVG hoặc GIF · tối đa 5 MB</span>
+                        <span class="logo-file-name" id="shop-logo-file-name">JPG, PNG, WEBP hoặc GIF · tối đa 5 MB</span>
                         <label class="reset-logo-label">
                             <input type="checkbox" name="reset_logo" value="1">
                             Dùng lại logo mặc định
@@ -132,6 +132,18 @@
                     <textarea id="hero_lede" name="hero_lede" rows="3"><?= e(setting('hero_lede', 'Một chiếc bàn thân quen ngập tràn ánh nắng, tách cà phê rang mộc chuẩn gu và những khoảng thời gian thư thái dành riêng cho bạn. Ghé Góc Nhỏ để tìm lại nhịp thở chậm giữa phố thị tất bật.')) ?></textarea>
                 </div>
 
+                <div class="settings-grid-2">
+                    <div class="settings-form-group">
+                        <label for="hero_main_image_file">Ảnh lớn đầu trang</label>
+                        <input type="file" id="hero_main_image_file" name="hero_main_image_file" accept="image/jpeg,image/png,image/webp">
+                        <span class="settings-field-hint">Ảnh hiện tại: <?= e(setting('hero_main_image', 'assets/images/menu/01-ca-phe-sua-da.jpg')) ?></span>
+                    </div>
+                    <div class="settings-form-group">
+                        <label for="hero_small_image_file">Ảnh nhỏ đầu trang</label>
+                        <input type="file" id="hero_small_image_file" name="hero_small_image_file" accept="image/jpeg,image/png,image/webp">
+                        <span class="settings-field-hint">Ảnh hiện tại: <?= e(setting('hero_small_image', 'assets/images/menu/08-tra-dao-cam-sa.jpg')) ?></span>
+                    </div>
+                </div>
                 <div class="settings-grid-2" style="margin-top: 14px;">
                     <div class="settings-form-group">
                         <label for="hero_suggestion">Tên món gợi ý hôm nay</label>
@@ -165,6 +177,11 @@
                 </div>
 
                 <div class="settings-form-group">
+                    <label for="story_image_file">Ảnh phần câu chuyện</label>
+                    <input type="file" id="story_image_file" name="story_image_file" accept="image/jpeg,image/png,image/webp">
+                    <span class="settings-field-hint">Ảnh hiện tại: <?= e(setting('story_image', 'assets/images/menu/10-banh-tiramisu.jpg')) ?> · JPG, PNG, WEBP · tối đa 5 MB</span>
+                </div>
+                <div class="settings-form-group">
                     <label for="story_quote">Câu trích dẫn tâm đắc (Quote)</label>
                     <input type="text" id="story_quote" name="story_quote" value="<?= e(setting('story_quote', '“Chúng tôi tin rằng ly cà phê tuyệt vời nhất là ly cà phê được thưởng thức trong sự an yên, thoải mái và trọn vẹn nhất.”')) ?>">
                 </div>
@@ -173,6 +190,65 @@
                     <label for="story_desc">Đoạn văn câu chuyện quán</label>
                     <textarea id="story_desc" name="story_desc" rows="4"><?= e(setting('story_desc', 'Góc Nhỏ được xây dựng từ niềm đam mê với những hạt cà phê Việt Nam và khát khao tạo ra một không gian dừng chân ấm áp. Từng góc bàn, chậu cây cho đến từng giai điệu lofi êm dịu đều được chăm chút kỹ lưỡng để mang lại cảm giác thân quen như trở về nhà.')) ?></textarea>
                 </div>
+            </div>
+
+            <div class="settings-card">
+                <h3 class="settings-card-title"><span aria-hidden="true">🪑</span> Không gian &amp; các góc ngồi</h3>
+                <p class="settings-card-subtitle">Chỉnh tiêu đề phần này và thông tin của từng góc. Mỗi tiện ích nhập trên một dòng; có thể tải ảnh mới lên.</p>
+                <div class="settings-form-group">
+                    <label for="space_eyebrow">Nhãn nhỏ phía trên tiêu đề</label>
+                    <input type="text" id="space_eyebrow" name="space_eyebrow" value="<?= e(setting('space_eyebrow', 'KHÔNG GIAN TẠI ' . mb_strtoupper(setting('brand_name', 'Góc Nhỏ'), 'UTF-8'))) ?>">
+                </div>
+                <div class="settings-form-group">
+                    <label for="space_title">Tiêu đề phần</label>
+                    <input type="text" id="space_title" name="space_title" value="<?= e(setting('space_title', 'Tìm góc ngồi dành riêng cho bạn.')) ?>">
+                </div>
+                <div class="settings-form-group">
+                    <label for="space_description">Mô tả phần</label>
+                    <textarea id="space_description" name="space_description" rows="2"><?= e(setting('space_description', 'Dù bạn đi một mình, đi cùng người thương hay họp mặt nhóm bạn thân, luôn có một vị trí thoải mái nhất chờ bạn.')) ?></textarea>
+                </div>
+                <?php
+                $spaceAdminCards = array(
+                    array('garden', 'Góc sân vườn', 'Góc Sân Vườn Xanh Mát', 'Bàn ghế gỗ mộc dưới tán cây râm mát, đón nắng sớm ban mai và gió trời dễ chịu. Rất thích hợp cho buổi sáng thư giãn ngắm phố.', 'assets/images/menu/08-tra-dao-cam-sa.jpg', '🌿 NGOÀI TRỜI THOÁNG ĐÃNG', 'Góc sân vườn thoáng mát', array('Bóng cây mát rượi', 'Gió trời tự nhiên', 'Được mang thú cưng')),
+                    array('work', 'Góc làm việc & đọc sách', 'Góc Làm Việc & Đọc Sách', 'Không gian máy lạnh êm ái, bàn dài rộng rãi, trang bị ổ cắm điện cho từng vị trí và wifi cáp quang tốc độ cao 200Mbps.', 'assets/images/menu/05-ca-phe-cappuccino.jpg', '💼 YÊN TĨNH MÁY LẠNH', 'Không gian làm việc yên tĩnh', array('Ổ cắm từng bàn', 'Wifi tốc độ cao', 'Nhạc lofi tập trung')),
+                    array('sofa', 'Khu sofa & trò chuyện', 'Khu Vực Sofa & Trò Chuyện', 'Những chiếc ghế sofa êm ái, ánh đèn vàng ấm áp và góc decor phong cách mộc mạc. Điểm hẹn lý tưởng cho những câu chuyện không vội vã.', 'assets/images/menu/01-ca-phe-sua-da.jpg', '🛋️ ẤM CÚNG & HẸN HÒ', 'Khu vực sofa ấm cúng', array('Sofa êm ái', 'Ánh sáng vàng ấm', 'Góc check-in xinh'))
+                );
+                foreach ($spaceAdminCards as $spaceCard):
+                    list($spaceKey, $spaceLabel, $spaceTitle, $spaceDesc, $spaceImage, $spaceTag, $spaceAlt, $spacePerks) = $spaceCard;
+                ?>
+                <div class="settings-card" style="background:#faf8f5; margin-top:18px;">
+                    <h4><?= e($spaceLabel) ?></h4>
+                    <div class="settings-grid-2">
+                        <div class="settings-form-group">
+                            <label for="space_<?= e($spaceKey) ?>_title">Tên góc</label>
+                            <input type="text" id="space_<?= e($spaceKey) ?>_title" name="space_<?= e($spaceKey) ?>_title" value="<?= e(setting('space_' . $spaceKey . '_title', $spaceTitle)) ?>">
+                        </div>
+                        <div class="settings-form-group">
+                            <label for="space_<?= e($spaceKey) ?>_tag">Nhãn trên ảnh</label>
+                            <input type="text" id="space_<?= e($spaceKey) ?>_tag" name="space_<?= e($spaceKey) ?>_tag" value="<?= e(setting('space_' . $spaceKey . '_tag', $spaceTag)) ?>">
+                        </div>
+                    </div>
+                    <div class="settings-form-group">
+                        <label for="space_<?= e($spaceKey) ?>_description">Mô tả</label>
+                        <textarea id="space_<?= e($spaceKey) ?>_description" name="space_<?= e($spaceKey) ?>_description" rows="3"><?= e(setting('space_' . $spaceKey . '_description', $spaceDesc)) ?></textarea>
+                    </div>
+                    <div class="settings-grid-2">
+                        <div class="settings-form-group">
+                            <label for="space_<?= e($spaceKey) ?>_alt">Mô tả ảnh (alt)</label>
+                            <input type="text" id="space_<?= e($spaceKey) ?>_alt" name="space_<?= e($spaceKey) ?>_alt" value="<?= e(setting('space_' . $spaceKey . '_alt', $spaceAlt)) ?>">
+                        </div>
+                        <div class="settings-form-group">
+                            <label for="space_<?= e($spaceKey) ?>_image_file">Ảnh góc ngồi</label>
+                            <input type="file" id="space_<?= e($spaceKey) ?>_image_file" name="space_<?= e($spaceKey) ?>_image_file" accept="image/jpeg,image/png,image/webp">
+                            <span class="settings-field-hint">Ảnh hiện tại: <?= e(setting('space_' . $spaceKey . '_image', $spaceImage)) ?> · JPG, PNG, WEBP · tối đa 5 MB</span>
+                        </div>
+                    </div>
+                    <div class="settings-form-group">
+                        <label for="space_<?= e($spaceKey) ?>_perks">Các tiện ích (mỗi dòng một mục)</label>
+                        <textarea id="space_<?= e($spaceKey) ?>_perks" name="space_<?= e($spaceKey) ?>_perks" rows="3"><?= e(setting('space_' . $spaceKey . '_perks', implode("\n", $spacePerks))) ?></textarea>
+                    </div>
+                </div>
+                <?php endforeach; ?>
             </div>
 
             <!-- Sticky Save Bar -->

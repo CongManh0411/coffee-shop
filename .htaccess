@@ -1,5 +1,12 @@
 RewriteEngine On
 RewriteBase /coffee-shop/
+Options -Indexes
+
+# Keep source control, database dumps, configuration, and source-only files private.
+RewriteRule (^|/)\.git(?:/|$) - [F,L,NC]
+RewriteRule ^(?:database|config|helpers|classes|sessions|api/modules)(?:/|$) - [F,L,NC]
+RewriteRule ^(?:README(?:\.[^/]*)?|test-db\.php|\.env(?:\.[^/]*)?)$ - [F,L,NC]
+RewriteRule \.(?:sql|md|log|bak|ini)$ - [F,L,NC]
 
 # Send legacy page URLs through the PHP front controller.
 RewriteRule ^Login\.html$ admin/index.php?page=login [R=302,L,NC]

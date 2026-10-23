@@ -32,19 +32,8 @@
                 </table>
             </div>
 
-            <details class="table-server-data" open>
-                <summary>Danh sách bàn từ MySQL (PHP)</summary>
-                <div class="data-table-wrapper"><table class="data-table">
-                    <thead><tr><th>Mã bàn</th><th>Tên bàn</th><th>Trạng thái</th></tr></thead>
-                    <tbody>
-                    <?php foreach ($adminTables as $table): ?>
-                        <tr><td><?= (int) $table['table_id'] ?></td><td><?= e($table['table_name']) ?></td>
-                            <td><?= (int) $table['is_active'] ? 'Đang hoạt động' : 'Ngừng hoạt động' ?></td></tr>
-                    <?php endforeach; ?>
-                    <?php if (!$adminTables): ?><tr><td colspan="3">Chưa có bàn nào.</td></tr><?php endif; ?>
-                    </tbody>
-                </table></div>
-            </details>
+
+
 
             <p class="sync-hint">Chỉ xóa được bàn đang trống. Bàn đang phục vụ hoặc chờ thanh toán sẽ xóa được sau khi Phục vụ thanh toán xong. Đổi tên bàn không ảnh hưởng hóa đơn đã lập.</p>
         </div>

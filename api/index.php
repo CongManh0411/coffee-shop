@@ -3,18 +3,36 @@ require_once __DIR__ . '/../config/init.php';
 require_once __DIR__ . '/../helpers/response.php';
 require_once __DIR__ . '/../helpers/auth.php';
 require_once __DIR__ . '/../functions.php';
+header('Cache-Control: no-store');
 
 $route  = $_GET['route'] ?? '';
 $method = $_SERVER['REQUEST_METHOD'];
+
+if (in_array($method, array('POST', 'PUT', 'PATCH', 'DELETE'), true)) {
+    require_csrf_token();
+}
 
 try {
     switch ($route) {
         case 'auth/login':
             if ($method !== 'POST') json_error('Sai phương thức.', 405);
             $in = json_input();
-            $user = auth_login($in['username'] ?? '', $in['password'] ?? '');
-            if (!$user) json_error('Sai tên đăng nhập hoặc mật khẩu.', 401);
-            json_ok($user);
+            $username = is_string($in['username'] ?? null) ? trim($in['username']) : '';
+            $password = is_string($in['password'] ?? null) ? $in['password'] : '';
+            if (strlen($username) > 100 || strlen($password) > 1024) {
+                auth_attempts($username, true);
+                json_error('Sai tên đăng nhập hoặc mật khẩu.', 401);
+            }
+            if (auth_attempts($username) >= 5) {
+                json_error('Tạm khóa đăng nhập trong 15 phút do nhập sai nhiều lần.', 429);
+            }
+            $user = auth_login($username, $password);
+            if (!$user) {
+                auth_attempts($username, true);
+                json_error('Sai tên đăng nhập hoặc mật khẩu.', 401);
+            }
+            auth_attempts($username, false, true);
+            json_ok(array('user' => $user, 'csrfToken' => csrf_token()));
             break;
 
         case 'auth/logout':
@@ -44,6 +62,12 @@ try {
             break;
         case 'reservations/public':
             if ($method !== 'POST') json_error('Sai phương thức.', 405);
+            $reservationBucket = 'public-reservation';
+            if (auth_attempts($reservationBucket, false, false, 60) >= 20) {
+                header('Retry-After: 60');
+                json_error('Đã gửi quá nhiều yêu cầu đặt bàn. Vui lòng thử lại sau.', 429);
+            }
+            auth_attempts($reservationBucket, true, false, 60);
             list($reservationId, $err) = reservation_create_public(json_input());
             if ($err) json_error($err, 422);
             json_ok(array('reservationId' => $reservationId));
@@ -135,7 +159,11 @@ try {
                 if ($err) json_error($err);
                 json_ok();
             }
-            if ($method === 'DELETE') { tables_delete((int)($_GET['id'] ?? 0)); json_ok(); }
+            if ($method === 'DELETE') {
+                $err = tables_delete((int) ($_GET['id'] ?? 0));
+                if ($err) json_error($err, 422);
+                json_ok();
+            }
             api_fail('Sai phương thức.', 405);
         case 'shifts':
             if ($method === 'GET') {

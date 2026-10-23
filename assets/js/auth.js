@@ -36,83 +36,25 @@ const PAGES_BY_ROLE = {
     ],
 };
 
-// ---- 2) TÀI KHOẢN DEMO (CHỈ DÙNG KHI CHƯA CÓ BACKEND — xoá cả khối
-//         DEMO_ACCOUNTS này khi nối API đăng nhập thật) ----
-// Khớp với phần "Tài khoản thử" hiển thị trên Login.html.
-const DEMO_ACCOUNTS = [
-    { id: 1, username: 'quanly',  password: '123456', roleKey: 'manager', name: 'Nguyễn Văn A' },
-    { id: 3, username: 'phucvu',  password: '123456', roleKey: 'waiter',  name: 'Lê Văn C' },
-    { id: 2, username: 'bep',     password: '123456', roleKey: 'kitchen', name: 'Phạm Văn D' },
-    { id: 4, username: 'thungan', password: '123456', roleKey: 'cashier', name: 'Trần Thị B' },
-];
-
-// ---- Tài khoản tạo ở trang Nhân viên (lưu trong localStorage) cũng đăng nhập được ----
-const STAFF_STORAGE_KEY = 'coffee_staff_v1';
-const STAFF_ROLE_MAP = { 'Quản lý': 'manager', 'Phục vụ': 'waiter', 'Bếp': 'kitchen', 'Thu ngân': 'cashier' };
-function getAllAccounts() {
-    let extra = [];
-    try {
-        const list = JSON.parse(localStorage.getItem(STAFF_STORAGE_KEY));
-        if (Array.isArray(list)) extra = list.filter(x => STAFF_ROLE_MAP[x.role])
-            .map(x => ({ username: x.username, password: x.password, roleKey: STAFF_ROLE_MAP[x.role], name: x.fullName, id: x.id }));
-    } catch (err) {}
-    return DEMO_ACCOUNTS.concat(extra);
-}
-
-// ---- 3) NƠI LƯU PHIÊN ĐĂNG NHẬP (BẢN DEMO: localStorage) ----
-const AUTH_STORAGE_KEY = 'coffee_auth_session_v1'; // lưu { roleKey, name }
-// BẢN BACKEND: thường sẽ lưu 1 "token" thay vì lưu thẳng roleKey/name,
-// ví dụ localStorage.setItem('token', data.token) — xem gợi ý trong
-// AuthAPI.login()/getSession() bên dưới.
-
-// ---- 4) AuthAPI — NƠI DUY NHẤT CẦN SỬA KHI CÓ BACKEND THẬT ----
-// Toàn bộ phần còn lại của file (chặn trang, form đăng nhập, sidebar ở
-// script.js) chỉ gọi qua các hàm của AuthAPI, không đụng trực tiếp vào
-// localStorage. Vì vậy khi có backend, chỉ cần sửa ĐÚNG các hàm trong
-// object này.
 const AuthAPI = {
-    // Gọi khi bấm nút "Đăng nhập". Trả về { roleKey, name } nếu đúng,
-    // ném lỗi (throw) nếu sai tài khoản/mật khẩu.
     async login(username, password) {
-    const user = await Api.post('auth/login', { username: username.trim(), password });
-    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
-    return user;
+        const result = await Api.post('auth/login', { username: username.trim(), password });
+        window.SERVER_USER = result.user;
+        const tokenMeta = document.querySelector('meta[name="csrf-token"]');
+        if (tokenMeta) tokenMeta.content = result.csrfToken;
+        return result.user;
     },
-
     async logout() {
         try { await Api.post('auth/logout'); } catch (err) {}
-        try { localStorage.removeItem(AUTH_STORAGE_KEY); } catch (err) {}
+        window.SERVER_USER = null;
         try { sessionStorage.clear(); } catch (err) {}
         window.location.replace((window.COFFEE_ROOT || './') + 'admin/index.php?page=login');
     },
-
-    // Đọc phiên đăng nhập hiện tại (đồng bộ — không chờ mạng), dùng để
-    // chặn trang ngay khi tải trang, tránh nháy nội dung trước khi đá về
-    // Login.html. Trả về null nếu chưa đăng nhập.
-    getSession() {
-        // ---- BẢN DEMO ----
-        try {
-            const raw = localStorage.getItem(AUTH_STORAGE_KEY);
-            return raw ? JSON.parse(raw) : null;
-        } catch (err) {
-            return null;
-        }
-
-        // ---- BẢN BACKEND ----
-        // Token không tự nói lên vai trò/tên người dùng, nên bản backend
-        // thường cần lưu tạm { roleKey, name } lúc login (như DEMO ở trên)
-        // để đọc đồng bộ ở đây, còn quyền THẬT SỰ vẫn phải được kiểm tra
-        // lại ở server cho từng API — phần chặn trang ở đây chỉ để tránh
-        // hiện nhầm giao diện, không thay được bảo mật phía backend.
-    },
+    getSession() { return window.SERVER_USER || null; },
 };
 
-// Thông tin hiển thị trên sidebar: logo quán + tên/chức vụ người đang
-// đăng nhập. script.js gọi UserAPI.getProfile() (qua getProfileOnce())
-// để đổ dữ liệu này vào sidebar.
 const UserAPI = {
     async getProfile() {
-        // ---- BẢN DEMO ----
         const session = AuthAPI.getSession();
         const roleKey = session ? session.roleKey : null;
         return {
@@ -121,15 +63,8 @@ const UserAPI = {
             role: ROLE_LABELS[roleKey] || '—',
             roleKey,
         };
-
-        // ---- BẢN BACKEND ----
-        // const res = await fetch('/api/me'); // hoặc /api/auth/me tuỳ backend đặt tên
-        // if (!res.ok) throw new Error('Không tải được thông tin người dùng');
-        // return await res.json(); // kỳ vọng { shopLogoUrl, name, role, roleKey }
     },
 };
-
-// ============================================================
 // 5) CHẶN TRUY CẬP TRANG KHI CHƯA ĐĂNG NHẬP HOẶC SAI VAI TRÒ
 // ------------------------------------------------------------
 // Chạy NGAY khi auth.js được nạp (không chờ DOMContentLoaded), vì
@@ -170,9 +105,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!form) return;
 
     // Router PHP đã tự chuyển người đã đăng nhập khỏi trang này, nên nếu còn ở đây
-    // nghĩa là server chưa có phiên -> xóa phiên cũ trong localStorage (tránh vòng lặp chuyển trang).
-    try { localStorage.removeItem(AUTH_STORAGE_KEY); } catch (err) {}
-
+    // The server session is authoritative; an anonymous visitor stays on the login page.
     const userEl = document.getElementById('username');
     const passEl = document.getElementById('password');
     const errEl = document.getElementById('loginError');

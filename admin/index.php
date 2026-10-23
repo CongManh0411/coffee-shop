@@ -1,5 +1,7 @@
 <?php
 require_once __DIR__ . '/includes/bootstrap.php';
+header('Cache-Control: no-store, private');
+header('Pragma: no-cache');
 
 $routes = array(
     'login' => 'login/index.php',

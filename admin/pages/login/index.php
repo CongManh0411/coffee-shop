@@ -22,15 +22,5 @@
 
       <button type="submit" class="login-btn">Đăng nhập</button>
     </form>
-
-    <div class="login-demo">
-      <strong>Tài khoản thử</strong>
-      <ul>
-        <li>quanly / 123456 — Quản lý</li>
-        <li>phucvu / 123456 — Phục Vụ</li>
-        <li>thungan / 123456 — Thu Ngân</li>
-        <li>bep / 123456 — Bếp</li>
-      </ul>
-    </div>
     <a class="login-home-link" href="../index.php?page=home">← Về trang chủ</a>
   </main>

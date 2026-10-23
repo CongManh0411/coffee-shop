@@ -47,8 +47,26 @@ function tables_update($id, $d)
     return '';
 }
 
-// Việc "chỉ xóa bàn đang trống" hiện do giao diện kiểm tra; khi có bảng đơn hàng sẽ kiểm tra ở đây.
+// Xóa bàn an toàn ở phía máy chủ để xử lý cả trạng thái trình duyệt đã cũ.
 function tables_delete($id)
 {
-    db()->execute("DELETE FROM dining_tables WHERE table_id = ?", array((int) $id));
+    $id = (int) $id;
+    if ($id <= 0) return 'Mã bàn không hợp lệ.';
+
+    return db()->transaction(function () use ($id) {
+        $table = db()->fetchOne(
+            "SELECT table_id FROM dining_tables WHERE table_id = ? FOR UPDATE",
+            array($id)
+        );
+        if (!$table) return 'Không tìm thấy bàn.';
+
+        $openOrder = db()->fetchOne(
+            "SELECT order_id FROM orders WHERE table_id = ? AND status = 'open' LIMIT 1",
+            array($id)
+        );
+        if ($openOrder) return 'Không thể xóa bàn đang có đơn hàng mở.';
+
+        db()->execute("DELETE FROM dining_tables WHERE table_id = ?", array($id));
+        return '';
+    });
 }

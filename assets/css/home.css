@@ -1240,89 +1240,6 @@ body.public-home [id] {
 }
 
 /* ============================================================
-   Section 6: Customer Reviews / Testimonials
-   ============================================================ */
-.reviews-section {
-    padding: 96px max(28px, calc((100% - 1240px) / 2));
-    background: #ffffff;
-    border-top: 1px solid var(--c-border);
-    border-bottom: 1px solid var(--c-border);
-}
-
-.reviews-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 24px;
-    margin-top: 40px;
-}
-
-.review-card {
-    padding: 28px;
-    background: var(--c-bg);
-    border: 1px solid var(--c-border);
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-sm);
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    transition: var(--transition);
-}
-
-.review-card:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-md);
-    border-color: var(--c-border-gold);
-}
-
-.review-stars {
-    color: #f59e0b;
-    font-size: 14px;
-    letter-spacing: 2px;
-    margin-bottom: 14px;
-}
-
-.review-quote {
-    color: var(--c-text);
-    font-size: 13.5px;
-    line-height: 1.8;
-    margin: 0 0 20px;
-    font-style: normal;
-}
-
-.review-author {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding-top: 16px;
-    border-top: 1px solid var(--c-border);
-}
-
-.author-avatar {
-    width: 42px;
-    height: 42px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #c98a4b, #7b4a24);
-    display: grid;
-    place-items: center;
-    color: #ffffff;
-    font-weight: 600;
-    font-size: 15px;
-}
-
-.author-meta b {
-    display: block;
-    color: var(--c-dark);
-    font-size: 13.5px;
-    font-weight: 600;
-}
-
-.author-meta small {
-    display: block;
-    color: var(--c-text-light);
-    font-size: 11.5px;
-}
-
-/* ============================================================
    Section 7: Booking & Reservation Section
    ============================================================ */
 .booking-section {
@@ -1972,9 +1889,6 @@ body.public-home [id] {
     }
     .space-grid {
         grid-template-columns: repeat(2, 1fr);
-    }
-    .reviews-grid {
-        grid-template-columns: 1fr;
     }
     .booking-section {
         grid-template-columns: 1fr;

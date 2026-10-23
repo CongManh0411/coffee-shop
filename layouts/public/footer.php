@@ -4,10 +4,7 @@
 $scripts = isset($scripts) ? $scripts : array();
 ?>
 <?php if (!in_array($page, array('home', 'menu', 'menu-detail', '404'), true) && !empty($user)): ?>
-    <script>
-        // Server là nơi quyết định ai đang đăng nhập -> đồng bộ sang localStorage cho auth.js/common.js đọc
-        try { localStorage.setItem('coffee_auth_session_v1', <?= json_encode(json_encode($user), JSON_HEX_TAG | JSON_HEX_AMP) ?>); } catch (e) {}
-    </script>
+    
 <?php endif; ?>
 <?php if ($page !== '404'): ?>
     <script src="<?= e($assetPrefix) ?>js/api.js"></script>

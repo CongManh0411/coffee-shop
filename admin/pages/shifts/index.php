@@ -19,19 +19,7 @@
                 <div class="shf-day-list" id="shDayList" aria-live="polite"></div>
             </section>
             <p class="sch-note">Lịch lưu ngay khi bấm Lưu. Nhân viên (Phục vụ) xem ở mục "Lịch ca làm". Lương chỉ tính cho giờ làm nằm trong ca đã xếp.</p>
-            <details class="shift-server-data" open>
-                <summary>Danh sách ca làm từ MySQL (PHP)</summary>
-                <div class="data-table-wrapper"><table class="data-table">
-                    <thead><tr><th>Nhân viên</th><th>Vai trò</th><th>Ngày</th><th>Giờ làm</th></tr></thead>
-                    <tbody>
-                    <?php foreach ($adminShifts as $shift): ?>
-                        <tr><td><?= e($shift['full_name']) ?></td><td><?= e($shift['role']) ?></td>
-                            <td><?= e($shift['shift_date']) ?></td><td><?= e(substr($shift['start_time'], 0, 5)) ?> – <?= e(substr($shift['end_time'], 0, 5)) ?></td></tr>
-                    <?php endforeach; ?>
-                    <?php if (!$adminShifts): ?><tr><td colspan="4">Chưa xếp ca làm nào.</td></tr><?php endif; ?>
-                    </tbody>
-                </table></div>
-            </details>
+
         </div>
     </main>
 

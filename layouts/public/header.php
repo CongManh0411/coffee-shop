@@ -13,11 +13,13 @@ $rootPrefix = !empty($isAdmin) ? '../' : './';
     <base href="./">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="csrf-token" content="<?= e(csrf_token()) ?>">
     <title><?= e($title) ?></title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
     <script>window.COFFEE_ROOT = <?= json_encode($rootPrefix) ?>;</script>
+    <script>window.SERVER_USER = <?= json_encode(isset($user) ? $user : null, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;</script>
     <link rel="stylesheet" href="<?= e($assetPrefix) ?>css/style.css">
 <?php foreach ($css as $cssFile): ?>
     <link rel="stylesheet" href="<?= e(strpos($cssFile, 'http') === 0 ? $cssFile : $assetPrefix . 'css/' . $cssFile) ?>">

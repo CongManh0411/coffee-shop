@@ -15,20 +15,7 @@
             <?php if ($menuFormError !== ''): ?>
                 <p class="menu-error-state" role="alert"><?= e($menuFormError) ?></p>
             <?php endif; ?>
-            <details class="menu-server-data" open>
-                <summary>Danh sách món từ MySQL (PHP)</summary>
-                <div class="data-table-wrapper"><table class="data-table">
-                    <thead><tr><th>Món</th><th>Danh mục</th><th>Giá</th><th>Hiển thị</th></tr></thead>
-                    <tbody>
-                    <?php foreach ($adminMenuItems as $item): ?>
-                        <tr><td><?= e($item['item_name']) ?></td><td><?= e($item['category_name']) ?></td>
-                            <td><?= e(number_format((int) $item['price'], 0, ',', '.')) ?> đ</td>
-                            <td><?= (int) $item['is_hidden'] === 1 ? 'Đang ẩn' : 'Đang bán' ?></td></tr>
-                    <?php endforeach; ?>
-                    <?php if (!$adminMenuItems): ?><tr><td colspan="4">Chưa có món trong cơ sở dữ liệu.</td></tr><?php endif; ?>
-                    </tbody>
-                </table></div>
-            </details>
+
             <!-- ============ PANEL: Sửa món ============ -->
             <div class="tab-panel active" id="panel-edit">
                 <div class="menu-page-header">

@@ -34,7 +34,11 @@ function staff_validate($d, $id = 0, $needPassword = true)
     if (!isset(STAFF_ROLES[$d['role'] ?? ''])) return 'Chức vụ không hợp lệ.';
     $u = trim($d['username'] ?? '');
     if ($u === '') return 'Vui lòng nhập tài khoản.';
-    if ($needPassword && trim($d['password'] ?? '') === '') return 'Vui lòng nhập mật khẩu.';
+    $password = (string) ($d['password'] ?? '');
+    if ($needPassword && $password === '') return 'Vui lòng nhập mật khẩu.';
+    if ($password !== '' && (strlen($password) < 12 || strlen($password) > 72)) {
+        return 'Mật khẩu phải có ít nhất 12 ký tự và không vượt quá 72 byte.';
+    }
     if (!preg_match('/^0\d{9}$/', $d['phone'] ?? '')) return 'Số điện thoại phải gồm 10 chữ số và bắt đầu bằng 0.';
     if (($d['email'] ?? '') !== '' && !filter_var($d['email'], FILTER_VALIDATE_EMAIL)) return 'Email chưa hợp lệ.';
 
@@ -66,7 +70,7 @@ function staff_update($id, $d)
     $old = db()->fetchOne("SELECT staff_id FROM staff WHERE staff_id = ? AND status = 1", array((int) $id));
     if (!$old) return 'Không tìm thấy nhân viên.';
 
-    $changePass = trim($d['password'] ?? '') !== '';
+    $changePass = (string) ($d['password'] ?? '') !== '';
     $err = staff_validate($d, $id, false);
     if ($err) return $err;
 

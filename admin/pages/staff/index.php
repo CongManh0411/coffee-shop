@@ -56,7 +56,8 @@
                         </div>
                         <div class="form-group">
                             <label for="password">Mật khẩu</label>
-                            <input type="password" id="password" placeholder="Nhập mật khẩu" required>
+                            <input type="password" id="password" placeholder="Ít nhất 12 ký tự" minlength="12" maxlength="72" autocomplete="new-password" required>
+                            <small>Mật khẩu mới cần ít nhất 12 ký tự. Khi sửa hồ sơ, để trống nếu không đổi mật khẩu.</small>
                         </div>
                     </div>
 
