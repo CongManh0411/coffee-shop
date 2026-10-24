@@ -1,5 +1,7 @@
 # Coffee Shop
 
+Hồ sơ module Menu, Bàn và Shifts: [docs/HO_SO_CA_NHAN.md](docs/HO_SO_CA_NHAN.md). Bản SQL bàn giao: [03_Database](03_Database/README.md). Ảnh minh chứng và thông tin tác giả cần bổ sung theo thực tế trước khi nộp.
+
 Ứng dụng quản lý quán cà phê bằng PHP, MySQL và JavaScript, chạy cục bộ với XAMPP.
 
 ## Cài đặt cục bộ

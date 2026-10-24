@@ -9,6 +9,7 @@
         </nav>
  
         <div class="main-content">
+            <p class="menu-demo-note">Ứng dụng mô phỏng phục vụ bài tập. Đăng nhập và phân quyền là chức năng mở rộng.</p>
             <?php if ($menuSavedMessage !== ''): ?>
                 <p class="menu-success-state" role="status"><?= e($menuSavedMessage) ?></p>
             <?php endif; ?>
@@ -23,6 +24,29 @@
                     <p>Thêm, sửa, ẩn món trực tiếp. Số lượng tồn kho quản lý ở trang <a href="<?= e(url('warehouse')) ?>">Kho</a>.</p>
                 </div>
  
+                <section class="menu-database-section" aria-labelledby="menuDatabaseTitle">
+                    <h3 id="menuDatabaseTitle">Danh sách món và danh mục</h3>
+                    <div class="menu-database-scroll">
+                        <table class="menu-database-table">
+                            <thead><tr><th scope="col">Mã món</th><th scope="col">Tên món</th><th scope="col">Danh mục</th><th scope="col">Giá</th><th scope="col">Trạng thái</th></tr></thead>
+                            <tbody>
+                                <?php foreach ($adminMenuItems as $item): ?>
+                                    <tr>
+                                        <td><?= (int) $item['item_id'] ?></td>
+                                        <td><?= e($item['item_name']) ?></td>
+                                        <td><?= e($item['category_name']) ?></td>
+                                        <td><?= e(number_format((int) $item['price'], 0, ',', '.')) ?> đ</td>
+                                        <td><?= (int) $item['is_hidden'] === 1 ? 'Đang ẩn' : 'Đang hiển thị' ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                                <?php if (!$adminMenuItems): ?>
+                                    <tr><td colspan="5">Chưa có món nào. Chọn "Thêm món" để bắt đầu.</td></tr>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
                 <div class="menu-toolbar">
                     <label for="menuSearchInput" class="sr-only">Tìm món theo tên</label>
                     <input type="text" id="menuSearchInput" class="menu-search-input" placeholder="Tìm món theo tên...">
@@ -51,6 +75,9 @@
                             <label for="itemCategory">Danh mục</label>
                             <select id="itemCategory" name="category">
                                 <option value="">-- Chọn danh mục --</option>
+                                <?php foreach ($adminMenuCategories as $category): ?>
+                                    <option value="<?= e($category['category_name']) ?>"><?= e($category['category_name']) ?></option>
+                                <?php endforeach; ?>
                             </select>
                         </div>
                         <div class="form-group">
