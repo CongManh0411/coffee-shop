@@ -2,6 +2,20 @@
 require_once __DIR__ . '/../../../functions.php';
 $adminMenuItems = admin_menu_items();
 $adminMenuCategories = db()->fetchAll('SELECT category_name FROM categories ORDER BY category_id');
+$adminMenuGroups = array();
+foreach ($adminMenuCategories as $category) {
+    $adminMenuGroups[$category['category_name']] = array('category' => $category['category_name'], 'items' => array());
+}
+foreach ($adminMenuItems as $item) {
+    $image = menu_item_image($item);
+    if (strpos($image, 'assets/') === 0) $image = '../' . $image;
+    $adminMenuGroups[$item['category_name']]['items'][] = array(
+        'id' => (int) $item['item_id'], 'name' => $item['item_name'],
+        'desc' => $item['description'] ?? '', 'price' => (int) $item['price'],
+        'img' => $item['image'] ?? '', 'thumb' => $image,
+        'hidden' => (int) $item['is_hidden'] === 1,
+    );
+}
 $menuFormError = '';
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && isset($_POST['save_menu_item'])) {
     $menuData = array(

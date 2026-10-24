@@ -23,14 +23,14 @@ Router, lớp Database, cấu hình, API chung và các module kho, doanh thu, b
 | --- | --- | --- |
 | Danh sách món Public | `pages/menu/index.php` dùng `foreach ($menuItems ...)` | JOIN món và danh mục, lọc món đang hiển thị |
 | Chi tiết món | `pages/menu-detail/action.php` và `index.php` | Truy vấn theo ID; ID không hợp lệ trả 404 |
-| Danh sách món Admin | `admin/pages/menu/index.php` dùng `foreach ($adminMenuItems ...)` | JOIN `menu_items` và `categories` |
+| Danh sách món Admin | `admin/pages/menu/index.php` dùng foreach theo nhóm danh mục từ `$adminMenuItems` | JOIN `menu_items` và `categories` |
 | Form thêm/sửa món | POST đến `admin/index.php?page=menu` | Kiểm tra dữ liệu, INSERT/UPDATE, redirect khi thành công |
 | Danh sách bàn | `admin/pages/tablemanage/index.php` | PHP render ban đầu; JS bổ sung thao tác API |
 | Lịch ca | `admin/pages/shifts/index.php` | JS render qua API; kết quả `$adminShifts` chưa được view sử dụng |
 
 ## Giải thích luồng xử lý (150–250 chữ)
 
-Khi người dùng mở trang quản lý thực đơn, yêu cầu đi vào Router `admin/index.php` với tham số `page=menu`. Router kiểm tra trang hợp lệ, phiên đăng nhập và quyền truy cập, sau đó nạp `admin/pages/menu/action.php` trước khi xuất giao diện. File action gọi hàm `admin_menu_items()` trong `functions.php`. Hàm này sử dụng đối tượng Database thông qua `db()` để thực thi câu SQL SELECT có JOIN giữa bảng `menu_items` và bảng `categories` theo khóa `category_id`. Lớp Database chuẩn bị câu lệnh, thực thi và trả về danh sách các dòng dữ liệu. Kết quả được gán vào biến `$adminMenuItems`. Tiếp theo, Router nạp layout và file `admin/pages/menu/index.php`. Giao diện dùng vòng lặp foreach để xuất tên món, danh mục, giá và trạng thái thành bảng HTML; các chuỗi được escape bằng hàm `e()`. Khi gửi form thêm hoặc sửa món, trình duyệt gửi POST về cùng Router. Action lấy dữ liệu, gọi `menu_create()` hoặc `menu_update()` để kiểm tra và ghi MySQL. Nếu thành công, hệ thống chuyển hướng về trang Menu để đọc lại dữ liệu; nếu thất bại, giao diện hiển thị thông báo lỗi.
+Khi người dùng mở trang quản lý thực đơn, yêu cầu đi vào Router `admin/index.php` với tham số `page=menu`. Router kiểm tra trang hợp lệ, phiên đăng nhập và quyền truy cập, sau đó nạp `admin/pages/menu/action.php` trước khi xuất giao diện. File action gọi hàm `admin_menu_items()` trong `functions.php`. Hàm này sử dụng đối tượng Database thông qua `db()` để thực thi câu SQL SELECT có JOIN giữa bảng `menu_items` và bảng `categories` theo khóa `category_id`. Lớp Database chuẩn bị câu lệnh, thực thi và trả về danh sách các dòng dữ liệu. Kết quả được gán vào biến `$adminMenuItems`. Tiếp theo, Router nạp layout và file `admin/pages/menu/index.php`. Action nhóm các món theo danh mục. Giao diện dùng foreach để xuất danh sách HTML có ảnh, tên món, giá, trạng thái và nút Sửa/Ẩn/Xóa; các chuỗi được escape bằng hàm `e()`. Khi gửi form thêm hoặc sửa món, trình duyệt gửi POST về cùng Router. Action lấy dữ liệu, gọi `menu_create()` hoặc `menu_update()` để kiểm tra và ghi MySQL. Nếu thành công, hệ thống chuyển hướng về trang Menu để đọc lại dữ liệu; nếu thất bại, giao diện hiển thị thông báo lỗi.
 
 ## Ảnh và kiểm thử cần bổ sung
 
@@ -41,7 +41,7 @@ T01–T04 phải theo định nghĩa trong đề gốc. Nếu đề chưa quy đ
 | Mã đề xuất | Thao tác | Kết quả cần xác nhận |
 | --- | --- | --- |
 | T01 | Mở Public Menu và chọn danh mục | Chỉ hiển thị món thuộc danh mục đã chọn |
-| T02 | Đăng nhập quản lý, mở Admin Menu | Bảng có tên món, danh mục JOIN, giá và trạng thái; xem source HTML thấy dòng dữ liệu |
+| T02 | Đăng nhập quản lý, mở Admin Menu | Danh sách nhóm theo danh mục JOIN, có ảnh, giá và nút Sửa/Ẩn/Xóa; source HTML có dữ liệu ngay khi tắt JS |
 | T03 | Thêm món với tên riêng và giá hợp lệ | Redirect, báo thành công; món xuất hiện trong Admin, Public và MySQL |
 | T04 | Gửi form với tên trống hoặc giá không hợp lệ | Báo lỗi và không thêm món; kiểm tra phía PHP bằng cách tắt JS |
 

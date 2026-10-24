@@ -24,40 +24,40 @@
                     <p>Thêm, sửa, ẩn món trực tiếp. Số lượng tồn kho quản lý ở trang <a href="<?= e(url('warehouse')) ?>">Kho</a>.</p>
                 </div>
  
-                <section class="menu-database-section" aria-labelledby="menuDatabaseTitle">
-                    <h3 id="menuDatabaseTitle">Danh sách món và danh mục</h3>
-                    <div class="menu-database-scroll">
-                        <table class="menu-database-table">
-                            <thead><tr><th scope="col">Mã món</th><th scope="col">Tên món</th><th scope="col">Danh mục</th><th scope="col">Giá</th><th scope="col">Trạng thái</th></tr></thead>
-                            <tbody>
-                                <?php foreach ($adminMenuItems as $item): ?>
-                                    <tr>
-                                        <td><?= (int) $item['item_id'] ?></td>
-                                        <td><?= e($item['item_name']) ?></td>
-                                        <td><?= e($item['category_name']) ?></td>
-                                        <td><?= e(number_format((int) $item['price'], 0, ',', '.')) ?> đ</td>
-                                        <td><?= (int) $item['is_hidden'] === 1 ? 'Đang ẩn' : 'Đang hiển thị' ?></td>
-                                    </tr>
-                                <?php endforeach; ?>
-                                <?php if (!$adminMenuItems): ?>
-                                    <tr><td colspan="5">Chưa có món nào. Chọn "Thêm món" để bắt đầu.</td></tr>
-                                <?php endif; ?>
-                            </tbody>
-                        </table>
-                    </div>
-                </section>
-
                 <div class="menu-toolbar">
                     <label for="menuSearchInput" class="sr-only">Tìm món theo tên</label>
                     <input type="text" id="menuSearchInput" class="menu-search-input" placeholder="Tìm món theo tên...">
                 </div>
 
-                <!-- Danh sách món sẽ được đổ vào đây -->
+                <!-- PHP xuất danh sách từ truy vấn JOIN; JS chỉ bổ sung tương tác. -->
                 <div class="menu-category-list" id="menuCategoryList">
-                    <div class="menu-empty-state">
-                        Chưa có món nào. Vào tab "Thêm món" để bắt đầu.
-                    </div>
+                    <?php foreach ($adminMenuGroups as $group): ?>
+                        <?php if (!$group['items']) continue; ?>
+                        <section class="menu-category">
+                            <h3><?= e($group['category']) ?></h3>
+                            <?php foreach ($group['items'] as $item): ?>
+                                <div class="menu-item<?= $item['hidden'] ? ' is-hidden' : '' ?>" data-item-id="<?= $item['id'] ?>">
+                                    <img class="menu-item-thumb" src="<?= e($item['thumb']) ?>" alt="<?= e($item['name']) ?>" loading="lazy">
+                                    <div>
+                                        <div class="menu-item-name"><?= e($item['name']) ?></div>
+                                        <?php if ($item['desc'] !== ''): ?><div class="menu-item-desc"><?= e($item['desc']) ?></div><?php endif; ?>
+                                        <?php if ($item['hidden']): ?><span class="menu-item-status">Đang ẩn</span><?php endif; ?>
+                                    </div>
+                                    <div class="menu-item-right">
+                                        <div class="menu-item-price"><?= e(number_format($item['price'], 0, ',', '.')) ?>đ</div>
+                                        <div class="menu-item-actions">
+                                            <button type="button" class="btn-outline" data-action="edit" data-id="<?= $item['id'] ?>">Sửa</button>
+                                            <button type="button" class="btn-outline" data-action="hide" data-id="<?= $item['id'] ?>"><?= $item['hidden'] ? 'Hiện' : 'Ẩn' ?></button>
+                                            <button type="button" class="btn-danger" data-action="delete" data-id="<?= $item['id'] ?>">Xóa</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </section>
+                    <?php endforeach; ?>
+                    <p class="menu-empty-state" id="menuEmptyState"<?= $adminMenuItems ? ' hidden' : '' ?>>Chưa có món nào phù hợp.</p>
                 </div>
+                <script type="application/json" id="adminMenuData"><?= json_encode(array_values($adminMenuGroups), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_THROW_ON_ERROR) ?></script>
             </div>
  
             <!-- ============ PANEL: Thêm món ============ -->

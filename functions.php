@@ -56,7 +56,7 @@ function public_featured_menu_items($limit = 6)
 function admin_menu_items()
 {
     return db()->fetchAll(
-        "SELECT m.item_id, m.item_name, m.description, m.price, m.is_hidden,
+        "SELECT m.item_id, m.item_name, m.description, m.price, m.image, m.is_hidden,
                 c.category_id, c.category_name
          FROM menu_items m
          JOIN categories c ON c.category_id = m.category_id
