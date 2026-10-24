@@ -1,8 +1,0 @@
-BỘ NỘP NHÁP — CHƯA NỘP NGUYÊN BẢN
-1. Đọc 04_MinhChung/BO_SUNG_MINH_CHUNG.md và cập nhật Word gốc. Chưa sửa hoặc xác minh bố cục/ảnh trong Word.
-2. Chụp thêm trang Public menu-categories và SQL đối chiếu. Home không phải đóng góp cá nhân.
-3. Xác nhận bổ sung trang Danh mục với nhóm trưởng nếu cần cập nhật phân công.
-4. Chạy lại T01–T04, kiểm tra ảnh và thử import SQL trên database riêng. Không dùng database đang làm để import đè.
-5. Copy nội dung 02_SourcePHP vào C:\xampp\htdocs\coffee-shop; import 03_Database/coffee.sql; tạo quản lý theo README. Không kèm mật khẩu thật.
-6. Hai trang Public: menu-categories và menu. Hai bảng Admin: tablemanage và shifts. Form POST: Menu.
-UI gốc được lấy từ ZIP bài GK1 đã có trong Downloads; Word giữ nguyên bản, phần bổ sung nằm ở Markdown đi kèm.
