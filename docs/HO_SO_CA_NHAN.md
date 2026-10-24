@@ -26,7 +26,7 @@ Router, lớp Database, cấu hình, API chung và các module kho, doanh thu, b
 | Danh sách món Admin | `admin/pages/menu/index.php` dùng foreach theo nhóm danh mục từ `$adminMenuItems` | JOIN `menu_items` và `categories` |
 | Form thêm/sửa món | POST đến `admin/index.php?page=menu` | Kiểm tra dữ liệu, INSERT/UPDATE, redirect khi thành công |
 | Danh sách bàn | `admin/pages/tablemanage/index.php` | PHP render ban đầu; JS bổ sung thao tác API |
-| Lịch ca | `admin/pages/shifts/index.php` | JS render qua API; kết quả `$adminShifts` chưa được view sử dụng |
+| Lịch ca | `admin/pages/shifts/index.php` | PHP render bảng ca theo tuần từ JOIN shifts + staff; JS đồng bộ bảng và lịch sau thao tác, chuyển tuần và tải định kỳ |
 
 ## Giải thích luồng xử lý (150–250 chữ)
 

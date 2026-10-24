@@ -20,6 +20,32 @@
             </section>
             <p class="sch-note">Lịch lưu ngay khi bấm Lưu. Nhân viên (Phục vụ) xem ở mục "Lịch ca làm". Lương chỉ tính cho giờ làm nằm trong ca đã xếp.</p>
 
+            <details class="shf-db-section" open>
+                <summary>Danh sách ca đã xếp</summary>
+                <p class="sch-note" id="shDbSummary">Tuần <?= e(date('d/m/Y', strtotime($shiftWeekStart))) ?> – <?= e(date('d/m/Y', strtotime($shiftWeekEnd))) ?> · <?= count($weekShifts) ?> ca</p>
+                <div class="shf-db-scroll">
+                    <table class="shf-db-table">
+                        <thead><tr><th scope="col">Mã ca</th><th scope="col">Ngày</th><th scope="col">Giờ bắt đầu</th><th scope="col">Giờ kết thúc</th><th scope="col">Nhân viên</th><th scope="col">Chức vụ</th></tr></thead>
+                        <tbody id="shDbBody">
+                            <?php foreach ($weekShifts as $shift): ?>
+                                <tr>
+                                    <td><?= (int) $shift['shift_id'] ?></td>
+                                    <td><?= e(date('d/m/Y', strtotime($shift['shift_date']))) ?></td>
+                                    <td><?= e(substr($shift['start_time'], 0, 5)) ?></td>
+                                    <td><?= e(substr($shift['end_time'], 0, 5)) ?></td>
+                                    <td><?= e($shift['full_name']) ?></td>
+                                    <td><?= e($shiftRoleLabels[$shift['role']] ?? $shift['role']) ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                            <?php if (!$weekShifts): ?>
+                                <tr><td colspan="6">Chưa có ca nào trong tuần này.</td></tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </details>
+            <script type="application/json" id="shDbData"><?= json_encode($adminShifts, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_THROW_ON_ERROR) ?></script>
+
         </div>
     </main>
 
