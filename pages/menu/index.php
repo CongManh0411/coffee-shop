@@ -1,6 +1,6 @@
 <header class="catalog-header">
     <a href="index.php?page=home" class="catalog-brand">Góc Nhỏ <span>Coffee &amp; Tea</span></a>
-    <nav><a href="index.php?page=home">Trang chủ</a><a href="index.php?page=menu">Thực đơn</a></nav>
+    <nav><a href="index.php?page=home">Trang chủ</a><a href="<?= e(url('menu-categories')) ?>">Danh mục</a><a href="index.php?page=menu">Thực đơn</a></nav>
 </header>
 <main class="catalog-main">
     <p class="catalog-eyebrow">MENU GÓC NHỎ</p>

@@ -3,13 +3,13 @@
 // Trang nào cần thứ tự/điều kiện riêng thì tạo pages/<trang>/scripts.php thay cho $scripts.
 $scripts = isset($scripts) ? $scripts : array();
 ?>
-<?php if (!in_array($page, array('home', 'menu', 'menu-detail', '404'), true) && !empty($user)): ?>
+<?php if (!in_array($page, array('home', 'menu', 'menu-detail', 'menu-categories', '404'), true) && !empty($user)): ?>
     
 <?php endif; ?>
 <?php if ($page !== '404'): ?>
     <script src="<?= e($assetPrefix) ?>js/api.js"></script>
 <?php endif; ?>
-<?php if (!in_array($page, array('home', 'menu', 'menu-detail', '404'), true)): ?>
+<?php if (!in_array($page, array('home', 'menu', 'menu-detail', 'menu-categories', '404'), true)): ?>
     <script src="<?= e($assetPrefix) ?>js/auth.js"></script>
     <script src="<?= e($assetPrefix) ?>js/common.js"></script>
 <?php endif; ?>

@@ -35,7 +35,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && isset($_POST['save_menu_
 
     if ($menuFormError === '') {
         $_SESSION['menu_saved'] = 'Đã lưu món vào cơ sở dữ liệu.';
-        redirect(url('menu'));
+        redirect(admin_url('menu'));
     }
 }
 $menuSavedMessage = $_SESSION['menu_saved'] ?? '';

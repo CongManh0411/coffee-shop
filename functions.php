@@ -64,6 +64,18 @@ function admin_menu_items()
     );
 }
 
+function public_menu_category_summary()
+{
+    return db()->fetchAll(
+        "SELECT c.category_id, c.category_name, COUNT(m.item_id) AS item_count,
+                MIN(m.price) AS min_price
+         FROM categories c
+         LEFT JOIN menu_items m ON m.category_id = c.category_id AND m.is_hidden = 0
+         GROUP BY c.category_id, c.category_name
+         ORDER BY c.category_id"
+    );
+}
+
 function admin_shifts()
 {
     return db()->fetchAll(

@@ -1,0 +1,157 @@
+/* shifts.css — trang Xếp lịch ca của Quản lý (dùng chung bảng .sch-* của schedule.css) */
+.shf-db-section { margin: 28px 0 8px; }
+.shf-db-section summary { cursor: pointer; font-size: 18px; font-weight: 600; color: #3b2313; }
+.shf-db-scroll { overflow-x: auto; }
+.shf-db-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
+.shf-db-table th, .shf-db-table td { padding: 10px 12px; border-bottom: 1px solid #ece2d3; white-space: nowrap; }
+.shf-db-table th { background: #f8f3eb; color: #3b2313; }
+.shf-shift { display: block; width: 100%; text-align: left; font-family: inherit; color: inherit; border: 0; border-left: 4px solid #c99a5b; cursor: pointer; }
+.shf-shift:hover { filter: brightness(0.96); }
+.shf-add { width: 100%; padding: 5px; font-family: inherit; font-size: 12px; color: #8a6b4f; background: transparent; border: 1px dashed #d9c7a8; border-radius: 8px; cursor: pointer; }
+.shf-add:hover { background: #f5e9d8; color: #3b2313; }
+.sch-table .shf-total { width: 84px; text-align: center; font-weight: 600; }
+.sch-table tfoot td { height: auto; background: #faf5ec; text-align: center; font-size: 12.5px; color: #5a3d28; }
+.sch-table tfoot td.warn { color: #b3441f; font-weight: 600; background: #fbe9e3; }
+.sch-table tfoot td:first-child { text-align: left; font-weight: 600; }
+.shf-outline, .shf-danger { margin-left: auto; }
+.shf-outline + .shf-danger { margin-left: 0; }
+.sch-weekbar .shf-danger { color: #b5573c; border-color: #c96a5b; }
+.shf-error { margin: -6px 0 12px; font-size: 12.5px; color: #b5573c; }
+.shf-mobile-schedule { display: none; }
+.shf-mobile-schedule[hidden] { display: none !important; }
+
+.modal-overlay { display: none; position: fixed; inset: 0; z-index: 100; padding: 16px; box-sizing: border-box; align-items: center; justify-content: center; background: rgba(43, 27, 15, 0.45); }
+.modal-overlay.active { display: flex; }
+.modal-box { width: 100%; max-width: 400px; padding: 24px 26px; box-sizing: border-box; background: #fffaf3; border-radius: 16px; box-shadow: 0 12px 40px rgba(43, 27, 15, 0.25); }
+.modal-title { margin: 0 0 6px; font-family: "Playfair Display", serif; font-size: 20px; color: #3b2313; }
+.modal-sub { margin: 0 0 16px; font-size: 13.5px; color: #7a5c3e; }
+.modal-actions { display: flex; gap: 10px; }
+.modal-actions > * { flex: 1; margin-top: 0; padding: 10px; }
+.modal-actions .btn-danger[hidden] { display: none; }
+
+/* Trang quan ly can xem bang tuan tren dien thoai; schedule.css an bang nay
+   cho trang nhan vien va thay bang bang danh sach ngay, nhung Shifts.php
+   khong co danh sach thay the. */
+@media (max-width: 768px) {
+    .main { min-width: 0; }
+    #schedule-app {
+        width: 100%;
+        min-width: 0;
+        padding: 20px 12px 28px;
+    }
+
+    #schedule-app .sch-title {
+        margin-bottom: 10px;
+        font-size: 22px;
+    }
+
+    #schedule-app .sch-weekbar {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 8px;
+        margin-bottom: 10px;
+    }
+
+    #schedule-app .sch-week-label {
+        grid-column: 1 / -1;
+        grid-row: 1;
+        min-width: 0;
+        padding-bottom: 2px;
+    }
+
+    #schedule-app #shPrev { grid-column: 1; grid-row: 2; }
+    #schedule-app #shThis { grid-column: 2; grid-row: 2; }
+    #schedule-app #shNext { grid-column: 1; grid-row: 3; }
+    #schedule-app #shCopy { grid-column: 2; grid-row: 3; }
+    #schedule-app #shClear { grid-column: 1 / -1; grid-row: 4; }
+
+    #schedule-app .sch-weekbar button {
+        width: 100%;
+        min-height: 40px;
+        margin: 0;
+        padding: 8px 6px;
+        font-size: 12px;
+        line-height: 1.35;
+    }
+
+    #schedule-app .sch-table-wrap {
+        display: none;
+    }
+
+    #schedule-app .shf-mobile-schedule {
+        display: block;
+    }
+
+    #schedule-app .shf-mobile-schedule[hidden] { display: none !important; }
+
+    #schedule-app .shf-day-tabs {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap: 4px;
+        margin: 12px 0;
+    }
+
+    #schedule-app .shf-day-tab {
+        display: flex;
+        min-width: 0;
+        min-height: 58px;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+        padding: 5px 1px;
+        border: 1px solid #e6d8c3;
+        border-radius: 9px;
+        background: #fffaf3;
+        color: #5a3d28;
+        font-family: inherit;
+        font-size: 10px;
+        line-height: 1.15;
+    }
+
+    #schedule-app .shf-day-tab small { color: #8a6b4f; font-size: 9px; }
+    #schedule-app .shf-day-tab em { color: #8a6b4f; font-size: 9px; font-style: normal; }
+    #schedule-app .shf-day-tab.active { border-color: #8a4f24; background: #4a2a18; color: #fff7ec; }
+    #schedule-app .shf-day-tab.active small,
+    #schedule-app .shf-day-tab.active em { color: #e8c79b; }
+    #schedule-app .shf-day-tab.today { box-shadow: inset 0 -2px #c99a5b; }
+
+    #schedule-app .shf-day-summary {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 8px;
+        margin: 4px 1px 8px;
+        color: #3b2313;
+        font-size: 13px;
+    }
+
+    #schedule-app .shf-day-summary span { color: #8a6b4f; font-size: 11px; }
+    #schedule-app .shf-day-staff { margin-bottom: 8px; padding: 10px; border: 1px solid #e6d8c3; border-radius: 10px; background: #fff; }
+    #schedule-app .shf-day-staff-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    #schedule-app .shf-day-staff-head > div { display: flex; min-width: 0; flex-direction: column; }
+    #schedule-app .shf-day-staff-head > div b { overflow-wrap: anywhere; font-size: 13px; }
+    #schedule-app .shf-day-staff-head > div small { color: #8a6b4f; font-size: 11px; }
+    #schedule-app .shf-mobile-add { flex: 0 0 auto; padding: 7px 9px; border: 1px solid #c99a5b; border-radius: 8px; background: #fffaf3; color: #5a3d28; font: inherit; font-size: 11px; }
+    #schedule-app .shf-mobile-shift { display: flex; width: 100%; align-items: center; gap: 8px; margin-top: 8px; padding: 10px; border: 0; border-left: 4px solid #c99a5b; border-radius: 7px; background: #f5e9d8; color: #3b2313; text-align: left; font: inherit; }
+    #schedule-app .shf-mobile-shift span { font-size: 13px; font-weight: 600; }
+    #schedule-app .shf-mobile-shift small { color: #8a6b4f; font-size: 11px; }
+    #schedule-app .shf-mobile-shift b { margin-left: auto; color: #8a6b4f; font-size: 18px; font-weight: 400; }
+    #schedule-app .shf-no-shift { margin: 8px 0 0; color: #9a8670; font-size: 11px; }
+    #schedule-app .shf-empty { padding: 14px; border: 1px dashed #d9c7a8; border-radius: 9px; color: #8a6b4f; font-size: 12px; text-align: center; }
+
+    #schedule-app .shf-mobile-add,
+    #schedule-app .shf-mobile-shift,
+    #schedule-app .shf-day-tab {
+        min-height: 44px;
+    }
+
+}
+
+@media (max-width: 360px) {
+    #schedule-app { padding-right: 9px; padding-left: 9px; }
+    #schedule-app .sch-weekbar { gap: 6px; }
+    #schedule-app .sch-weekbar button { font-size: 11px; }
+    #schedule-app .shf-day-tabs { gap: 2px; }
+    #schedule-app .shf-day-tab { font-size: 9px; }
+}

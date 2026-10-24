@@ -21,7 +21,7 @@
             <div class="tab-panel active" id="panel-edit">
                 <div class="menu-page-header">
                     <h2>Thực đơn</h2>
-                    <p>Thêm, sửa, ẩn món trực tiếp. Số lượng tồn kho quản lý ở trang <a href="<?= e(url('warehouse')) ?>">Kho</a>.</p>
+                    <p>Thêm, sửa, ẩn món trực tiếp. Số lượng tồn kho quản lý ở trang <a href="<?= e(admin_url('warehouse')) ?>">Kho</a>.</p>
                 </div>
  
                 <div class="menu-toolbar">
@@ -66,7 +66,7 @@
                     <h2>Thêm món mới</h2>
                 </div>
  
-                <form class="add-item-form" method="POST" action="index.php?page=menu">
+                <form class="add-item-form" method="POST" action="<?= e(admin_url('menu')) ?>">
                     <input type="hidden" name="save_menu_item" value="1">
                     <input type="hidden" id="editItemId" name="id" value="">
                     <input type="hidden" id="itemImageData" value="">

@@ -35,6 +35,8 @@ Cấu hình localhost mặc định dùng user `root` và mật khẩu trống �
 
 ## Các trang chính
 
+- Danh mục thực đơn (Public, tổng hợp số món và giá thấp nhất): `index.php?page=menu-categories`.
+
 - Trang giới thiệu khách: `/` hoặc `index.php?page=home`.
 - Thực đơn đầy đủ, lọc theo danh mục: `index.php?page=menu`.
 - Chi tiết món: `index.php?page=menu-detail&id=1` (mã món không hợp lệ trả HTTP 404).

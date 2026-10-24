@@ -4,10 +4,15 @@
 
 ## Phạm vi trình bày
 
+Sinh viên: Trần Công Mạnh — MSSV 2531540635 — Nhóm 5. Home là phần của thành viên khác, không tính vào đóng góp cá nhân. Hai trang Public thuộc Menu là `index.php?page=menu-categories` (tổng hợp danh mục) và `index.php?page=menu` (danh sách món). Trang chi tiết là route bổ sung. Hai trang Admin dùng Table là Bàn và Shifts; Menu có danh sách nhóm và form POST.
+
+Trang tổng hợp danh mục được bổ sung trong BT03 để đáp ứng số lượng trang; cần ghi bổ sung này trong bảng phân công và xin nhóm trưởng xác nhận nếu làm thay đổi phân công đã chốt.
+
 Chọn Menu làm module chính vì có giao diện Public, Admin, truy vấn JOIN và form POST. Bàn và Shifts là module bổ sung. Người nộp cần điền họ tên, mã sinh viên và xác nhận phạm vi đóng góp thực tế trước khi nộp; danh sách dưới đây mô tả mã liên quan, không xác nhận quyền tác giả.
 
 | Module | File giao diện và xử lý | Hàm và bảng liên quan |
 | --- | --- | --- |
+| Danh mục Public | `pages/menu-categories/{action,index}.php` | `public_menu_category_summary()`; LEFT JOIN danh mục và món, đếm món đang phục vụ và giá thấp nhất |
 | Menu Public | `pages/menu/{action,index}.php`, `pages/menu-detail/{action,index}.php` | `public_menu_items()`, `public_menu_categories()`, `get_menu_item()` trong `functions.php`; `menu_items`, `categories` |
 | Menu Admin | `admin/pages/menu/{action,index}.php`, `assets/js/menu.js`, `assets/css/menu.css` | `admin_menu_items()` trong `functions.php`; `menu_create()`, `menu_update()` trong `api/modules/menu.php` |
 | Bàn | `admin/pages/tablemanage/{action,index}.php`, `assets/js/table-manage.js` | `admin_tables()` trong `functions.php`, `api/modules/tables.php`; `dining_tables` |
@@ -36,12 +41,12 @@ Khi người dùng mở trang quản lý thực đơn, yêu cầu đi vào Route
 
 Chưa có ảnh minh chứng trong hồ sơ này. Chụp hai ảnh UI cũ từ bản gốc và hai ảnh PHP mới tương ứng (đề xuất Public Menu và Admin Menu). Không dùng ảnh mới thay cho ảnh trước.
 
-T01–T04 phải theo định nghĩa trong đề gốc. Nếu đề chưa quy định nội dung, có thể đề xuất các tình huống sau; chưa đánh dấu đạt khi chưa thực hiện:
+T01–T04 dưới đây bám đề gốc; chỉ đánh dấu đạt sau khi thực hiện và lưu minh chứng:
 
 | Mã đề xuất | Thao tác | Kết quả cần xác nhận |
 | --- | --- | --- |
-| T01 | Mở Public Menu và chọn danh mục | Chỉ hiển thị món thuộc danh mục đã chọn |
-| T02 | Đăng nhập quản lý, mở Admin Menu | Danh sách nhóm theo danh mục JOIN, có ảnh, giá và nút Sửa/Ẩn/Xóa; source HTML có dữ liệu ngay khi tắt JS |
+| T01 | Mở Danh mục và Menu, đối chiếu SQL | Số món, giá thấp nhất và danh sách món khớp MySQL |
+| T02 | Mở Admin Bàn, Shifts và Menu | Layout, sidebar, hai bảng dữ liệu và danh sách Menu hoạt động |
 | T03 | Thêm món với tên riêng và giá hợp lệ | Redirect, báo thành công; món xuất hiện trong Admin, Public và MySQL |
 | T04 | Gửi form với tên trống hoặc giá không hợp lệ | Báo lỗi và không thêm món; kiểm tra phía PHP bằng cách tắt JS |
 

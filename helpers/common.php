@@ -15,6 +15,12 @@ function url($page)
     return 'index.php?page=' . rawurlencode($page);
 }
 
+// URL dùng trong khu Admin, nơi base URL là admin/.
+function admin_url($page)
+{
+    return 'index.php?page=' . rawurlencode($page);
+}
+
 // Chuyển trang rồi dừng (dùng trong action.php, trước khi in header)
 function redirect($location)
 {
