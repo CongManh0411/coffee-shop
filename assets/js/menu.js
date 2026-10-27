@@ -98,18 +98,21 @@ function attachMenuItemEvents() {
 // ============================================================
 // FORM "THÊM / SỬA MÓN"
 // ============================================================
-let pendingImg; // undefined = không đổi ảnh
+// Ảnh món: chọn file -> gửi nguyên file lên server, server lưu vào assets/images/menu/
 const imgInputEl = document.getElementById('itemImage');
 const imgPrevEl = document.getElementById('itemImagePreview');
-function showImgPreview(src) { if (!imgPrevEl) return; imgPrevEl.style.display = src ? 'block' : 'none'; imgPrevEl.src = src || ''; }
+function showImgPreview(src) {
+    if (!imgPrevEl) return;
+    // Ảnh lưu dạng đường dẫn assets/... (trang admin nằm trong thư mục admin/ nên thêm ../)
+    if (src && src.indexOf('assets/') === 0) src = '../' + src;
+    imgPrevEl.style.display = src ? 'block' : 'none';
+    imgPrevEl.src = src || '';
+}
 if (imgInputEl) imgInputEl.addEventListener('change', () => {
-    const f = imgInputEl.files[0]; if (!f) return;
-    const fr = new FileReader();
-    fr.onload = () => { const im = new Image(); im.onload = () => { // thu nhỏ còn 240px để không đầy localStorage
-        const k = Math.min(1, 240 / Math.max(im.width, im.height)), c = document.createElement('canvas');
-        c.width = im.width * k; c.height = im.height * k; c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
-        pendingImg = c.toDataURL('image/jpeg', 0.8); showImgPreview(pendingImg); }; im.src = fr.result; };
-    fr.readAsDataURL(f);
+    const f = imgInputEl.files[0];
+    if (!f) return;
+    if (f.size > 5 * 1024 * 1024) { alert('Ảnh quá lớn (tối đa 5MB).'); imgInputEl.value = ''; return; }
+    showImgPreview(URL.createObjectURL(f));
 });
 const addItemFormEl = document.querySelector('.add-item-form');
 const itemCategorySelectEl = document.getElementById('itemCategory');
@@ -117,7 +120,7 @@ const itemCategorySelectEl = document.getElementById('itemCategory');
 function resetAddFormToAddMode() {
     if (!addItemFormEl) return;
     addItemFormEl.reset();
-    pendingImg = undefined; showImgPreview('');
+    showImgPreview('');
     const editIdInput = document.getElementById('editItemId');
     if (editIdInput) editIdInput.value = '';
     const headerH2 = document.querySelector('#panel-add .menu-page-header h2');
@@ -221,14 +224,6 @@ if (addItemFormEl) {
 
         itemCategorySelectEl.value = result.cleanCategory;
         document.getElementById('newCategory').value = result.cleanNewCategory;
-        const imageDataEl = document.getElementById('itemImageData');
-        if (pendingImg) {
-            imageDataEl.name = 'img';
-            imageDataEl.value = pendingImg;
-        } else {
-            imageDataEl.removeAttribute('name');
-            imageDataEl.value = '';
-        }
         addItemFormEl.submit();
     });
 }

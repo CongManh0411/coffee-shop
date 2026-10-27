@@ -66,10 +66,9 @@
                     <h2>Thêm món mới</h2>
                 </div>
  
-                <form class="add-item-form" method="POST" action="<?= e(admin_url('menu')) ?>">
+                <form class="add-item-form" method="POST" enctype="multipart/form-data" action="<?= e(admin_url('menu')) ?>">
                     <input type="hidden" name="save_menu_item" value="1">
                     <input type="hidden" id="editItemId" name="id" value="">
-                    <input type="hidden" id="itemImageData" value="">
                     <div class="form-row">
                         <div class="form-group">
                             <label for="itemCategory">Danh mục</label>
@@ -103,7 +102,7 @@
  
                     <div class="form-group">
                         <label for="itemImage">Ảnh món (không bắt buộc)</label>
-                        <input type="file" id="itemImage" accept="image/*">
+                        <input type="file" id="itemImage" name="image_file" accept="image/jpeg,image/png,image/webp,image/gif">
                         <img id="itemImagePreview" alt="" style="display:none;width:90px;height:90px;object-fit:cover;border-radius:10px;margin-top:8px">
                     </div>
  
