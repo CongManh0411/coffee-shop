@@ -129,7 +129,6 @@
             tab.classList.add('is-active');
 
             activeMenuCategory = tab.getAttribute('data-filter') || 'all';
-            menuVisibleLimit = menuInitialCount;
             updateMenuCards();
         });
     });
