@@ -25,12 +25,17 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && isset($_POST['save_menu_
         'desc' => trim((string) ($_POST['desc'] ?? '')),
         'price' => $_POST['price'] ?? '',
     );
-    if (!empty($_POST['img'])) $menuData['img'] = (string) $_POST['img'];
+    // Ảnh món: chọn file từ máy -> lưu vào assets/images/menu/, database chỉ giữ đường dẫn
+    list($uploadedImage, $menuFormError) = menu_store_uploaded_image($_FILES['image_file'] ?? null);
+    if ($uploadedImage !== null) $menuData['img'] = $uploadedImage;
 
-    if (!empty($_POST['id'])) {
-        $menuFormError = menu_update((int) $_POST['id'], $menuData);
-    } else {
-        list($createdId, $menuFormError) = menu_create($menuData);
+    if ($menuFormError === '') {
+        if (!empty($_POST['id'])) {
+            $menuFormError = menu_update((int) $_POST['id'], $menuData);
+        } else {
+            list($createdId, $menuFormError) = menu_create($menuData);
+        }
+        if ($menuFormError !== '' && $uploadedImage !== null) menu_remove_image_file($uploadedImage);
     }
 
     if ($menuFormError === '') {
