@@ -5,7 +5,7 @@
 // Không tự chạy gì — chỉ cung cấp hàm cho waiter-pay.js, table-order.js, orders.js, shift.js, logs.js.
 //
 // DỮ LIỆU (localStorage):
-//   'coffee_cashshift_v1' : { current: Ca|null, history: [Ca...] }
+//   Ca tiền mặt: lấy từ API 'cashshift' -> { current: Ca|null, history: [Ca...] } (không còn dùng localStorage)
 //        Ca = { id, cashierId, cashierName, openedAt, openingCash,
 //               movements:[{id,time,kind:'in'|'out',category,amount,note,by}],
 //               closedAt, closedBy, countedCash, expectedCash, diff, reason, summary }
@@ -14,7 +14,7 @@
 //   'qlcp_invoices'       : hóa đơn (dùng chung với Lịch sử / Doanh thu) — thêm các trường:
 //        shiftId, createdById, createdBy, orderType, subtotal, discount, voucher, paymentDetail, ref
 //
-// Trạng thái ca tiền mặt, nhật ký giao diện và món tạm hết vẫn còn lưu trong trình duyệt.
+// Ca tiền mặt (mở ca, thu/chi, kết ca) lưu trong database (API 'cashshift'). Nhật ký giao diện và món tạm hết vẫn lưu trong trình duyệt.
 // ============================================================
 (function () {
     'use strict';
@@ -68,33 +68,41 @@
         shift_diff: 'Chênh lệch kết ca', soldout: 'Hết món', cancel_order: 'Hủy đơn'
     };
 
-    // ---------- CA LÀM (mở ca / kết ca) ----------
-    const shiftStore = () => { const s = read(K.SHIFT, null); return s && typeof s === 'object' ? { current: s.current || null, history: s.history || [] } : { current: null, history: [] }; };
-    const saveShiftStore = s => write(K.SHIFT, s);
-    const currentShift = () => shiftStore().current;
+    // ---------- CA LÀM (mở ca / kết ca) — lưu trong database qua API 'cashshift' ----------
+    // shiftCache là bản sao ca đọc từ server (cashshift). Thống kê (doanh thu, tiền két) do server tính.
+    let shiftCache = { current: null, history: [] };
+    const shiftStore = () => shiftCache;
+    const currentShift = () => shiftCache.current;
 
-    function openShift(openingCash) {
-        const st = shiftStore();
-        if (st.current) return { ok: false, error: `Ca của ${st.current.cashierName} đang mở (từ ${fmtTime(st.current.openedAt)}). Hãy kết ca đó trước.` };
+    async function syncShift() {
+        if (!window.Api) return shiftCache;
+        try {
+            const d = await Api.get('cashshift');
+            shiftCache = { current: d.current || null, history: d.history || [] };
+            document.dispatchEvent(new CustomEvent('cashier:shift-updated'));
+        } catch (e) { /* mất mạng / chưa đăng nhập: giữ bản đang có */ }
+        return shiftCache;
+    }
+    const shiftReady = syncShift();   // các trang chờ Cashier.shiftReady trước khi vẽ số liệu ca
+
+    async function openShift(openingCash) {
         openingCash = Math.round(Number(openingCash));
         if (!(openingCash >= 0)) return { ok: false, error: 'Tiền đầu ca không hợp lệ.' };
-        const a = me();
-        st.current = { id: uid('CA'), cashierId: a.id, cashierName: a.name, openedAt: new Date().toISOString(), openingCash, movements: [] };
-        saveShiftStore(st);
+        try { await Api.post('cashshift/open', { openingCash }); }
+        catch (err) { await syncShift(); return { ok: false, error: err.message }; }
+        await syncShift();
         log('shift_open', `Mở ca với tiền đầu ca ${money(openingCash)}`, openingCash);
-        return { ok: true, shift: st.current };
+        return { ok: true, shift: currentShift() };
     }
 
-    function addMovement(kind, category, amount, note) {
-        const st = shiftStore();
-        if (!st.current) return { ok: false, error: 'Chưa mở ca.' };
+    async function addMovement(kind, category, amount, note) {
+        if (!currentShift()) { await syncShift(); if (!currentShift()) return { ok: false, error: 'Chưa mở ca.' }; }
         amount = Math.round(Number(amount));
         if (!(amount > 0)) return { ok: false, error: 'Số tiền phải lớn hơn 0.' };
         if (!note || !String(note).trim()) return { ok: false, error: 'Vui lòng ghi chú nội dung thu/chi.' };
-        if (kind === 'out' && amount > stats(st.current).expectedCash) return { ok: false, error: 'Số tiền chi lớn hơn tiền mặt đang có trong két.' };
-        const a = me();
-        st.current.movements.push({ id: uid('M'), time: new Date().toISOString(), kind, category, amount, note: String(note).trim(), by: a.name });
-        saveShiftStore(st);
+        try { await Api.post('cashshift/movement', { kind, category, amount, note: String(note).trim() }); }
+        catch (err) { await syncShift(); return { ok: false, error: err.message }; }
+        await syncShift();
         log(kind === 'in' ? 'cash_in' : 'cash_out', `${kind === 'in' ? 'Thu' : 'Chi'} quỹ — ${category}: ${String(note).trim()}`, amount, amount >= BIG_ADJUST_VND);
         return { ok: true };
     }
@@ -102,50 +110,25 @@
     // Phương thức của 1 hóa đơn -> 'cash' | 'qr' | 'card' | 'ewallet'
     const methodKey = i => i.paymentMethod === 'cash' ? 'cash' : (i.paymentDetail || (i.paymentMethod === 'card' ? 'card' : 'qr'));
 
-    // Thống kê 1 ca (mine = true: chỉ hóa đơn do người đang đăng nhập tạo)
+    // Thống kê 1 ca do server tính sẵn. mine = true: chỉ hóa đơn do người đang đăng nhập thu (ca đang mở).
     function stats(shift, mine) {
-        const a = me();
-        let inv = read(K.INV, []).filter(i => i.shiftId === shift.id);
-        if (mine) inv = inv.filter(i => String(i.createdById) === String(a.id));
-        const active = inv.filter(i => i.status === 'active');
-        const cancelled = inv.filter(i => i.status === 'cancelled');
-        const by = { cash: 0, qr: 0, card: 0, ewallet: 0 };
-        const byType = { dinein: 0, takeaway: 0, delivery: 0 };
-        let revenue = 0, discount = 0;
-        active.forEach(i => {
-            revenue += i.total; discount += Number(i.discount) || 0;
-            by[methodKey(i)] = (by[methodKey(i)] || 0) + i.total;
-            byType[i.orderType || 'dinein'] = (byType[i.orderType || 'dinein'] || 0) + 1;
-        });
-        // tiền mặt thực thu của cả ca (không phụ thuộc "mine") để tính két
-        const allActive = read(K.INV, []).filter(i => i.shiftId === shift.id && i.status === 'active');
-        const cashSales = allActive.filter(i => methodKey(i) === 'cash').reduce((s, i) => s + i.total, 0);
-        const mv = shift.movements || [];
-        const cashIn = mv.filter(m => m.kind === 'in').reduce((s, m) => s + m.amount, 0);
-        const cashOut = mv.filter(m => m.kind === 'out').reduce((s, m) => s + m.amount, 0);
-        return {
-            orders: active.length, revenue, discount, by, byType,
-            cancelledCount: cancelled.length, cancelledTotal: cancelled.reduce((s, i) => s + i.total, 0),
-            cashSales, cashIn, cashOut,
-            expectedCash: shift.openingCash + cashSales + cashIn - cashOut
-        };
+        const empty = { orders: 0, revenue: 0, discount: 0, by: { cash: 0, qr: 0, card: 0, ewallet: 0 }, byType: { dinein: 0, takeaway: 0, delivery: 0 },
+            cancelledCount: 0, cancelledTotal: 0, cashSales: 0, cashIn: 0, cashOut: 0, expectedCash: Number(shift && shift.openingCash) || 0 };
+        if (!shift) return empty;
+        return (mine && shift.mine) ? shift.mine : (shift.summary || empty);
     }
 
-    function closeShift(countedCash, reason) {
-        const st = shiftStore();
-        if (!st.current) return { ok: false, error: 'Chưa mở ca.' };
+    async function closeShift(countedCash, reason) {
+        if (!currentShift()) { await syncShift(); if (!currentShift()) return { ok: false, error: 'Chưa mở ca.' }; }
         countedCash = Math.round(Number(countedCash));
         if (!(countedCash >= 0)) return { ok: false, error: 'Tiền đếm thực tế không hợp lệ.' };
-        const s = st.current, sm = stats(s), diff = countedCash - sm.expectedCash;
-        if (diff !== 0 && !(reason && String(reason).trim())) return { ok: false, error: 'Tiền đếm lệch so với hệ thống — bắt buộc ghi lý do.' };
-        const a = me();
-        const done = Object.assign({}, s, {
-            closedAt: new Date().toISOString(), closedBy: a.name, closedById: a.id,
-            countedCash, expectedCash: sm.expectedCash, diff, reason: diff !== 0 ? String(reason).trim() : '', summary: sm
-        });
-        st.history.push(done); st.current = null; saveShiftStore(st);
+        let done;
+        try { done = await Api.post('cashshift/close', { countedCash, reason: reason ? String(reason).trim() : '' }); }
+        catch (err) { await syncShift(); return { ok: false, error: err.message }; }
+        await syncShift();
+        const sm = done.summary, diff = done.diff;
         log('shift_close', `Kết ca ${fmtTime(done.openedAt)}–${fmtTime(done.closedAt)}: doanh thu ${money(sm.revenue)}, ${sm.orders} đơn`, sm.revenue);
-        if (diff !== 0) log('shift_diff', `Tiền đếm ${money(countedCash)} so với hệ thống ${money(sm.expectedCash)} (${diff > 0 ? 'thừa' : 'thiếu'} ${money(Math.abs(diff))}). Lý do: ${done.reason}`, Math.abs(diff), true);
+        if (diff !== 0) log('shift_diff', `Tiền đếm ${money(countedCash)} so với hệ thống ${money(done.expectedCash)} (${diff > 0 ? 'thừa' : 'thiếu'} ${money(Math.abs(diff))}). Lý do: ${done.reason}`, Math.abs(diff), true);
         return { ok: true, shift: done };
     }
 
@@ -252,7 +235,7 @@
     window.Cashier = {
         K, VOUCHERS, ORDER_TYPES, METHODS, CATEGORIES, LOG_TYPES,
         esc, money, pad, fmtTime, fmtDT, read, write, uid, me, isCashier, session,
-        log, currentShift, shiftStore, openShift, addMovement, closeShift, stats, methodKey,
+        log, currentShift, shiftStore, shiftReady, syncShift, openShift, addMovement, closeShift, stats, methodKey,
         applyVoucher, refreshPromotions, manualDiscount, isLargeDiscount,
         soldOutIds, setSoldOut,
         receiptText, receiptHtml, printReceipt, printHtml, shiftReportHtml

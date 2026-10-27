@@ -30,18 +30,12 @@
     }
     async function reload(silent) {
         try { [staff, shifts] = await Promise.all([fetchStaff(), fetchShifts()]); }
-        catch (e) { if (silent !== true) alert('Không tải được lịch ca: ' + e.message); return; }
+        catch (e) { if (silent !== true) alert('Không tải được lịch ca: ' + e.message); }
         render();
     }
     const overlap = (a, b) => toMin(a.start) < toMin(b.end) && toMin(b.start) < toMin(a.end);
 
-    const initialRows = JSON.parse($('shDbData')?.textContent || '[]');
-    const roleLabels = { manager: 'Quản lý', waiter: 'Phục vụ', cashier: 'Thu ngân', kitchen: 'Bếp' };
-    const initialStaff = new Map(initialRows.map(x => [String(x.staff_id), { fullName: x.full_name, role: roleLabels[x.role] || x.role }]));
-    let weekStart = mondayOf(new Date()), staff = [], shifts = initialRows.map(x => ({
-        id: Number(x.shift_id), staffId: Number(x.staff_id), date: x.shift_date,
-        start: x.start_time.slice(0, 5), end: x.end_time.slice(0, 5),
-    })), ed = null;
+    let weekStart = mondayOf(new Date()), staff = [], shifts = [], ed = null;
     let selectedDayIndex = (new Date().getDay() + 6) % 7;
     const weekKey = () => dateKey(weekStart);
 
@@ -49,7 +43,6 @@
         const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
         const today = dateKey(new Date());
         renderMobile(days, today);
-        renderShiftList();
         $('shMonth').textContent = `Tháng ${addDays(weekStart, 3).getMonth() + 1}/${addDays(weekStart, 3).getFullYear()}`;
         $('shRange').textContent = `${fmtDate(weekStart)} – ${fmtDate(addDays(weekStart, 6))}`;
 
@@ -69,20 +62,6 @@
             return ids.size ? `<td>${ids.size} người</td>` : '<td class="warn">Chưa có ai</td>';
         }).join('')}<td></td></tr></tfoot>`;
         $('shTable').innerHTML = head + `<tbody>${rows || '<tr><td colspan="9" class="sch-none">Chưa có nhân viên. Thêm ở trang Nhân viên.</td></tr>'}</tbody>` + (staff.length ? foot : '');
-    }
-
-    function renderShiftList() {
-        if (!$('shDbBody')) return;
-        const first = weekKey(), last = dateKey(addDays(weekStart, 6));
-        const rows = shifts.filter(x => x.date >= first && x.date <= last)
-            .sort((a, b) => a.date.localeCompare(b.date) || a.start.localeCompare(b.start) || Number(a.id) - Number(b.id));
-        const people = new Map([...initialStaff, ...staff.map(x => [String(x.id), x])]);
-        $('shDbSummary').textContent = `Tuần ${fmtDate(weekStart)} – ${fmtDate(addDays(weekStart, 6))} · ${rows.length} ca`;
-        $('shDbBody').innerHTML = rows.map(x => {
-            const person = people.get(String(x.staffId));
-            const date = x.date.split('-').reverse().join('/');
-            return `<tr><td>${esc(x.id)}</td><td>${esc(date)}</td><td>${esc(x.start)}</td><td>${esc(x.end)}</td><td>${esc(person?.fullName || 'Nhân viên #' + x.staffId)}</td><td>${esc(person?.role || '—')}</td></tr>`;
-        }).join('') || '<tr><td colspan="6">Chưa có ca nào trong tuần này.</td></tr>';
     }
 
     function renderMobile(days, today) {

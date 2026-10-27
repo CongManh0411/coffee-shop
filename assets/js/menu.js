@@ -39,6 +39,18 @@ function mirrorMenu(data) {
 try { localStorage.removeItem('coffee_menu_recipes_v1'); } catch (e) {}
 
 const MenuAPI = {
+    async getMenu() {
+        const data = await Api.get('menu');
+        mirrorMenu(data);
+        return data;
+    },
+    // payload = { category, newCategory, name, price, img }
+    async addItem(payload) {
+        return Api.post('menu', payload);
+    },
+    async updateItem(id, payload) {
+        return Api.put('menu&id=' + id, payload);
+    },
     async deleteItem(id) {
         if ((window.InventoryAPI && InventoryAPI.reserved()[String(id)]) > 0) {
             throw new Error('Không thể xóa món đang có trong đơn hàng.');
@@ -57,10 +69,133 @@ const MenuAPI = {
 };
 
 // ============================================================
-// DỮ LIỆU PHP CHO CÁC THAO TÁC (tab Sửa món)
+// RENDER DANH SÁCH MÓN (tab Sửa món)
 // ============================================================
-const menuDataEl = document.getElementById('adminMenuData');
-let currentMenuData = menuDataEl ? JSON.parse(menuDataEl.textContent) : [];
+let currentMenuData = [];
+
+function escHtml(v) {
+    return String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+function formatPrice(price) {
+    return price.toLocaleString('vi-VN') + 'đ';
+}
+
+function createActionButton(className, action, id, text) {
+    const btn = document.createElement('button');
+    btn.className = className;
+    btn.dataset.action = action;
+    btn.dataset.id = id;
+    btn.textContent = text;
+    return btn;
+}
+
+function createMenuItemEl(item, categoryName) {
+    const itemEl = document.createElement('div');
+    itemEl.className = 'menu-item';
+    itemEl.dataset.itemId = item.id;
+
+    const thumb = document.createElement('img');
+    thumb.className = 'menu-item-thumb';
+    thumb.alt = item.name;
+    thumb.src = itemImage(item, categoryName);
+    itemEl.appendChild(thumb);
+
+    const leftEl = document.createElement('div');
+
+    const nameEl = document.createElement('div');
+    nameEl.className = 'menu-item-name';
+    nameEl.textContent = item.name;
+    leftEl.appendChild(nameEl);
+
+    if (item.desc) {
+        const descEl = document.createElement('div');
+        descEl.className = 'menu-item-desc';
+        descEl.textContent = item.desc;
+        leftEl.appendChild(descEl);
+    }
+
+    const rightEl = document.createElement('div');
+    rightEl.className = 'menu-item-right';
+
+    const priceEl = document.createElement('div');
+    priceEl.className = 'menu-item-price';
+    priceEl.textContent = formatPrice(item.price);
+    rightEl.appendChild(priceEl);
+
+    const actionsEl = document.createElement('div');
+    actionsEl.className = 'menu-item-actions';
+    actionsEl.appendChild(createActionButton('btn-outline', 'edit', item.id, 'Sửa'));
+    actionsEl.appendChild(createActionButton('btn-outline', 'hide', item.id, item.hidden ? 'Hiện' : 'Ẩn'));
+    actionsEl.appendChild(createActionButton('btn-danger', 'delete', item.id, 'Xóa'));
+    rightEl.appendChild(actionsEl);
+
+    itemEl.appendChild(leftEl);
+    itemEl.appendChild(rightEl);
+
+    if (item.hidden) itemEl.style.opacity = '0.5';
+
+    return itemEl;
+}
+
+function createCategoryEl(category) {
+    const categoryEl = document.createElement('div');
+    categoryEl.className = 'menu-category';
+
+    const titleEl = document.createElement('h3');
+    titleEl.textContent = category.category;
+    categoryEl.appendChild(titleEl);
+
+    category.items.forEach(item => {
+        categoryEl.appendChild(createMenuItemEl(item, category.category));
+    });
+
+    return categoryEl;
+}
+
+function renderMenu(data) {
+    const container = document.getElementById('menuCategoryList');
+    if (!container) return;
+    container.innerHTML = '';
+
+    if (!data || data.length === 0) {
+        const emptyEl = document.createElement('div');
+        emptyEl.className = 'menu-empty-state';
+        emptyEl.textContent = 'Chưa có món nào. Vào tab "Thêm món" để bắt đầu.';
+        container.appendChild(emptyEl);
+        return;
+    }
+
+    data.forEach(category => {
+        container.appendChild(createCategoryEl(category));
+    });
+
+    attachMenuItemEvents();
+}
+
+async function reloadMenu() {
+    const container = document.getElementById('menuCategoryList');
+    if (!container) return;
+
+    container.innerHTML = '';
+    const loadingEl = document.createElement('div');
+    loadingEl.className = 'menu-loading';
+    loadingEl.textContent = 'Đang tải menu...';
+    container.appendChild(loadingEl);
+
+    try {
+        currentMenuData = await MenuAPI.getMenu();
+        renderMenu(currentMenuData);
+        populateCategorySelect();
+    } catch (err) {
+        console.error('Không tải được menu:', err);
+        container.innerHTML = '';
+        const errorEl = document.createElement('div');
+        errorEl.className = 'menu-error-state';
+        errorEl.textContent = 'Không tải được menu. Vui lòng tải lại trang.';
+        container.appendChild(errorEl);
+    }
+}
 
 function attachMenuItemEvents() {
     document.querySelectorAll('#menuCategoryList button[data-action]').forEach(btn => {
@@ -85,7 +220,7 @@ function attachMenuItemEvents() {
                 } else if (action === 'hide') {
                     await MenuAPI.toggleHideItem(id);
                 }
-                window.location.reload();
+                await reloadMenu();
             } catch (err) {
                 console.error('Không thực hiện được thao tác:', err);
                 alert(err.message || 'Có lỗi xảy ra. Vui lòng thử lại.');
@@ -113,6 +248,14 @@ if (imgInputEl) imgInputEl.addEventListener('change', () => {
 });
 const addItemFormEl = document.querySelector('.add-item-form');
 const itemCategorySelectEl = document.getElementById('itemCategory');
+
+function populateCategorySelect() {
+    if (!itemCategorySelectEl) return;
+    const categories = currentMenuData.map(c => c.category);
+    itemCategorySelectEl.innerHTML =
+        '<option value="">-- Chọn danh mục --</option>' +
+        categories.map(c => `<option value="${escHtml(c)}">${escHtml(c)}</option>`).join('');
+}
 
 function resetAddFormToAddMode() {
     if (!addItemFormEl) return;
@@ -244,28 +387,29 @@ if (btnCancelEditEl) {
 // ============================================================
 // TÌM KIẾM MÓN (tab "Sửa món")
 // ============================================================
+function filterMenuData(data, keyword) {
+    if (!keyword) return data;
+    const lowerKeyword = keyword.trim().toLowerCase();
+    if (!lowerKeyword) return data;
+    return data
+        .map(cat => ({
+            category: cat.category,
+            items: cat.items.filter(it => (it.name + ' ' + (it.desc || '') + ' ' + cat.category).toLowerCase().includes(lowerKeyword)),
+        }))
+        .filter(cat => cat.items.length > 0);
+}
+
 function initMenuSearch() {
     const searchInput = document.getElementById('menuSearchInput');
     if (!searchInput) return;
+
     searchInput.addEventListener('input', () => {
-        const keyword = searchInput.value.trim().toLocaleLowerCase('vi-VN');
-        let visibleCount = 0;
-        document.querySelectorAll('#menuCategoryList .menu-category').forEach(group => {
-            let groupCount = 0;
-            group.querySelectorAll('.menu-item').forEach(row => {
-                const text = row.querySelector('.menu-item-name').textContent + ' ' +
-                    (row.querySelector('.menu-item-desc')?.textContent || '') + ' ' + group.querySelector('h3').textContent;
-                row.hidden = !text.toLocaleLowerCase('vi-VN').includes(keyword);
-                if (!row.hidden) groupCount++;
-            });
-            group.hidden = groupCount === 0;
-            visibleCount += groupCount;
-        });
-        document.getElementById('menuEmptyState').hidden = visibleCount > 0;
+        renderMenu(filterMenuData(currentMenuData, searchInput.value));
     });
 }
 
-// Giữ nguyên HTML PHP ban đầu, không gọi API để dựng lại danh sách.
-mirrorMenu(currentMenuData);
-attachMenuItemEvents();
+// ============================================================
+// KHỞI ĐỘNG TRANG
+// ============================================================
 initMenuSearch();
+reloadMenu();

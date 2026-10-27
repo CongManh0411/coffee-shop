@@ -449,6 +449,12 @@ function orders_pay($data, $user)
             if ($discount !== $expectedDiscount) return array(null, 'Mức giảm giá của mã không hợp lệ. Hãy áp dụng lại mã.');
         }
         $total = $subtotal - $discount;
+        // Gắn hóa đơn vào ca tiền mặt đang mở; thu ngân bắt buộc phải mở ca mới được thu tiền.
+        $openShift = db()->fetchOne('SELECT cash_shift_id FROM cash_shifts WHERE closed_at IS NULL ORDER BY cash_shift_id DESC LIMIT 1');
+        if (!$openShift && $user['roleKey'] === 'cashier') {
+            return array(null, 'Chưa mở ca — vào "Ca & Quỹ" để mở ca trước khi thu tiền.');
+        }
+        $cashShiftId = $openShift ? (int) $openShift['cash_shift_id'] : null;
         $items = array_map(function ($item) {
             return array(
                 'id' => $item['menu_item_id'] === null ? null : (int) $item['menu_item_id'],
@@ -464,9 +470,9 @@ function orders_pay($data, $user)
         ));
         db()->execute(
             "UPDATE orders SET status = 'paid', subtotal = ?, discount = ?, total = ?, voucher = ?, promotion_id = ?,
-             payment_method = ?, payment_ref = ?, paid_by = ?, paid_at = NOW() WHERE order_id = ?",
+             payment_method = ?, payment_ref = ?, paid_by = ?, cash_shift_id = ?, paid_at = NOW() WHERE order_id = ?",
             array($subtotal, $discount, $total, $voucherCode !== '' ? $voucherCode : null, $promotionId,
-                $method, trim((string) ($data['paymentRef'] ?? '')) ?: null, (int) $user['staffId'], $orderId)
+                $method, trim((string) ($data['paymentRef'] ?? '')) ?: null, (int) $user['staffId'], $cashShiftId, $orderId)
         );
         if ($promotionId !== null) db()->execute('UPDATE promotions SET used_count = used_count + 1 WHERE promotion_id = ?', array($promotionId));
         $nextOrder = null;

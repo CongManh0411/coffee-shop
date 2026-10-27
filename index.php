@@ -3,8 +3,8 @@ require_once __DIR__ . '/admin/includes/bootstrap.php';
 
 $routes = array(
     'home' => 'home/index.php',
+    'public-menu' => 'public-menu/index.php',
     'menu' => 'menu/index.php',
-    'menu-categories' => 'menu-categories/index.php',
     'menu-detail' => 'menu-detail/index.php',
     'tables' => 'tables/index.php',
     'schedule' => 'schedule/index.php',
@@ -53,7 +53,7 @@ if (!is_file($file)) {
     $file = __DIR__ . '/pages/404/index.php';
 }
 
-if (!in_array($page, array('404', 'home', 'menu', 'menu-detail', 'menu-categories'), true)) {
+if (!in_array($page, array('404', 'home', 'public-menu', 'menu', 'menu-detail'), true)) {
     if (!$user) {
         redirect('admin/index.php?page=login');
     }
