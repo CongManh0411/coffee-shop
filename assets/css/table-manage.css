@@ -130,3 +130,12 @@
         width: 100%;
     }
 }
+
+/* ---- BT03: form thêm/sửa bàn (POST) ---- */
+.tm-form { max-width: 520px; margin: 0 0 18px; padding: 16px 18px; background: #fff; border: 1px solid #e6d8c3; border-radius: 12px; }
+.tm-form-title { margin: 0 0 10px; font-size: 16px; }
+.tm-form-actions { display: flex; gap: 10px; align-items: center; margin-top: 10px; }
+.tm-cancel { text-decoration: none; display: inline-block; }
+.tm-success { margin: 0 0 12px; padding: 10px 14px; background: #e4f4ea; border: 1px solid #3f8f5a; color: #2c7046; border-radius: 8px; font-weight: 600; }
+.tm-inline-form { display: inline; margin: 0; }
+.tm-row-actions a.btn-outline { text-decoration: none; display: inline-block; }
