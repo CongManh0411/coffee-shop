@@ -12,9 +12,9 @@ $routes = array(
     'staff' => 'staff/index.php',
     'shifts' => 'shifts/index.php',
     'warehouse' => 'warehouse/index.php',
+    'settings' => 'settings/index.php',
     'ops' => '../../pages/ops/index.php',
     'logs' => 'logs/index.php',
-    'settings' => 'settings/index.php',
 );
 
 $rolePages = array(
@@ -56,7 +56,7 @@ if ($user && $user['roleKey'] !== 'manager' && $page !== '404' && $page !== 'log
 }
 if ($page !== '404' && $page !== 'login') {
     if (!$user) {
-        redirect(admin_url('login'));
+        redirect(url('login'));
     }
     $allowed = $rolePages[$user['roleKey']] ?? array();
     if (!in_array($page, $allowed, true)) {
@@ -64,11 +64,11 @@ if ($page !== '404' && $page !== 'login') {
             http_response_code(403);
             exit('403 - Tai khoan khong co quyen truy cap.');
         }
-        redirect(admin_url($allowed[0]));
+        redirect(url($allowed[0]));
     }
 } elseif ($page === 'login' && $user && !empty($rolePages[$user['roleKey']])) {
     $home = $rolePages[$user['roleKey']][0];
-    redirect($user['roleKey'] === 'manager' ? admin_url($home) : '../index.php?page=' . rawurlencode($home));
+    redirect($user['roleKey'] === 'manager' ? url($home) : '../index.php?page=' . rawurlencode($home));
 }
 
 $action = dirname($file) . '/action.php';

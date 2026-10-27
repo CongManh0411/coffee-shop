@@ -271,6 +271,7 @@
         if (!bill.items.length) return;
         const cv = calc(bill);
         const given = Number(state.given) || 0;
+        if (C) await C.syncShift();
         if (isCashier() && !C.currentShift()) return alert('Chưa mở ca. Vào "Ca & Quỹ" để mở ca trước.');
         if (state.method === 'cash' && given < cv.total) return;
         if (bill.notReady && !window.confirm(`Còn ${bill.notReady} món chưa xong. Vẫn thanh toán?`)) return;

@@ -2,6 +2,15 @@
 require_once __DIR__ . '/../config/init.php';
 require_once __DIR__ . '/../helpers/response.php';
 require_once __DIR__ . '/../helpers/auth.php';
+require_once __DIR__ . '/modules/auth.php';
+require_once __DIR__ . '/modules/staff.php';
+require_once __DIR__ . '/modules/menu.php';
+require_once __DIR__ . '/modules/tables.php';
+require_once __DIR__ . '/modules/shifts.php';
+require_once __DIR__ . '/modules/orders.php';
+require_once __DIR__ . '/modules/cashshift.php';
+require_once __DIR__ . '/modules/reservations.php';
+require_once __DIR__ . '/modules/ops.php';
 require_once __DIR__ . '/../functions.php';
 header('Cache-Control: no-store');
 
@@ -27,10 +36,8 @@ try {
                 json_error('Tạm khóa đăng nhập trong 15 phút do nhập sai nhiều lần.', 429);
             }
             $user = auth_login($username, $password);
-            if (!$user) {
-                auth_attempts($username, true);
-                json_error('Sai tên đăng nhập hoặc mật khẩu.', 401);
-            }
+            if (!$user) auth_attempts($username, true);
+            if (!$user) json_error('Sai tên đăng nhập hoặc mật khẩu.', 401);
             auth_attempts($username, false, true);
             json_ok(array('user' => $user, 'csrfToken' => csrf_token()));
             break;
@@ -65,7 +72,7 @@ try {
             $reservationBucket = 'public-reservation';
             if (auth_attempts($reservationBucket, false, false, 60) >= 20) {
                 header('Retry-After: 60');
-                json_error('Đã gửi quá nhiều yêu cầu đặt bàn. Vui lòng thử lại sau.', 429);
+                json_error('Quá nhiều yêu cầu đặt bàn. Vui lòng thử lại sau.', 429);
             }
             auth_attempts($reservationBucket, true, false, 60);
             list($reservationId, $err) = reservation_create_public(json_input());
@@ -323,6 +330,26 @@ try {
             list($invoice, $err) = orders_pay(json_input(), $me);
             if ($err) json_error($err);
             json_ok($invoice);
+            break;
+        case 'cashshift':
+            $me = require_role(array('manager', 'cashier', 'waiter'));
+            if ($method !== 'GET') json_error('Sai phương thức.', 405);
+            json_ok(cashshift_snapshot($me));
+            break;
+        case 'cashshift/open':
+            $me = require_role(array('cashier'));
+            if ($method !== 'POST') json_error('Sai phương thức.', 405);
+            json_ok(cashshift_open(json_input(), $me));
+            break;
+        case 'cashshift/movement':
+            $me = require_role(array('cashier'));
+            if ($method !== 'POST') json_error('Sai phương thức.', 405);
+            json_ok(cashshift_movement(json_input(), $me));
+            break;
+        case 'cashshift/close':
+            $me = require_role(array('cashier'));
+            if ($method !== 'POST') json_error('Sai phương thức.', 405);
+            json_ok(cashshift_close(json_input(), $me));
             break;
         default:
             json_error('Không tìm thấy API.', 404);
