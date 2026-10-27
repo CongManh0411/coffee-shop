@@ -1,5 +1,7 @@
 # Coffee Shop
 
+Hồ sơ module Menu, Bàn và Shifts: [docs/HO_SO_CA_NHAN.md](docs/HO_SO_CA_NHAN.md). Bản SQL bàn giao: [03_Database](03_Database/README.md). Ảnh minh chứng và thông tin tác giả cần bổ sung theo thực tế trước khi nộp.
+
 Ứng dụng quản lý quán cà phê bằng PHP, MySQL và JavaScript, chạy cục bộ với XAMPP.
 
 ## Cài đặt cục bộ
@@ -32,6 +34,8 @@ Script chỉ chạy bằng CLI. Nó tạo tài khoản quản lý mới trước
 Cấu hình localhost mặc định dùng user `root` và mật khẩu trống để phù hợp XAMPP. Khi triển khai, đặt `APP_ENV=production` cùng `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`; ứng dụng sẽ từ chối chạy production với user `root` hoặc mật khẩu database trống.
 
 ## Các trang chính
+
+- Danh mục thực đơn (Public, tổng hợp số món và giá thấp nhất): `index.php?page=menu-categories`.
 
 - Trang giới thiệu khách: `/` hoặc `index.php?page=home`.
 - Thực đơn đầy đủ, lọc theo danh mục: `index.php?page=menu`.

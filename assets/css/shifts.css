@@ -1,4 +1,10 @@
 /* shifts.css — trang Xếp lịch ca của Quản lý (dùng chung bảng .sch-* của schedule.css) */
+.shf-db-section { margin: 28px 0 8px; }
+.shf-db-section summary { cursor: pointer; font-size: 18px; font-weight: 600; color: #3b2313; }
+.shf-db-scroll { overflow-x: auto; }
+.shf-db-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
+.shf-db-table th, .shf-db-table td { padding: 10px 12px; border-bottom: 1px solid #ece2d3; white-space: nowrap; }
+.shf-db-table th { background: #f8f3eb; color: #3b2313; }
 .shf-shift { display: block; width: 100%; text-align: left; font-family: inherit; color: inherit; border: 0; border-left: 4px solid #c99a5b; cursor: pointer; }
 .shf-shift:hover { filter: brightness(0.96); }
 .shf-add { width: 100%; padding: 5px; font-family: inherit; font-size: 12px; color: #8a6b4f; background: transparent; border: 1px dashed #d9c7a8; border-radius: 8px; cursor: pointer; }
@@ -149,7 +155,3 @@
     #schedule-app .shf-day-tabs { gap: 2px; }
     #schedule-app .shf-day-tab { font-size: 9px; }
 }
-
-/* ---- BT03: bảng danh sách ca sắp tới (PHP + MySQL) ---- */
-.shf-upcoming { margin-top: 28px; }
-.shf-upcoming h3 { margin: 0 0 6px; font-size: 17px; }
