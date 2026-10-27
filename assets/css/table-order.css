@@ -347,3 +347,9 @@
 .table-ops { display: flex; gap: 8px; margin: 8px 0; }
 .table-ops button { flex: 1; padding: 7px 4px; border: 1.5px solid #6b4f3a; background: #f7f1ea; color: #4a3626; border-radius: 10px; font: inherit; font-size: 13px; cursor: pointer; }
 .table-ops button:hover { background: #6b4f3a; color: #fff; }
+
+/* ---- BT03: dòng tổng hợp trên sơ đồ bàn (dữ liệu từ MySQL) ---- */
+.tables-summary { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; margin: 0 0 14px; font-size: 14px; }
+.tables-summary b { font-size: 16px; }
+.tables-summary-link { margin-left: auto; color: #8a5a2b; font-weight: 600; text-decoration: none; }
+.tables-summary-link:hover { text-decoration: underline; }
