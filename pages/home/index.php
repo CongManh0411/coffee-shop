@@ -273,7 +273,7 @@ function get_item_badge($index, $catFilter, $price) {
         </div>
 
         <div class="menu-section-cta">
-            <a class="button button-outline" href="index.php?page=menu">Xem toàn bộ thực đơn</a>
+            <a class="button button-outline" href="index.php?page=public-menu">Xem toàn bộ thực đơn</a>
             <p>Giá niêm yết rõ ràng, đồng bộ trực tiếp từ quầy thu ngân và quản trị quán.</p>
         </div>
     </section>
