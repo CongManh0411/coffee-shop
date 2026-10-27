@@ -31,7 +31,6 @@
 
         <form method="POST" action="index.php?page=settings" enctype="multipart/form-data">
             <input type="hidden" name="save_settings" value="1">
-            <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
 
             <div class="settings-card">
                 <h3 class="settings-card-title"><span aria-hidden="true">🖼️</span> Quản trị Logo</h3>

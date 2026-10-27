@@ -6,7 +6,7 @@ if (session_status() === PHP_SESSION_NONE) {
     ini_set('session.cookie_samesite', 'Lax');
     ini_set('session.gc_maxlifetime', '14400');
 
-    // Keep session files outside the public document root.
+    // Store sessions outside the public document root.
     $sessionDirectory = rtrim(sys_get_temp_dir(), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'coffee-shop-sessions';
     if (!is_dir($sessionDirectory)) @mkdir($sessionDirectory, 0700, true);
     if (is_dir($sessionDirectory) && is_writable($sessionDirectory)) session_save_path($sessionDirectory);

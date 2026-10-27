@@ -12,26 +12,7 @@
  
             <div class="main-content">
                 <h2 class="tables-title">Sơ đồ bàn</h2>
-                <div class="tables-summary">
-                    <span>Tổng: <b><?= (int) $tablesTotal ?></b> bàn</span>
-                    <span>Đang phục vụ: <b><?= (int) $tablesOccupied ?></b></span>
-                    <span>Bàn trống: <b><?= (int) $tablesEmpty ?></b></span>
-                    <a class="tables-summary-link" href="<?= e(url('schedule')) ?>"><i class="fa-regular fa-calendar"></i> Xem lịch ca làm</a>
-                </div>
-                <div id="tablesGrid" class="tables-grid">
-                    <?php foreach ($tablesStatus as $tableRow): ?>
-                        <div class="table-card <?= e($tableRow['status']) ?>">
-                            <div class="table-card-name"><?= e($tableRow['table_name']) ?></div>
-                            <div class="table-card-status"><?= $tableRow['status'] === 'occupied' ? 'Đang phục vụ' : 'Bàn trống' ?></div>
-                            <?php if ($tableRow['status'] === 'occupied' && $tableRow['created_at']): ?>
-                                <div class="table-card-time"><i class="fa-regular fa-clock"></i> Vào lúc: <?= e(date('H:i', strtotime($tableRow['created_at']))) ?></div>
-                            <?php endif; ?>
-                        </div>
-                    <?php endforeach; ?>
-                    <?php if (!$tablesStatus): ?>
-                        <div class="tables-empty">Chưa có bàn nào. Vui lòng liên hệ Quản lý để thêm bàn.</div>
-                    <?php endif; ?>
-                </div>
+                <div id="tablesGrid" class="tables-grid"></div>
             </div>
         </div>
  

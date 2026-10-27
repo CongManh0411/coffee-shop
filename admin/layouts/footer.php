@@ -3,7 +3,10 @@
 // Trang nào cần thứ tự/điều kiện riêng thì tạo pages/<trang>/scripts.php thay cho $scripts.
 $scripts = isset($scripts) ? $scripts : array();
 ?>
-<script src="<?= e($assetPrefix) ?>js/api.js"></script>
+<?php if ($page !== 'login' && !empty($user)): ?>
+    
+<?php endif; ?>
+    <script src="<?= e($assetPrefix) ?>js/api.js"></script>
     <script src="<?= e($assetPrefix) ?>js/auth.js"></script>
     <script src="<?= e($assetPrefix) ?>js/common.js"></script>
 <?php

@@ -10,21 +10,15 @@ function money($value)
 }
 
 // Đường dẫn tới một trang qua Router: url('menu') => index.php?page=menu
-function url($page, $params = array())
+function url($page)
 {
-    $link = 'index.php?page=' . rawurlencode($page);
-    foreach ($params as $key => $value) {
-        $link .= '&' . rawurlencode($key) . '=' . rawurlencode((string) $value);
-    }
-    return $link;
+    return 'index.php?page=' . rawurlencode($page);
 }
 
-// Đường dẫn tới một trang Admin: admin_url('tablemanage') => index.php?page=tablemanage
-// (gọi trong khu Admin) hoặc admin/index.php?page=tablemanage (gọi từ khu Public).
-function admin_url($page, $params = array())
+// URL dùng trong khu Admin, nơi base URL là admin/.
+function admin_url($page)
 {
-    $prefix = !empty($GLOBALS['isAdmin']) ? '' : 'admin/';
-    return $prefix . url($page, $params);
+    return 'index.php?page=' . rawurlencode($page);
 }
 
 // Chuyển trang rồi dừng (dùng trong action.php, trước khi in header)

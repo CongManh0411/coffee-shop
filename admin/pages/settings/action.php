@@ -10,10 +10,6 @@ $errorMessage = '';
 
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 if ($method === 'POST' && isset($_POST['save_settings'])) {
-    $submittedToken = is_string($_POST['csrf_token'] ?? null) ? $_POST['csrf_token'] : '';
-    if ($submittedToken === '' || !hash_equals(csrf_token(), $submittedToken)) {
-        $errorMessage = 'Phiên bảo mật hết hạn. Hãy tải lại trang rồi thử lại.';
-    } else {
     $success = true;
 
     // 1. Xử lý đặt lại logo mặc định
@@ -125,6 +121,5 @@ if ($method === 'POST' && isset($_POST['save_settings'])) {
 
     if ($success && empty($errorMessage)) {
         $savedMessage = 'Đã lưu cài đặt website và cập nhật logo thành công! Các thay đổi đã được áp dụng trực tiếp.';
-    }
     }
 }
