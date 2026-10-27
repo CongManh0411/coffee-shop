@@ -1,6 +1,6 @@
 <header class="catalog-header">
-    <a href="<?= e(url('menu')) ?>" class="catalog-brand">Góc Nhỏ <span>Coffee &amp; Tea</span></a>
-    <nav aria-label="Điều hướng thực đơn"><a href="<?= e(url('menu-categories')) ?>">Danh mục</a><a href="<?= e(url('menu')) ?>">Thực đơn</a></nav>
+    <a href="<?= e(url('home')) ?>" class="catalog-brand">Góc Nhỏ <span>Coffee &amp; Tea</span></a>
+    <nav aria-label="Điều hướng thực đơn"><a href="<?= e(url('home')) ?>">Trang chủ</a><a href="<?= e(url('menu-categories')) ?>">Danh mục</a><a href="<?= e(url('menu')) ?>">Thực đơn</a></nav>
 </header>
 <main class="catalog-main">
     <p class="catalog-eyebrow">MENU GÓC NHỎ</p>
