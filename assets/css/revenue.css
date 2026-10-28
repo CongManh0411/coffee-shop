@@ -55,3 +55,7 @@
 .payment-bar-fill.card {
     background: #7a8ca8;
 }
+
+/* Nút lọc kỳ là thẻ <a> (PHP render, không còn JS) */
+a.topnav-item { text-decoration: none; display: inline-block; }
+.dash-head a { text-decoration: none; }
