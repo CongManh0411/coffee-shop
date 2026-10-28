@@ -468,6 +468,11 @@ function orders_pay($data, $user)
              WHERE order_id = ? AND status <> 'cancelled' AND status <> 'draft' ORDER BY order_item_id",
             array($orderId)
         ));
+        $stockErr = warehouse_deduct_sale($orderId, $order['order_code'], $user);
+        if ($stockErr !== '') {
+            return array(null, $stockErr);
+        }
+
         db()->execute(
             "UPDATE orders SET status = 'paid', subtotal = ?, discount = ?, total = ?, voucher = ?, promotion_id = ?,
              payment_method = ?, payment_ref = ?, paid_by = ?, cash_shift_id = ?, paid_at = NOW() WHERE order_id = ?",

@@ -86,7 +86,7 @@ async function handleFormSubmit(e) {
 
     const fullName = document.getElementById('fullName').value.trim();
     const username = document.getElementById('username').value.trim();
-    const password = document.getElementById('password').value.trim();
+    const password = document.getElementById('password').value;
     const role = document.getElementById('role').value;
     const phone = document.getElementById('phone').value.trim().replace(/[\s.-]/g, '');
     const email = document.getElementById('email').value.trim();
@@ -125,7 +125,8 @@ function resetForm() {
     document.getElementById('staffFormTitle').textContent = 'Thêm nhân viên mới';
     document.getElementById('editModeIndicator').classList.remove('active');
     document.getElementById('btnCancelEdit').style.display = 'none';
-    document.getElementById('password').placeholder = 'Nhập mật khẩu';
+    document.getElementById('password').placeholder = 'Ít nhất 12 ký tự';
+    document.getElementById('password').required = true;
     currentEditingId = null;
 }
 
@@ -138,6 +139,7 @@ function editStaff(id) {
     document.getElementById('username').value = staff.username;
     document.getElementById('password').value = '';
     document.getElementById('password').placeholder = 'Để trống nếu không đổi mật khẩu';
+    document.getElementById('password').required = false;
     document.getElementById('role').value = staff.role;
     document.getElementById('phone').value = staff.phone || '';
     document.getElementById('email').value = staff.email || '';

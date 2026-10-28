@@ -11,7 +11,8 @@ function auth_login($username, $password)
         return null;
     }
     if (password_needs_rehash($row['password'], PASSWORD_DEFAULT)) {
-        db()->execute('UPDATE staff SET password = ? WHERE staff_id = ?', array(password_hash((string) $password, PASSWORD_DEFAULT), (int) $row['staff_id']));
+        $row['password'] = password_hash((string) $password, PASSWORD_DEFAULT);
+        db()->execute('UPDATE staff SET password = ? WHERE staff_id = ?', array($row['password'], (int) $row['staff_id']));
     }
 
     session_regenerate_id(true);
@@ -22,6 +23,7 @@ function auth_login($username, $password)
         'roleKey' => $row['role'],
     );
     $_SESSION['user'] = $user;
+    $_SESSION['credential_fingerprint'] = hash('sha256', $row['password']);
     $_SESSION['last_activity'] = time();
     return $user;
 }

@@ -154,7 +154,9 @@ function menu_create($d)
         "INSERT INTO menu_items (category_id, item_name, description, price, image) VALUES (?, ?, ?, ?, ?)",
         array($catId, $name, $description !== '' ? $description : null, (int) $d['price'], $img)
     );
-    return array(db()->insertId(), '');
+    $newId = db()->insertId();
+    db()->execute("INSERT IGNORE INTO menu_stock (menu_item_id, quantity, min_quantity) VALUES (?, 0, 10)", array($newId));
+    return array($newId, '');
 }
 
 // Cập nhật từng phần: chỉ trường nào gửi lên mới đổi (ẩn/hiện chỉ gửi {hidden:true})

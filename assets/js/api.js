@@ -22,3 +22,6 @@ const Api = {
     put(route, body) { return Api.call(route, 'PUT', body); },
     del(route) { return Api.call(route, 'DELETE'); }
 };
+
+// Expose the same client to modules checking window.Api.
+window.Api = Api;

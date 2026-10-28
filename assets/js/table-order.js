@@ -94,6 +94,9 @@ async function loadMenuList() {
     const data = await Api.get('menu');
     // InventoryAPI (inventory.js) vẫn đọc menu từ localStorage nên phải chép sang
     try { localStorage.setItem(MENU_KEY, JSON.stringify(data)); } catch (e) {}
+    if (window.InventoryAPI && InventoryAPI.sync) {
+        try { await InventoryAPI.sync(); } catch (e) {}
+    }
     return menuFromData(data);
 }
 let menuList = [];

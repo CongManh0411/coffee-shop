@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . "/../api/modules/auth.php";
 if (session_status() === PHP_SESSION_NONE) {
     ini_set('session.use_strict_mode', '1');
     ini_set('session.use_only_cookies', '1');
@@ -35,6 +36,17 @@ function current_user()
         auth_logout();
         return null;
     }
+    // Revalidate active status, role and password on every authenticated request.
+    $row = db()->fetchOne('SELECT staff_id, full_name, role, status, password FROM staff WHERE staff_id = ?', array((int) ($_SESSION['user']['staffId'] ?? 0)));
+    $fingerprint = $row ? hash('sha256', $row['password']) : '';
+    if (!$row || (int) $row['status'] !== 1
+        || $row['role'] !== $_SESSION['user']['roleKey']
+        || (isset($_SESSION['credential_fingerprint']) && !hash_equals($_SESSION['credential_fingerprint'], $fingerprint))) {
+        auth_logout();
+        return null;
+    }
+    $_SESSION['credential_fingerprint'] = $fingerprint;
+    $_SESSION['user']['name'] = $row['full_name'];
     $_SESSION['last_activity'] = $now;
     return $_SESSION['user'];
 }
