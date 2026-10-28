@@ -27,6 +27,8 @@ function orders_list($status = 'open')
     foreach ($orders as &$order) {
         $order['id'] = (int) $order['order_id'];
         $order['tableId'] = $order['table_id'] === null ? null : (int) $order['table_id'];
+        $order['orderType'] = $order['order_type'];   // JS (table-order.js, orders.js) đọc camelCase
+        $order['tableName'] = $order['table_name'];
         $order['subtotal'] = (int) $order['subtotal'];
         $order['discount'] = (int) $order['discount'];
         $order['total'] = (int) $order['total'];

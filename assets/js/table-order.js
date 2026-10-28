@@ -213,9 +213,20 @@ function switchView(viewId) {
 /* ==========================================
    3. XỬ LÝ SƠ ĐỒ BÀN
    ========================================== */
+// Cập nhật dòng thống kê (Tổng / Đang phục vụ / Bàn trống) theo dữ liệu bàn hiện tại (chỉ tính bàn thật, không tính mang đi/giao hàng)
+function updateTablesSummary() {
+    const real = tables.filter(t => !t.type);
+    const occ = real.filter(t => t.status === 'occupied').length;
+    const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+    set('sumTotal', real.length);
+    set('sumOccupied', occ);
+    set('sumEmpty', real.length - occ);
+}
+
 function renderTablesGrid() {
     const grid = document.getElementById('tablesGrid');
     if (!grid) return;
+    updateTablesSummary();
  
     const filtered = tables.filter(t => currentFilterTable === 'all' || (currentFilterTable === 'togo' ? !!t.type : (t.status === currentFilterTable && !t.type)));
  
