@@ -1,56 +1,209 @@
-// Kho thành phẩm (theo số ly / phần) — dùng chung cho Menu, Bán hàng, Kho, Thu ngân.
-// Không quy đổi nguyên liệu cũ sang ly; dữ liệu nguyên liệu cũ vẫn giữ tại coffee_warehouse_v1.
+// Kho thành phẩm (theo số ly / phần) — kết nối MySQL qua API, đồng bộ bộ nhớ đệm trình duyệt
 (function () {
     'use strict';
     if (window.InventoryAPI) return;
+
     const KEY = 'coffee_portion_stock_v1';
     const LOG_KEY = 'coffee_portion_stock_log_v1';
     const SALE_KEY = 'coffee_portion_stock_sales_v1';
     const MENU_STORAGE = 'coffee_menu_data_v2';
     const TABLES_KEY = 'coffee_tables_v1';
     const PENDING_KEY = 'coffee_pending_orders_v1';
-    const read = (key, fallback) => { try { const v = JSON.parse(localStorage.getItem(key)); return v == null ? fallback : v; } catch (_) { return fallback; } };
-    const write = (key, data) => { try { localStorage.setItem(key, JSON.stringify(data)); return true; } catch (_) { return false; } };
+
+    let cachedItems = null;
+
+    const read = (key, fallback) => {
+        try {
+            const v = JSON.parse(localStorage.getItem(key));
+            return v == null ? fallback : v;
+        } catch (_) {
+            return fallback;
+        }
+    };
+
+    const write = (key, data) => {
+        try {
+            localStorage.setItem(key, JSON.stringify(data));
+            return true;
+        } catch (_) {
+            return false;
+        }
+    };
+
     const unitFor = category => category === 'Bánh' ? 'phần' : 'ly';
     const positiveInt = value => Number.isSafeInteger(Number(value)) && Number(value) >= 0;
-    const actor = () => { try { const u = window.AuthAPI && AuthAPI.getSession(); return u ? (u.name || u.fullName || u.username || u.roleKey || 'Nhân viên') : 'Nhân viên'; } catch (_) { return 'Nhân viên'; } };
-    function menuItems() {
-        const menu = read(MENU_STORAGE, typeof DEFAULT_MENU !== 'undefined' ? DEFAULT_MENU : []);
-        return (Array.isArray(menu) ? menu : []).flatMap(cat => (cat.items || []).map(item => ({ id: String(item.id), name: item.name, category: cat.category, unit: unitFor(cat.category) })));
+
+    const actor = () => {
+        try {
+            const u = (window.SERVER_USER || (window.AuthAPI && AuthAPI.getSession()));
+            return u ? (u.name || u.fullName || u.username || u.roleKey || 'Nhân viên') : 'Nhân viên';
+        } catch (_) {
+            return 'Nhân viên';
+        }
+    };
+
+    // Khởi tạo từ dữ liệu ban đầu nếu được PHP in sẵn trên trang
+    if (window.INITIAL_WAREHOUSE_DATA && Array.isArray(window.INITIAL_WAREHOUSE_DATA.items)) {
+        const stockCache = {};
+        cachedItems = window.INITIAL_WAREHOUSE_DATA.items.map(it => {
+            stockCache[String(it.id)] = { stock: Number(it.stock), minLevel: Number(it.minLevel) };
+            return {
+                ...it,
+                id: String(it.id),
+                name: it.name,
+                category: it.category,
+                unit: it.unit || unitFor(it.category),
+                stock: Number(it.stock),
+                minLevel: Number(it.minLevel)
+            };
+        });
+        write(KEY, stockCache);
     }
+
+    function menuItems() {
+        if (cachedItems !== null) return cachedItems;
+        const menu = read(MENU_STORAGE, typeof DEFAULT_MENU !== 'undefined' ? DEFAULT_MENU : []);
+        return (Array.isArray(menu) ? menu : []).flatMap(cat =>
+            (cat.items || []).map(item => ({
+                id: String(item.id),
+                name: item.name,
+                category: cat.category,
+                unit: unitFor(cat.category)
+            }))
+        );
+    }
+
     function getAll() {
-        const items = menuItems(), raw = read(KEY, {}), stock = raw && !Array.isArray(raw) && typeof raw === 'object' ? raw : {};
+        if (cachedItems !== null) return cachedItems.map(item => ({ ...item }));
+        const items = menuItems(), raw = read(KEY, {}), stock = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
         return items.map(m => {
             const old = stock[m.id] || {};
-            return { ...m, stock: positiveInt(old.stock) ? Number(old.stock) : 0,
-                minLevel: positiveInt(old.minLevel) ? Number(old.minLevel) : 10 };
+            return {
+                ...m,
+                stock: positiveInt(old.stock) ? Number(old.stock) : 0,
+                minLevel: positiveInt(old.minLevel) ? Number(old.minLevel) : 10
+            };
         });
     }
+
     const get = id => getAll().find(x => x.id === String(id));
+
     function log(type, item, delta, ref) {
         const logs = read(LOG_KEY, []);
-        logs.push({ ts: Date.now(), type, itemId: item.id, name: item.name, unit: item.unit, delta, ref: ref || '', actor: actor() });
+        logs.push({
+            ts: Date.now(),
+            type,
+            itemId: item.id,
+            name: item.name,
+            unit: item.unit,
+            delta,
+            ref: ref || '',
+            actor: actor()
+        });
         write(LOG_KEY, logs.slice(-1500));
     }
-    function getLog() { const logs = read(LOG_KEY, []); return Array.isArray(logs) ? logs : []; }
-    function adjust(id, delta, reason) {
-        const item = get(id), change = Number(delta);
-        if (!item) return { ok: false, error: 'Món không còn trong Menu.' };
-        if (!Number.isSafeInteger(change) || !change) return { ok: false, error: 'Số lượng thay đổi phải là số nguyên khác 0.' };
-        if (item.stock + change < 0) return { ok: false, error: `Kho ${item.name} chỉ còn ${item.stock} ${item.unit}.` };
-        const data = read(KEY, {});
-        data[item.id] = { stock: item.stock + change, minLevel: item.minLevel };
-        if (!write(KEY, data)) return { ok: false, error: 'Không thể lưu kho vào trình duyệt.' };
-        log(change > 0 ? 'import' : 'adjust', item, change, reason || 'Điều chỉnh thủ công');
-        return { ok: true };
+
+    function getLog() {
+        const logs = read(LOG_KEY, []);
+        return Array.isArray(logs) ? logs : [];
     }
-    function setLevel(id, level) {
+
+    // Đồng bộ số lượng tồn kho từ MySQL qua API
+    async function sync() {
+        if (!window.Api) throw new Error('Không tải được API kho. Hãy tải lại trang.');
+        try {
+            const res = await Api.get('warehouse');
+            if (res && Array.isArray(res.items)) {
+                const stockCache = {};
+                cachedItems = res.items.map(it => {
+                    stockCache[String(it.id)] = {
+                        stock: Number(it.stock || 0),
+                        minLevel: Number(it.minLevel ?? 10)
+                    };
+                    return {
+                        ...it,
+                        id: String(it.id),
+                        name: it.name,
+                        category: it.category,
+                        unit: it.unit || unitFor(it.category),
+                        stock: Number(it.stock || 0),
+                        minLevel: Number(it.minLevel ?? 10)
+                    };
+                });
+                write(KEY, stockCache);
+                window.dispatchEvent(new CustomEvent('inventory-updated', { detail: res }));
+                return getAll();
+            }
+        } catch (err) { throw err; }
+        throw new Error('Dữ liệu kho máy chủ không hợp lệ.');
+    }
+
+    // Điều chỉnh tồn kho: nhập thêm hoặc giảm do hao hụt/kiểm kê
+    async function adjust(id, delta, reason, minLevel) {
+        const change = Number(delta);
+        if (!Number.isSafeInteger(Number(id)) || Number(id) < 1) return { ok: false, error: 'Mã món không hợp lệ.' };
+        if (!Number.isSafeInteger(change) || !change) return { ok: false, error: 'Số lượng thay đổi phải là số nguyên khác 0.' };
+
+        if (window.Api) {
+            try {
+                const mode = change > 0 ? 'import' : 'adjust';
+                const amount = Math.abs(change);
+                await Api.post('warehouse/adjust', {
+                    itemId: Number(id),
+                    mode,
+                    amount,
+                    minLevel: minLevel != null ? Number(minLevel) : undefined,
+                    note: reason || (mode === 'import' ? 'Nhập thêm tồn kho' : 'Điều chỉnh giảm tồn kho')
+                });
+                try { await sync(); } catch (_) { return { ok: true, warning: 'Đã lưu trên máy chủ nhưng chưa tải lại được dữ liệu. Hãy tải lại trang, không nhập lại giao dịch.' }; }
+                return { ok: true };
+            } catch (err) {
+                return { ok: false, error: err.message || 'Lỗi kết nối máy chủ.' };
+            }
+        }
+
+        return { ok: false, error: 'Không có kết nối API kho. Chưa lưu thay đổi.' };
+    }
+
+    // Thiết lập định mức cảnh báo sắp hết
+    async function setLevel(id, level) {
         const item = get(id);
         if (!item || !positiveInt(level)) return { ok: false, error: 'Định mức cảnh báo phải là số nguyên không âm.' };
-        const data = read(KEY, {});
-        data[item.id] = { stock: item.stock, minLevel: Number(level) };
-        return write(KEY, data) ? { ok: true } : { ok: false, error: 'Không thể lưu định mức.' };
+
+        if (window.Api) {
+            try {
+                await Api.post('warehouse/min-level', {
+                    itemId: Number(id),
+                    minLevel: Number(level)
+                });
+                try { await sync(); } catch (_) { return { ok: true, warning: 'Đã lưu trên máy chủ nhưng chưa tải lại được dữ liệu. Hãy tải lại trang, không nhập lại giao dịch.' }; }
+                return { ok: true };
+            } catch (err) {
+                return { ok: false, error: err.message || 'Lỗi kết nối máy chủ.' };
+            }
+        }
+
+        return { ok: false, error: 'Không có kết nối API kho. Chưa lưu thay đổi.' };
     }
+
+    // Lấy lịch sử biến động từ MySQL
+    async function getHistory(filters = {}) {
+        if (window.Api) {
+            try {
+                const params = new URLSearchParams();
+                if (filters.itemId) params.append('itemId', filters.itemId);
+                if (filters.type) params.append('type', filters.type);
+                if (filters.dateFrom) params.append('dateFrom', filters.dateFrom);
+                if (filters.dateTo) params.append('dateTo', filters.dateTo);
+                const qs = params.toString() ? '&' + params.toString() : '';
+                const logs = await Api.get('warehouse/history' + qs);
+                if (!Array.isArray(logs)) throw new Error('Dữ liệu lịch sử không hợp lệ.');
+                return logs;
+            } catch (err) { throw err; }
+        }
+        throw new Error('Không tải được API lịch sử kho.');
+    }
+
     function totals(items) {
         const qty = {};
         for (const line of items || []) {
@@ -61,7 +214,8 @@
         }
         return qty;
     }
-    // Cộng cả món nháp và món đã gửi bếp: món chỉ bị trừ khi thanh toán, không phải khi bếp bấm Xong.
+
+    // Tính số ly/phần đang được đặt ở các bàn đang mở
     function reserved(excludeTableId) {
         const sum = {};
         const tables = read(TABLES_KEY, []);
@@ -73,7 +227,6 @@
                 if (n > 0) sum[String(i.id)] = (sum[String(i.id)] || 0) + n;
             });
         });
-        // Các hóa đơn trong Pay.html có thể là đơn độc lập, không có bàn lưu tương ứng.
         const pending = read(PENDING_KEY, []);
         (Array.isArray(pending) ? pending : []).forEach(p => {
             if ((Array.isArray(tables) ? tables : []).some(t => String(t.id) === String(p.tableId))) return;
@@ -85,7 +238,12 @@
         });
         return sum;
     }
-    function available(id) { const item = get(id); return item ? Math.max(0, item.stock - (reserved()[String(id)] || 0)) : 0; }
+
+    function available(id) {
+        const item = get(id);
+        return item ? Math.max(0, item.stock - (reserved()[String(id)] || 0)) : 0;
+    }
+
     function canReserve(id, quantity) {
         const item = get(id), n = Number(quantity);
         if (!item) return { ok: false, error: 'Món không có trong thực đơn.' };
@@ -93,6 +251,7 @@
         const left = available(id);
         return left >= n ? { ok: true, left } : { ok: false, left, error: `${item.name} chỉ còn ${left} ${item.unit} có thể đặt (tồn kho ${item.stock}).` };
     }
+
     function validateSale(lines, invoiceId) {
         const sold = read(SALE_KEY, {});
         if (invoiceId && sold[invoiceId]) return { ok: false, error: `Hóa đơn ${invoiceId} đã được trừ kho trước đó.` };
@@ -108,44 +267,15 @@
         }
         return { ok: true, details };
     }
+
     function drop(id) {
         const data = read(KEY, {});
         delete data[String(id)];
         return write(KEY, data);
     }
-    // Trừ đúng 1 lần theo mã hóa đơn. Nếu không ghi được sổ theo dõi thì hoàn nguyên tồn kho.
-    function consume(lines, invoiceId) {
-        const check = validateSale(lines, invoiceId);
-        if (!check.ok) return check;
-        const before = read(KEY, {}), after = JSON.parse(JSON.stringify(before));
-        const sold = read(SALE_KEY, {});
-        check.details.forEach(x => { after[x.id] = { stock: x.stock - x.quantity, minLevel: x.minLevel }; });
-        if (!write(KEY, after)) return { ok: false, error: 'Không lưu được tồn kho.' };
-        sold[invoiceId] = { ts: Date.now(), lines: check.details.map(x => ({ id: x.id, quantity: x.quantity })) };
-        if (!write(SALE_KEY, sold)) {
-            write(KEY, before);
-            return { ok: false, error: 'Không lưu được lịch sử trừ kho.' };
-        }
-        check.details.forEach(x => log('sale', x, -x.quantity, `Hóa đơn ${invoiceId}`));
-        return { ok: true };
-    }
-    // Chỉ sử dụng khi ghi hóa đơn thất bại, không tự động trả kho khi hoàn tiền.
-    function rollback(invoiceId) {
-        const sales = read(SALE_KEY, {}), record = sales[invoiceId];
-        if (!record) return false;
-        const before = read(KEY, {});
-        const data = JSON.parse(JSON.stringify(before));
-        for (const line of record.lines) {
-            const item = get(line.id);
-            if (!item) continue;
-            data[item.id] = { stock: item.stock + line.quantity, minLevel: item.minLevel };
-        }
-        if (!write(KEY, data)) return false;
-        delete sales[invoiceId];
-        write(SALE_KEY, sales);
-        record.lines.forEach(x => { const it = get(x.id); if (it) log('rollback', it, x.quantity, `Hoàn tác lỗi thanh toán ${invoiceId}`); });
-        return true;
-    }
-    window.InventoryAPI = { KEY, LOG_KEY, SALE_KEY, getAll, get, menuItems, adjust, setLevel,
-        getLog, reserved, available, canReserve, validateSale, consume, rollback, drop };
+
+    window.InventoryAPI = {
+        KEY, LOG_KEY, SALE_KEY, getAll, get, menuItems, adjust, setLevel, sync, getHistory,
+        getLog, reserved, available, canReserve, validateSale, drop
+    };
 })();

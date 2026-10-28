@@ -9,6 +9,7 @@ require_once __DIR__ . '/api/modules/orders.php';
 require_once __DIR__ . '/api/modules/cashshift.php';
 require_once __DIR__ . '/api/modules/reservations.php';
 require_once __DIR__ . '/api/modules/ops.php';
+require_once __DIR__ . '/api/modules/warehouse.php';
 
 // Lấy toàn bộ món đang hiển thị để đưa vào thực đơn trên trang chủ.
 function public_menu_items($categoryId = 0)

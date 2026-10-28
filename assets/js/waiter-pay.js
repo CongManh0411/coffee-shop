@@ -262,7 +262,21 @@
     }
 
     // Xác nhận thanh toán: tạo hóa đơn + trả bàn
+    let paymentInFlight = false;
     async function pay() {
+        if (paymentInFlight) return;
+        paymentInFlight = true;
+        const payButton = $('wpSend');
+        if (payButton) payButton.disabled = true;
+        try {
+            await commitPayment();
+        } finally {
+            paymentInFlight = false;
+            if (state.view !== 'paid') updateSend();
+        }
+    }
+
+    async function commitPayment() {
         const now = Date.now();
         const list = readTables();
         const t = list.find(x => x.id === state.tableId);
@@ -295,8 +309,6 @@
             createdById: who.id, createdBy: who.name, createdRole: who.role
         };
         if (!t.orderId) return alert('Đơn này chưa được lưu trên máy chủ. Hãy tải lại trang bán hàng.');
-        const stockResult = InventoryAPI.consume(bill.items, id);
-        if (!stockResult.ok) return alert('Không thể thanh toán: ' + stockResult.error);
         let serverInvoice;
         try {
             serverInvoice = await Api.post('orders/pay', {
@@ -304,8 +316,7 @@
                 voucher: cv.code || '', paymentRef: state.ref || ''
             });
         } catch (err) {
-            InventoryAPI.rollback(id);
-            return alert('Máy chủ chưa chốt được đơn: ' + err.message);
+            return alert('Không nhận được xác nhận thanh toán: ' + err.message + '. Hãy kiểm tra Lịch sử hóa đơn trước khi thu tiền lại.');
         }
         inv = Object.assign(inv, serverInvoice, {
             id: serverInvoice.id,
@@ -317,8 +328,10 @@
         });
         invoices.push(inv);
         if (!writeInvoices(invoices)) {
-            InventoryAPI.rollback(id);
-            alert('Không lưu được hóa đơn. Tồn kho đã được hoàn lại.'); return;
+            alert('Hóa đơn đã thanh toán và trừ kho trên máy chủ. Không lưu được bản sao trên trình duyệt; xem hóa đơn tại Lịch sử.');
+        }
+        if (window.InventoryAPI && InventoryAPI.sync) {
+            try { await InventoryAPI.sync(); } catch (_) { alert('Đã thanh toán trên máy chủ. Hãy tải lại trang để cập nhật tồn kho.'); }
         }
         if (C && cv.disc > 0) {
             const large = C.isLargeDiscount(cv.disc, cv.sub);

@@ -344,6 +344,38 @@ try {
             if ($method !== 'POST') json_error('Sai phương thức.', 405);
             json_ok(cashshift_close(json_input(), $me));
             break;
+        case 'warehouse':
+            if ($method === 'GET') {
+                require_login();
+                json_ok(warehouse_list());
+            }
+            $me = require_role(array('manager'));
+            if ($method === 'POST') {
+                $err = warehouse_adjust(json_input(), $me);
+                if ($err) json_error($err);
+                json_ok();
+            }
+            json_error('Sai phương thức.', 405);
+            break;
+        case 'warehouse/adjust':
+            $me = require_role(array('manager'));
+            if ($method !== 'POST') json_error('Sai phương thức.', 405);
+            $err = warehouse_adjust(json_input(), $me);
+            if ($err) json_error($err);
+            json_ok();
+            break;
+        case 'warehouse/min-level':
+            $me = require_role(array('manager'));
+            if ($method !== 'POST') json_error('Sai phương thức.', 405);
+            $err = warehouse_set_min_level(json_input(), $me);
+            if ($err) json_error($err);
+            json_ok();
+            break;
+        case 'warehouse/history':
+            require_role(array('manager'));
+            if ($method !== 'GET') json_error('Sai phương thức.', 405);
+            json_ok(warehouse_movements($_GET));
+            break;
         default:
             json_error('Không tìm thấy API.', 404);
     }
