@@ -54,3 +54,6 @@
     .k-col { min-height: 0; }
     .k-list { max-height: none; }
 }
+/* Nút là form POST (PHP render, không còn JS) */
+.k-form { display: contents; margin: 0; }
+.k-actions .k-form .k-btn { flex: 1; }
