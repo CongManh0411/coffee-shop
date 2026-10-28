@@ -13,9 +13,9 @@
             <div class="main-content">
                 <h2 class="tables-title">Sơ đồ bàn</h2>
                 <div class="tables-summary">
-                    <span>Tổng: <b><?= (int) $tablesTotal ?></b> bàn</span>
-                    <span>Đang phục vụ: <b><?= (int) $tablesOccupied ?></b></span>
-                    <span>Bàn trống: <b><?= (int) $tablesEmpty ?></b></span>
+                    <span>Tổng: <b id="sumTotal"><?= (int) $tablesTotal ?></b> bàn</span>
+                    <span>Đang phục vụ: <b id="sumOccupied"><?= (int) $tablesOccupied ?></b></span>
+                    <span>Bàn trống: <b id="sumEmpty"><?= (int) $tablesEmpty ?></b></span>
                     <a class="tables-summary-link" href="<?= e(url('schedule')) ?>"><i class="fa-regular fa-calendar"></i> Xem lịch ca làm</a>
                 </div>
                 <div id="tablesGrid" class="tables-grid">
