@@ -75,6 +75,24 @@ function update_setting($key, $value)
     }
 }
 
+// Tên quán (đồng bộ từ Admin → Cài đặt Web)
+function brand_name()
+{
+    return setting('brand_name', 'Góc Nhỏ');
+}
+
+// Dòng phụ dưới tên quán (vd: "Coffee & Tea")
+function brand_subtitle()
+{
+    return setting('brand_subtitle', 'Coffee & Tea');
+}
+
+// Tên đầy đủ: "Góc Nhỏ Coffee & Tea"
+function brand_full()
+{
+    return trim(brand_name() . ' ' . brand_subtitle());
+}
+
 // Lấy đường dẫn logo quán cho trang Public hoặc trang Admin
 function shop_logo($isAdmin = false)
 {

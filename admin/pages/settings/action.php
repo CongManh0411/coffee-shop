@@ -95,6 +95,7 @@ if ($method === 'POST' && isset($_POST['save_settings'])) {
     $keys = array(
         'brand_name',
         'brand_tagline',
+        'brand_subtitle',
         'hero_badge',
         'hero_title',
         'hero_subtitle',

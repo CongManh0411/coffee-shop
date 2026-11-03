@@ -14,6 +14,6 @@ try {
     // Render a friendly empty state when the local database is unavailable.
 }
 
-$title = 'Thực đơn | Góc Nhỏ Coffee & Tea';
+$title = 'Thực đơn | ' . brand_full();
 $bodyClass = 'public-catalog-page';
 $css = array('public-catalog.css');

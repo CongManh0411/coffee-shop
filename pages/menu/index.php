@@ -1,9 +1,9 @@
 <header class="catalog-header">
-    <a href="index.php?page=home" class="catalog-brand">Góc Nhỏ <span>Coffee &amp; Tea</span></a>
+    <a href="index.php?page=home" class="catalog-brand"><?= e(brand_name()) ?> <span><?= e(brand_subtitle()) ?></span></a>
     <nav><a href="index.php?page=home">Trang chủ</a><a href="<?= e(url('menu-categories')) ?>">Danh mục</a><a href="index.php?page=menu">Thực đơn</a></nav>
 </header>
 <main class="catalog-main">
-    <p class="catalog-eyebrow">MENU GÓC NHỎ</p>
+    <p class="catalog-eyebrow">MENU <?= e(mb_strtoupper(brand_name(), "UTF-8")) ?></p>
     <h1>Thực đơn</h1>
     <p class="catalog-intro">Khám phá đầy đủ các món đang phục vụ tại quán.</p>
     <nav class="catalog-filters" aria-label="Lọc theo danh mục">

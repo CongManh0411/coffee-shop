@@ -9,6 +9,6 @@ $relatedMenuItems = $menuItem
 if (!$menuItem) {
     http_response_code(404);
 }
-$title = $menuItem ? $menuItem['item_name'] . ' | Góc Nhỏ Coffee & Tea' : 'Không tìm thấy món';
+$title = $menuItem ? $menuItem['item_name'] . ' | ' . brand_full() : 'Không tìm thấy món';
 $bodyClass = 'public-catalog-page';
 $css = array('public-catalog.css');
