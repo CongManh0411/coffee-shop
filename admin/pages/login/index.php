@@ -18,6 +18,11 @@
         </div>
       </label>
 
+      <label class="login-remember">
+        <input type="checkbox" id="rememberMe">
+        <span>Lưu mật khẩu trên trình duyệt này</span>
+      </label>
+
       <p id="loginError" class="login-error" role="alert" hidden></p>
 
       <button type="submit" class="login-btn">Đăng nhập</button>

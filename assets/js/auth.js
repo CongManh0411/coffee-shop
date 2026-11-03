@@ -112,6 +112,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const toggleBtn = document.getElementById('togglePass');
     const submitBtn = form.querySelector('.login-btn');
 
+    // "Lưu mật khẩu": nhớ tên đăng nhập (localStorage) và nhờ trình duyệt lưu mật khẩu
+    // qua Credential Management API. Mật khẩu KHÔNG bao giờ được lưu bởi mã của quán.
+    const rememberEl = document.getElementById('rememberMe');
+    const REMEMBER_KEY = 'coffee_remember_username';
+    try {
+        const savedUser = localStorage.getItem(REMEMBER_KEY);
+        if (savedUser && userEl) {
+            userEl.value = savedUser;
+            if (rememberEl) rememberEl.checked = true;
+            if (passEl) passEl.focus();
+        }
+    } catch (e) { /* localStorage có thể bị chặn */ }
+
     // Nút "Hiện/Ẩn" mật khẩu
     if (toggleBtn && passEl) {
         toggleBtn.addEventListener('click', () => {
@@ -129,6 +142,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             const session = await AuthAPI.login(userEl.value, passEl.value);
+            try {
+                if (rememberEl && rememberEl.checked) {
+                    localStorage.setItem(REMEMBER_KEY, userEl.value.trim());
+                    if (window.PasswordCredential && navigator.credentials && navigator.credentials.store) {
+                        await navigator.credentials.store(new PasswordCredential({ id: userEl.value.trim(), password: passEl.value }));
+                    }
+                } else {
+                    localStorage.removeItem(REMEMBER_KEY);
+                }
+            } catch (e) { /* không ảnh hưởng việc đăng nhập */ }
             const home = PAGES_BY_ROLE[session.roleKey]
                 ? PAGES_BY_ROLE[session.roleKey][0].path
                 : (window.COFFEE_ROOT || './') + 'admin/index.php?page=login';
