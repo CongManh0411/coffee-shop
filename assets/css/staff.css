@@ -180,3 +180,8 @@
         grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
     }
 }
+
+.password-field { position: relative; }
+.password-field input { width: 100%; padding-right: 64px; box-sizing: border-box; }
+.password-toggle { position: absolute; top: 50%; right: 8px; transform: translateY(-50%); border: 0; background: transparent; color: #8a5a2b; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; padding: 4px 8px; }
+.password-toggle:hover { text-decoration: underline; }
