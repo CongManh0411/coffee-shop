@@ -37,8 +37,8 @@ const PAGES_BY_ROLE = {
 };
 
 const AuthAPI = {
-    async login(username, password) {
-        const result = await Api.post('auth/login', { username: username.trim(), password });
+    async login(username, password, remember) {
+        const result = await Api.post('auth/login', { username: username.trim(), password, remember: !!remember });
         window.SERVER_USER = result.user;
         const tokenMeta = document.querySelector('meta[name="csrf-token"]');
         if (tokenMeta) tokenMeta.content = result.csrfToken;
@@ -141,7 +141,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (submitBtn) submitBtn.disabled = true;
 
         try {
-            const session = await AuthAPI.login(userEl.value, passEl.value);
+            const session = await AuthAPI.login(userEl.value, passEl.value, rememberEl && rememberEl.checked);
             try {
                 if (rememberEl && rememberEl.checked) {
                     localStorage.setItem(REMEMBER_KEY, userEl.value.trim());

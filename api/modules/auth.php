@@ -1,5 +1,5 @@
 <?php
-function auth_login($username, $password)
+function auth_login($username, $password, $remember = false)
 {
     $row = db()->fetchOne(
         "SELECT staff_id, full_name, username, password, role FROM staff WHERE username = ? AND status = 1",
@@ -25,6 +25,9 @@ function auth_login($username, $password)
     $_SESSION['user'] = $user;
     $_SESSION['credential_fingerprint'] = hash('sha256', $row['password']);
     $_SESSION['last_activity'] = time();
+    $_SESSION['remember'] = (bool) $remember;
+    // Ghi nhớ đăng nhập: cookie phiên tồn tại 30 ngày; không thì là cookie phiên thường.
+    auth_send_session_cookie($remember ? AUTH_REMEMBER_SECONDS : 0);
     return $user;
 }
 

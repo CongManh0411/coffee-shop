@@ -1,11 +1,15 @@
 <?php
+if (!defined('AUTH_IDLE_SECONDS')) define('AUTH_IDLE_SECONDS', 14400);            // 4 giờ không hoạt động
+if (!defined('AUTH_REMEMBER_SECONDS')) define('AUTH_REMEMBER_SECONDS', 2592000);  // 30 ngày khi chọn "Ghi nhớ đăng nhập"
 require_once __DIR__ . "/../api/modules/auth.php";
 if (session_status() === PHP_SESSION_NONE) {
     ini_set('session.use_strict_mode', '1');
     ini_set('session.use_only_cookies', '1');
     ini_set('session.cookie_httponly', '1');
     ini_set('session.cookie_samesite', 'Lax');
-    ini_set('session.gc_maxlifetime', '14400');
+    // Server-side session files must live as long as the longest ("remember me") session.
+    // Normal sessions are still expired after AUTH_IDLE_SECONDS by current_user().
+    ini_set('session.gc_maxlifetime', (string) AUTH_REMEMBER_SECONDS);
 
     // Store sessions outside the public document root.
     $sessionDirectory = rtrim(sys_get_temp_dir(), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'coffee-shop-sessions';
@@ -32,7 +36,9 @@ function current_user()
 {
     if (empty($_SESSION['user'])) return null;
     $now = time();
-    if (!empty($_SESSION['last_activity']) && $now - (int) $_SESSION['last_activity'] > 14400) {
+    $remember = !empty($_SESSION['remember']);
+    $idleLimit = $remember ? AUTH_REMEMBER_SECONDS : AUTH_IDLE_SECONDS;
+    if (!empty($_SESSION['last_activity']) && $now - (int) $_SESSION['last_activity'] > $idleLimit) {
         auth_logout();
         return null;
     }
@@ -48,7 +54,23 @@ function current_user()
     $_SESSION['credential_fingerprint'] = $fingerprint;
     $_SESSION['user']['name'] = $row['full_name'];
     $_SESSION['last_activity'] = $now;
+    if ($remember) auth_send_session_cookie(AUTH_REMEMBER_SECONDS); // gia hạn thêm 30 ngày mỗi lần dùng
     return $_SESSION['user'];
+}
+
+// Gửi lại cookie phiên với thời hạn cụ thể (0 = cookie phiên, đóng trình duyệt là mất).
+function auth_send_session_cookie($lifetime)
+{
+    if (headers_sent() || session_status() !== PHP_SESSION_ACTIVE) return;
+    $params = session_get_cookie_params();
+    setcookie(session_name(), session_id(), array(
+        'expires' => $lifetime > 0 ? time() + (int) $lifetime : 0,
+        'path' => $params['path'],
+        'domain' => $params['domain'],
+        'secure' => $params['secure'],
+        'httponly' => true,
+        'samesite' => 'Lax',
+    ));
 }
 
 function csrf_token()

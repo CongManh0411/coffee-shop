@@ -26,7 +26,7 @@ try {
             if (auth_attempts($username) >= 5) {
                 json_error('Tạm khóa đăng nhập trong 15 phút do nhập sai nhiều lần.', 429);
             }
-            $user = auth_login($username, $password);
+            $user = auth_login($username, $password, !empty($in['remember']));
             if (!$user) {
                 auth_attempts($username, true);
                 json_error('Sai tên đăng nhập hoặc mật khẩu.', 401);
