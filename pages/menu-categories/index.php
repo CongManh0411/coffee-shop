@@ -1,9 +1,9 @@
 <header class="catalog-header">
-    <a href="<?= e(url('home')) ?>" class="catalog-brand">Góc Nhỏ <span>Coffee &amp; Tea</span></a>
+    <a href="<?= e(url('home')) ?>" class="catalog-brand"><?= e(brand_name()) ?> <span><?= e(brand_subtitle()) ?></span></a>
     <nav aria-label="Điều hướng thực đơn"><a href="<?= e(url('home')) ?>">Trang chủ</a><a href="<?= e(url('menu-categories')) ?>">Danh mục</a><a href="<?= e(url('menu')) ?>">Thực đơn</a></nav>
 </header>
 <main class="catalog-main">
-    <p class="catalog-eyebrow">MENU GÓC NHỎ</p>
+    <p class="catalog-eyebrow">MENU <?= e(mb_strtoupper(brand_name(), "UTF-8")) ?></p>
     <h1>Danh mục thực đơn</h1>
     <p class="catalog-intro">Chọn danh mục để khám phá các món đang phục vụ.</p>
     <?php if ($categorySummaries): ?>

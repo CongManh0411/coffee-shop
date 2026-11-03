@@ -71,6 +71,11 @@
                     </div>
 
                     <div class="settings-form-group">
+                        <label for="brand_subtitle">Dòng phụ cạnh tên quán (vd: Coffee &amp; Tea)</label>
+                        <input type="text" id="brand_subtitle" name="brand_subtitle" value="<?= e(setting('brand_subtitle', 'Coffee & Tea')) ?>">
+                    </div>
+
+                    <div class="settings-form-group">
                         <label for="brand_tagline">Khẩu hiệu / Năm thành lập</label>
                         <input type="text" id="brand_tagline" name="brand_tagline" value="<?= e(setting('brand_tagline', 'COFFEE & TEA • EST. 2024')) ?>">
                     </div>

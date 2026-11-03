@@ -370,6 +370,7 @@ SELECT item_id, stock, min_stock FROM menu_items;
 INSERT IGNORE INTO site_settings (setting_key, setting_value, setting_label) VALUES
 ('brand_name', 'Góc Nhỏ', 'Tên thương hiệu quán'),
 ('brand_tagline', 'COFFEE & TEA • EST. 2024', 'Khẩu hiệu dưới logo'),
+('brand_subtitle', 'Coffee & Tea', 'Dòng phụ cạnh tên quán'),
 ('hero_badge', 'CHÀO MỪNG BẠN ĐẾN VỚI GÓC NHỎ', 'Huy hiệu mở đầu Hero'),
 ('hero_title', 'Cà phê thơm đượm vị.', 'Tiêu đề chính Hero dòng 1'),
 ('hero_subtitle', 'Chuyện trò thật an yên.', 'Tiêu đề chính Hero dòng 2'),

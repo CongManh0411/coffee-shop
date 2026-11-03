@@ -1,5 +1,5 @@
 <header class="catalog-header">
-    <a href="index.php?page=home" class="catalog-brand">Góc Nhỏ <span>Coffee &amp; Tea</span></a>
+    <a href="index.php?page=home" class="catalog-brand"><?= e(brand_name()) ?> <span><?= e(brand_subtitle()) ?></span></a>
     <nav aria-label="Điều hướng chính">
         <a href="index.php?page=home">Trang chủ</a>
         <a href="index.php?page=menu">Thực đơn</a>
@@ -24,10 +24,10 @@
         <article class="catalog-detail">
             <div class="catalog-detail-visual">
                 <img src="<?= e(menu_item_image($menuItem)) ?>" alt="<?= e($menuItem['item_name']) ?>">
-                <span class="catalog-photo-caption"><span aria-hidden="true">✦</span> Góc Nhỏ Coffee &amp; Tea</span>
+                <span class="catalog-photo-caption"><span aria-hidden="true">✦</span> <?= e(brand_full()) ?></span>
             </div>
             <div class="catalog-detail-info">
-                <span class="catalog-detail-kicker">HƯƠNG VỊ GÓC NHỎ</span>
+                <span class="catalog-detail-kicker">HƯƠNG VỊ <?= e(mb_strtoupper(brand_name(), "UTF-8")) ?></span>
                 <p class="catalog-category-pill"><span aria-hidden="true">☕</span> <?= e($menuItem['category_name']) ?></p>
                 <h1><?= e($menuItem['item_name']) ?></h1>
                 <p class="catalog-detail-description"><?= e($menuItem['description'] ?: 'Được chuẩn bị tại quán với sự chăm chút trong từng phần.') ?></p>
@@ -39,7 +39,7 @@
 
                 <div class="catalog-detail-note">
                     <span class="catalog-note-icon" aria-hidden="true">✓</span>
-                    <p><b>Món đang có trong thực đơn</b><small>Ghé quán để thưởng thức món này tại Góc Nhỏ.</small></p>
+                    <p><b>Món đang có trong thực đơn</b><small>Ghé quán để thưởng thức món này tại <?= e(brand_name()) ?>.</small></p>
                 </div>
 
                 <a class="catalog-back catalog-back-link" href="index.php?page=menu"><span aria-hidden="true">←</span> Khám phá thêm món</a>
