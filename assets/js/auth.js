@@ -125,6 +125,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     } catch (e) { /* localStorage có thể bị chặn */ }
 
+    // Điền sẵn mật khẩu: lấy lại thông tin đăng nhập mà trình duyệt đã lưu (Chrome/Edge)
+    // để sau khi đăng xuất chỉ cần bấm "Đăng nhập". Trình duyệt khác dùng autocomplete bình thường.
+    if (window.PasswordCredential && navigator.credentials && navigator.credentials.get && window.isSecureContext) {
+        navigator.credentials.get({ password: true, mediation: 'optional' }).then((cred) => {
+            if (cred && cred.password) {
+                if (userEl) userEl.value = cred.id;
+                if (passEl) passEl.value = cred.password;
+                if (rememberEl) rememberEl.checked = true;
+            }
+        }).catch(() => { /* người dùng từ chối hoặc trình duyệt không hỗ trợ */ });
+    }
+
     // Nút "Hiện/Ẩn" mật khẩu
     if (toggleBtn && passEl) {
         toggleBtn.addEventListener('click', () => {
