@@ -9,7 +9,6 @@
         </nav>
  
         <div class="main-content">
-            <p class="menu-demo-note">Ứng dụng mô phỏng phục vụ bài tập. Đăng nhập và phân quyền là chức năng mở rộng.</p>
             <?php if ($menuSavedMessage !== ''): ?>
                 <p class="menu-success-state" role="status"><?= e($menuSavedMessage) ?></p>
             <?php endif; ?>
