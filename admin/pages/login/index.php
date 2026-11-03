@@ -20,7 +20,7 @@
 
       <label class="login-remember">
         <input type="checkbox" id="rememberMe">
-        <span>Ghi nhớ đăng nhập (30 ngày) trên trình duyệt này</span>
+        <span>Lưu Mật khẩu</span>
       </label>
 
       <p id="loginError" class="login-error" role="alert" hidden></p>
