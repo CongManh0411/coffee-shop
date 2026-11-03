@@ -5,7 +5,6 @@ $routes = array(
     'home' => 'home/index.php',
     'public-menu' => 'public-menu/index.php',
     'menu' => 'menu/index.php',
-    'menu-categories' => 'menu-categories/index.php',
     'menu-detail' => 'menu-detail/index.php',
     'tables' => 'tables/index.php',
     'schedule' => 'schedule/index.php',
@@ -41,6 +40,11 @@ if ($page === 'login') {
     redirect('admin/index.php?page=login');
 }
 
+// Trang Danh mục đã gộp vào Thực đơn: giữ link cũ hoạt động
+if ($page === 'menu-categories') {
+    redirect('index.php?page=menu');
+}
+
 if (!is_string($page) || !isset($routes[$page])) {
     http_response_code(404);
     $page = '404';
@@ -54,7 +58,7 @@ if (!is_file($file)) {
     $file = __DIR__ . '/pages/404/index.php';
 }
 
-if (!in_array($page, array('404', 'home', 'public-menu', 'menu', 'menu-detail', 'menu-categories'), true)) {
+if (!in_array($page, array('404', 'home', 'public-menu', 'menu', 'menu-detail'), true)) {
     if (!$user) {
         redirect('admin/index.php?page=login');
     }

@@ -1,6 +1,6 @@
 <header class="catalog-header">
     <a href="index.php?page=home" class="catalog-brand"><?= e(brand_name()) ?> <span><?= e(brand_subtitle()) ?></span></a>
-    <nav><a href="index.php?page=home">Trang chủ</a><a href="<?= e(url('menu-categories')) ?>">Danh mục</a><a href="index.php?page=menu">Thực đơn</a></nav>
+    <nav><a href="index.php?page=home">Trang chủ</a><a href="index.php?page=menu">Thực đơn</a></nav>
 </header>
 <main class="catalog-main">
     <p class="catalog-eyebrow">MENU <?= e(mb_strtoupper(brand_name(), "UTF-8")) ?></p>
@@ -10,7 +10,7 @@
         <a class="<?= $selectedCategory === 0 ? 'active' : '' ?>" href="index.php?page=menu">Tất cả</a>
         <?php foreach ($menuCategories as $category): ?>
             <a class="<?= $selectedCategory === (int) $category['category_id'] ? 'active' : '' ?>"
-               href="index.php?page=menu&amp;category=<?= (int) $category['category_id'] ?>"><?= e($category['category_name']) ?></a>
+               href="index.php?page=menu&amp;category=<?= (int) $category['category_id'] ?>"><?= e($category['category_name']) ?> <small>(<?= (int) $category['item_count'] ?>)</small></a>
         <?php endforeach; ?>
     </nav>
     <?php if ($menuItems): ?>
