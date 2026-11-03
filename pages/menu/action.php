@@ -8,7 +8,9 @@ if ($selectedCategory === false || $selectedCategory === null || $selectedCatego
     $selectedCategory = 0;
 }
 try {
-    $menuCategories = public_menu_categories();
+    $menuCategories = array_values(array_filter(public_menu_category_summary(), function ($c) {
+        return (int) $c['item_count'] > 0;
+    }));
     $menuItems = public_menu_items($selectedCategory);
 } catch (Throwable $e) {
     // Render a friendly empty state when the local database is unavailable.
