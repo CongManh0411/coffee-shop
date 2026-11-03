@@ -191,3 +191,14 @@ function ageOf(iso) {
 
 // ==================== Initialize on Page Load ====================
 document.addEventListener('DOMContentLoaded', initStaffManagement);
+// Nút Hiện/Ẩn mật khẩu trong form nhân viên
+document.addEventListener('click', function (event) {
+    var btn = event.target.closest ? event.target.closest('#togglePassword') : null;
+    if (!btn) return;
+    var input = document.getElementById('password');
+    if (!input) return;
+    var show = input.type === 'password';
+    input.type = show ? 'text' : 'password';
+    btn.textContent = show ? 'Ẩn' : 'Hiện';
+    btn.setAttribute('aria-pressed', show ? 'true' : 'false');
+});
