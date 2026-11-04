@@ -11,17 +11,103 @@ require_once __DIR__ . '/api/modules/reservations.php';
 require_once __DIR__ . '/api/modules/ops.php';
 require_once __DIR__ . '/api/modules/warehouse.php';
 
-// Lấy toàn bộ món đang hiển thị để đưa vào thực đơn trên trang chủ.
-function public_menu_items($categoryId = 0)
+// Escape ký tự đặc biệt của LIKE (% _ \\) để từ khóa được so khớp đúng nghĩa đen.
+function like_escape($text)
 {
+    return '%' . addcslashes((string) $text, '%_\\') . '%';
+}
+
+// Chuẩn hóa tham số GET: từ khóa tìm kiếm (cắt khoảng trắng, tối đa 100 ký tự).
+function request_search($key = 'q')
+{
+    $q = $_GET[$key] ?? '';
+    return is_string($q) ? mb_substr(trim($q), 0, 100, 'UTF-8') : '';
+}
+
+// Số trang hiện tại từ GET (>= 1).
+function request_page($key = 'p')
+{
+    $p = filter_input(INPUT_GET, $key, FILTER_VALIDATE_INT);
+    return ($p === false || $p === null || $p < 1) ? 1 : $p;
+}
+
+// Tính phân trang: trả về array(page, pages, offset, perPage, total). Tự kéo $page về trang hợp lệ.
+function paginate($total, $page, $perPage)
+{
+    $perPage = max(1, (int) $perPage);
+    $pages = max(1, (int) ceil(((int) $total) / $perPage));
+    $page = min(max(1, (int) $page), $pages);
+    return array('page' => $page, 'pages' => $pages, 'offset' => ($page - 1) * $perPage, 'perPage' => $perPage, 'total' => (int) $total);
+}
+
+// Dựng điều kiện WHERE cho thực đơn công khai. Trả về array(sql, params).
+function public_menu_where($categoryId = 0, $search = '')
+{
+    $where = ' WHERE m.is_hidden = 0';
+    $params = array();
+    if ((int) $categoryId > 0) {
+        $where .= ' AND m.category_id = ?';
+        $params[] = (int) $categoryId;
+    }
+    if ($search !== '') {
+        $where .= ' AND (m.item_name LIKE ? OR m.description LIKE ?)';
+        $params[] = like_escape($search);
+        $params[] = like_escape($search);
+    }
+    return array($where, $params);
+}
+
+// Lấy món đang hiển thị (lọc theo danh mục + từ khóa, có thể phân trang bằng $limit/$offset).
+function public_menu_items($categoryId = 0, $search = '', $limit = 0, $offset = 0)
+{
+    list($where, $params) = public_menu_where($categoryId, $search);
     $sql = "SELECT m.item_id, m.category_id, m.item_name, m.price, m.image, m.description, c.category_name
             FROM menu_items m
-            JOIN categories c ON c.category_id = m.category_id
-            WHERE m.is_hidden = 0";
-    if ((int) $categoryId > 0) {
-        return db()->fetchAll($sql . " AND m.category_id = ? ORDER BY m.item_id ASC", array((int) $categoryId));
+            JOIN categories c ON c.category_id = m.category_id" . $where . " ORDER BY m.item_id ASC";
+    if ((int) $limit > 0) {
+        $sql .= ' LIMIT ? OFFSET ?';
+        $params[] = (int) $limit;
+        $params[] = max(0, (int) $offset);
     }
-    return db()->fetchAll($sql . " ORDER BY m.item_id ASC");
+    return db()->fetchAll($sql, $params);
+}
+
+function public_menu_count($categoryId = 0, $search = '')
+{
+    list($where, $params) = public_menu_where($categoryId, $search);
+    $row = db()->fetchOne("SELECT COUNT(*) AS n FROM menu_items m" . $where, $params);
+    return (int) ($row['n'] ?? 0);
+}
+
+// Nút phân trang. $query là các tham số GIỮ NGUYÊN trên URL (page, q, category...); trang được ghi vào ?p=
+function render_pagination($page, $pages, array $query, $key = 'p')
+{
+    if ($pages <= 1) return '';
+    $link = function ($n) use ($query, $key) {
+        $q = $query;
+        if ($n > 1) $q[$key] = $n; else unset($q[$key]);
+        return '?' . http_build_query($q);
+    };
+    $show = array_unique(array_filter(array(1, $pages, $page - 1, $page, $page + 1), function ($n) use ($pages) {
+        return $n >= 1 && $n <= $pages;
+    }));
+    sort($show);
+    $html = '<nav class="pagination" aria-label="Phân trang">';
+    $html .= $page > 1
+        ? '<a class="pg-btn" rel="prev" href="' . e($link($page - 1)) . '">&laquo; Trước</a>'
+        : '<span class="pg-btn is-disabled">&laquo; Trước</span>';
+    $prev = 0;
+    foreach ($show as $n) {
+        if ($prev && $n - $prev > 1) $html .= '<span class="pg-gap">…</span>';
+        $html .= $n === $page
+            ? '<span class="pg-btn is-current" aria-current="page">' . $n . '</span>'
+            : '<a class="pg-btn" href="' . e($link($n)) . '">' . $n . '</a>';
+        $prev = $n;
+    }
+    $html .= $page < $pages
+        ? '<a class="pg-btn" rel="next" href="' . e($link($page + 1)) . '">Sau &raquo;</a>'
+        : '<span class="pg-btn is-disabled">Sau &raquo;</span>';
+    return $html . '</nav>';
 }
 
 function public_featured_menu_items($limit = 6)
@@ -55,15 +141,36 @@ function public_featured_menu_items($limit = 6)
     return $featured;
 }
 
-function admin_menu_items()
+function admin_menu_items($search = '', $limit = 0, $offset = 0)
 {
-    return db()->fetchAll(
-        "SELECT m.item_id, m.item_name, m.description, m.price, m.image, m.is_hidden,
+    $sql = "SELECT m.item_id, m.item_name, m.description, m.price, m.image, m.is_hidden,
                 c.category_id, c.category_name
          FROM menu_items m
-         JOIN categories c ON c.category_id = m.category_id
-         ORDER BY c.category_name, m.item_name"
-    );
+         JOIN categories c ON c.category_id = m.category_id";
+    $params = array();
+    if ($search !== '') {
+        $sql .= ' WHERE (m.item_name LIKE ? OR m.description LIKE ? OR c.category_name LIKE ?)';
+        $params = array(like_escape($search), like_escape($search), like_escape($search));
+    }
+    $sql .= ' ORDER BY c.category_name, m.item_name';
+    if ((int) $limit > 0) {
+        $sql .= ' LIMIT ? OFFSET ?';
+        $params[] = (int) $limit;
+        $params[] = max(0, (int) $offset);
+    }
+    return db()->fetchAll($sql, $params);
+}
+
+function admin_menu_count($search = '')
+{
+    $sql = "SELECT COUNT(*) AS n FROM menu_items m JOIN categories c ON c.category_id = m.category_id";
+    $params = array();
+    if ($search !== '') {
+        $sql .= ' WHERE (m.item_name LIKE ? OR m.description LIKE ? OR c.category_name LIKE ?)';
+        $params = array(like_escape($search), like_escape($search), like_escape($search));
+    }
+    $row = db()->fetchOne($sql, $params);
+    return (int) ($row['n'] ?? 0);
 }
 
 function public_menu_category_summary()

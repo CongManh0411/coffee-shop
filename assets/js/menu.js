@@ -236,31 +236,8 @@ if (btnCancelEditEl) {
     });
 }
 
-// ============================================================
-// TÌM KIẾM MÓN (tab "Sửa món")
-// ============================================================
-function initMenuSearch() {
-    const searchInput = document.getElementById('menuSearchInput');
-    if (!searchInput) return;
-    searchInput.addEventListener('input', () => {
-        const keyword = searchInput.value.trim().toLocaleLowerCase('vi-VN');
-        let visibleCount = 0;
-        document.querySelectorAll('#menuCategoryList .menu-category').forEach(group => {
-            let groupCount = 0;
-            group.querySelectorAll('.menu-item').forEach(row => {
-                const text = row.querySelector('.menu-item-name').textContent + ' ' +
-                    (row.querySelector('.menu-item-desc')?.textContent || '') + ' ' + group.querySelector('h3').textContent;
-                row.hidden = !text.toLocaleLowerCase('vi-VN').includes(keyword);
-                if (!row.hidden) groupCount++;
-            });
-            group.hidden = groupCount === 0;
-            visibleCount += groupCount;
-        });
-        document.getElementById('menuEmptyState').hidden = visibleCount > 0;
-    });
-}
+// Tìm kiếm + phân trang do server xử lý qua URL (?page=menu&q=...&p=...).
 
 // Giữ nguyên HTML PHP ban đầu, không gọi API để dựng lại danh sách.
 mirrorMenu(currentMenuData);
 attachMenuItemEvents();
-initMenuSearch();

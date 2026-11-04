@@ -19,9 +19,16 @@
     </section>
     <section class="public-menu-list" aria-label="Danh sách thực đơn">
         <div class="public-menu-heading"><div><p class="eyebrow">THỰC ĐƠN</p><h2>Chọn món bạn thích.</h2></div><p>Giá và món hiện có được cập nhật trực tiếp từ quán.</p></div>
+        <form id="menuSearchForm" class="catalog-search" role="search">
+            <label for="menuSearch" class="sr-only">Tìm món</label>
+            <input type="search" id="menuSearch" name="q" placeholder="Tìm món theo tên hoặc mô tả…" maxlength="100" autocomplete="off">
+            <button type="submit">Tìm</button>
+            <a id="menuSearchClear" class="catalog-search-clear" href="index.php?page=public-menu" hidden>Xóa lọc</a>
+        </form>
         <nav id="menuCategories" class="menu-category-tabs" aria-label="Lọc theo danh mục"></nav>
         <p id="menuStatus" class="menu-status" role="status">Đang tải thực đơn…</p>
         <div id="publicMenuGrid" class="public-menu-grid"></div>
+        <div id="menuPagination"></div>
     </section>
     <section class="menu-booking-banner"><div><p class="eyebrow">MỘT CHỖ NGỒI ĐANG CHỜ BẠN</p><h2>Hẹn nhau ở <?= e(brand_name()) ?> nhé.</h2></div><a class="button button-dark" href="index.php?page=home#booking">Đặt bàn <span aria-hidden="true">→</span></a></section>
 </main>
