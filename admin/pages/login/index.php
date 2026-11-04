@@ -4,16 +4,16 @@
     <h1 class="login-title">Đăng nhập</h1>
     <p class="login-sub">Dùng tài khoản do Quản lý cấp</p>
 
-    <form id="loginForm" class="login-form" novalidate>
+    <form id="loginForm" class="login-form" novalidate autocomplete="off">
       <label class="login-field">
         <span>Tên đăng nhập</span>
-        <input type="text" id="username" autocomplete="username" required autofocus>
+        <input type="text" id="username" autocomplete="off" required autofocus>
       </label>
 
       <label class="login-field">
         <span>Mật khẩu</span>
         <div class="login-pass">
-          <input type="password" id="password" autocomplete="current-password" required>
+          <input type="password" id="password" autocomplete="new-password" required>
           <button type="button" id="togglePass" class="login-eye" aria-label="Hiện mật khẩu">Hiện</button>
         </div>
       </label>

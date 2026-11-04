@@ -6,13 +6,25 @@
     <p class="catalog-eyebrow">MENU <?= e(mb_strtoupper(brand_name(), "UTF-8")) ?></p>
     <h1>Thực đơn</h1>
     <p class="catalog-intro">Khám phá đầy đủ các món đang phục vụ tại quán.</p>
+    <form class="catalog-search" method="get" action="index.php" role="search">
+        <input type="hidden" name="page" value="menu">
+        <?php if ($selectedCategory > 0): ?><input type="hidden" name="category" value="<?= (int) $selectedCategory ?>"><?php endif; ?>
+        <label for="catalogSearch" class="sr-only">Tìm món</label>
+        <input type="search" id="catalogSearch" name="q" value="<?= e($menuSearch) ?>" placeholder="Tìm món theo tên hoặc mô tả…" maxlength="100">
+        <button type="submit">Tìm</button>
+        <?php if ($menuSearch !== ''): ?><a class="catalog-search-clear" href="index.php?page=menu<?= $selectedCategory > 0 ? '&amp;category=' . (int) $selectedCategory : '' ?>">Xóa lọc</a><?php endif; ?>
+    </form>
+    <?php $keepQ = $menuSearch !== '' ? '&amp;q=' . rawurlencode($menuSearch) : ''; ?>
     <nav class="catalog-filters" aria-label="Lọc theo danh mục">
-        <a class="<?= $selectedCategory === 0 ? 'active' : '' ?>" href="index.php?page=menu">Tất cả</a>
+        <a class="<?= $selectedCategory === 0 ? 'active' : '' ?>" href="index.php?page=menu<?= $keepQ ?>">Tất cả</a>
         <?php foreach ($menuCategories as $category): ?>
             <a class="<?= $selectedCategory === (int) $category['category_id'] ? 'active' : '' ?>"
-               href="index.php?page=menu&amp;category=<?= (int) $category['category_id'] ?>"><?= e($category['category_name']) ?> <small>(<?= (int) $category['item_count'] ?>)</small></a>
+               href="index.php?page=menu&amp;category=<?= (int) $category['category_id'] ?><?= $keepQ ?>"><?= e($category['category_name']) ?> <small>(<?= (int) $category['item_count'] ?>)</small></a>
         <?php endforeach; ?>
     </nav>
+    <?php if ($menuSearch !== ''): ?>
+        <p class="catalog-result-note">Tìm thấy <?= (int) $menuPager['total'] ?> món cho “<?= e($menuSearch) ?>”.</p>
+    <?php endif; ?>
     <?php if ($menuItems): ?>
         <div class="catalog-grid">
             <?php foreach ($menuItems as $item): ?>
@@ -30,6 +42,12 @@
             <?php endforeach; ?>
         </div>
     <?php else: ?>
-        <p class="catalog-empty">Danh mục này hiện chưa có món.</p>
+        <p class="catalog-empty"><?= $menuSearch !== '' ? 'Không có món nào khớp với “' . e($menuSearch) . '”.' : 'Danh mục này hiện chưa có món.' ?></p>
     <?php endif; ?>
+    <?php
+    $pagerQuery = array('page' => 'menu');
+    if ($selectedCategory > 0) $pagerQuery['category'] = $selectedCategory;
+    if ($menuSearch !== '') $pagerQuery['q'] = $menuSearch;
+    echo render_pagination($menuPager['page'], $menuPager['pages'], $pagerQuery);
+    ?>
 </main>

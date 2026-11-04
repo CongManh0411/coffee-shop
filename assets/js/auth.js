@@ -48,6 +48,11 @@ const AuthAPI = {
         try { await Api.post('auth/logout'); } catch (err) {}
         window.SERVER_USER = null;
         try { sessionStorage.clear(); } catch (err) {}
+        // Đăng xuất = quên tài khoản vừa dùng, để trang đăng nhập không còn hiện lại tài khoản cũ.
+        try { localStorage.removeItem('coffee_remember_username'); } catch (err) {}
+        try {
+            if (navigator.credentials && navigator.credentials.preventSilentAccess) await navigator.credentials.preventSilentAccess();
+        } catch (err) {}
         window.location.replace((window.COFFEE_ROOT || './') + 'admin/index.php?page=login');
     },
     getSession() { return window.SERVER_USER || null; },
@@ -125,17 +130,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     } catch (e) { /* localStorage có thể bị chặn */ }
 
-    // Điền sẵn mật khẩu: lấy lại thông tin đăng nhập mà trình duyệt đã lưu (Chrome/Edge)
-    // để sau khi đăng xuất chỉ cần bấm "Đăng nhập". Trình duyệt khác dùng autocomplete bình thường.
-    if (window.PasswordCredential && navigator.credentials && navigator.credentials.get && window.isSecureContext) {
-        navigator.credentials.get({ password: true, mediation: 'optional' }).then((cred) => {
-            if (cred && cred.password) {
-                if (userEl) userEl.value = cred.id;
-                if (passEl) passEl.value = cred.password;
-                if (rememberEl) rememberEl.checked = true;
-            }
-        }).catch(() => { /* người dùng từ chối hoặc trình duyệt không hỗ trợ */ });
-    }
+    // Không tự điền mật khẩu khi mở trang: sau khi đăng xuất, form phải trống để đăng nhập tài khoản khác.
+    // (Chỉ khi người dùng đã tick "Lưu mật khẩu" ở lần đăng nhập thì tên đăng nhập mới được nhớ ở trên.)
+    // Tránh trình duyệt bơm lại mật khẩu cũ do bfcache/autofill: xóa trường mật khẩu khi trang được khôi phục từ cache.
+    window.addEventListener('pageshow', (ev) => {
+        if (ev.persisted && passEl) passEl.value = '';
+    });
 
     // Nút "Hiện/Ẩn" mật khẩu
     if (toggleBtn && passEl) {
