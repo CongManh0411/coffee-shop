@@ -1,20 +1,31 @@
 <?php
 require_once __DIR__ . '/../../../functions.php';
-$adminMenuItems = admin_menu_items();
+$adminMenuItems = admin_menu_items(); // toàn bộ món: dùng cho dữ liệu JSON (sửa / ẩn / đồng bộ localStorage)
+$adminSearch = request_search('q');
+$adminPager = paginate(admin_menu_count($adminSearch), request_page('p'), 10);
+$adminPageItems = admin_menu_items($adminSearch, $adminPager['perPage'], $adminPager['offset']);
 $adminMenuCategories = db()->fetchAll('SELECT category_name FROM categories ORDER BY category_id');
 $adminMenuGroups = array();
 foreach ($adminMenuCategories as $category) {
     $adminMenuGroups[$category['category_name']] = array('category' => $category['category_name'], 'items' => array());
 }
+$adminMenuPageGroups = array();
+foreach ($adminMenuCategories as $category) {
+    $adminMenuPageGroups[$category['category_name']] = array('category' => $category['category_name'], 'items' => array());
+}
+$adminPageIds = array();
+foreach ($adminPageItems as $pageItem) $adminPageIds[(int) $pageItem['item_id']] = true;
 foreach ($adminMenuItems as $item) {
     $image = menu_item_image($item);
     if (strpos($image, 'assets/') === 0) $image = '../' . $image;
-    $adminMenuGroups[$item['category_name']]['items'][] = array(
+    $row = array(
         'id' => (int) $item['item_id'], 'name' => $item['item_name'],
         'desc' => $item['description'] ?? '', 'price' => (int) $item['price'],
         'img' => $item['image'] ?? '', 'thumb' => $image,
         'hidden' => (int) $item['is_hidden'] === 1,
     );
+    $adminMenuGroups[$item['category_name']]['items'][] = $row;
+    if (isset($adminPageIds[$row['id']])) $adminMenuPageGroups[$item['category_name']]['items'][] = $row;
 }
 $menuFormError = '';
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && isset($_POST['save_menu_item'])) {
@@ -40,7 +51,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && isset($_POST['save_menu_
 
     if ($menuFormError === '') {
         $_SESSION['menu_saved'] = 'Đã lưu món vào cơ sở dữ liệu.';
-        redirect(admin_url('menu'));
+        redirect(admin_url('menu', array_filter(array('q' => $adminSearch, 'p' => $adminPager['page'] > 1 ? $adminPager['page'] : null))));
     }
 }
 $menuSavedMessage = $_SESSION['menu_saved'] ?? '';

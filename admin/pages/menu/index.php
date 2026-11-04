@@ -23,14 +23,17 @@
                     <p>Thêm, sửa, ẩn món trực tiếp. Số lượng tồn kho quản lý ở trang <a href="<?= e(admin_url('warehouse')) ?>">Kho</a>.</p>
                 </div>
  
-                <div class="menu-toolbar">
+                <form class="menu-toolbar" method="get" action="<?= e(admin_url('menu')) ?>" role="search">
+                    <input type="hidden" name="page" value="menu">
                     <label for="menuSearchInput" class="sr-only">Tìm món theo tên</label>
-                    <input type="text" id="menuSearchInput" class="menu-search-input" placeholder="Tìm món theo tên...">
-                </div>
+                    <input type="text" id="menuSearchInput" name="q" class="menu-search-input" value="<?= e($adminSearch) ?>" placeholder="Tìm món theo tên, mô tả, danh mục..." maxlength="100" autocomplete="off">
+                    <button type="submit" class="btn-outline">Tìm</button>
+                    <?php if ($adminSearch !== ''): ?><a class="btn-outline" href="<?= e(admin_url('menu')) ?>">Xóa lọc</a><?php endif; ?>
+                </form>
 
                 <!-- PHP xuất danh sách từ truy vấn JOIN; JS chỉ bổ sung tương tác. -->
                 <div class="menu-category-list" id="menuCategoryList">
-                    <?php foreach ($adminMenuGroups as $group): ?>
+                    <?php foreach ($adminMenuPageGroups as $group): ?>
                         <?php if (!$group['items']) continue; ?>
                         <section class="menu-category">
                             <h3><?= e($group['category']) ?></h3>
@@ -54,7 +57,8 @@
                             <?php endforeach; ?>
                         </section>
                     <?php endforeach; ?>
-                    <p class="menu-empty-state" id="menuEmptyState"<?= $adminMenuItems ? ' hidden' : '' ?>>Chưa có món nào phù hợp.</p>
+                    <p class="menu-empty-state" id="menuEmptyState"<?= $adminPageItems ? ' hidden' : '' ?>>Chưa có món nào phù hợp.</p>
+                    <?= render_pagination($adminPager['page'], $adminPager['pages'], array_filter(array('page' => 'menu', 'q' => $adminSearch))) ?>
                 </div>
                 <script type="application/json" id="adminMenuData"><?= json_encode(array_values($adminMenuGroups), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_THROW_ON_ERROR) ?></script>
             </div>

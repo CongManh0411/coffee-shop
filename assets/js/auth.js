@@ -125,11 +125,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     } catch (e) { /* localStorage có thể bị chặn */ }
 
-    // Điền sẵn mật khẩu: lấy lại thông tin đăng nhập mà trình duyệt đã lưu (Chrome/Edge)
-    // để sau khi đăng xuất chỉ cần bấm "Đăng nhập". Trình duyệt khác dùng autocomplete bình thường.
-    if (window.PasswordCredential && navigator.credentials && navigator.credentials.get && window.isSecureContext) {
+    // Điền sẵn mật khẩu CHỈ khi lần đăng nhập gần nhất có tick "Lưu mật khẩu" (REMEMBER_KEY còn tồn tại)
+    // và thông tin trình duyệt lưu khớp đúng tài khoản đó. Không tick -> form trống, đăng nhập tài khoản khác thoải mái.
+    let remembered = null;
+    try { remembered = localStorage.getItem(REMEMBER_KEY); } catch (e) {}
+    if (remembered && window.PasswordCredential && navigator.credentials && navigator.credentials.get && window.isSecureContext) {
         navigator.credentials.get({ password: true, mediation: 'optional' }).then((cred) => {
-            if (cred && cred.password) {
+            if (cred && cred.password && cred.id === remembered) {
                 if (userEl) userEl.value = cred.id;
                 if (passEl) passEl.value = cred.password;
                 if (rememberEl) rememberEl.checked = true;
@@ -162,6 +164,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 } else {
                     localStorage.removeItem(REMEMBER_KEY);
+                    if (navigator.credentials && navigator.credentials.preventSilentAccess) await navigator.credentials.preventSilentAccess();
                 }
             } catch (e) { /* không ảnh hưởng việc đăng nhập */ }
             const home = PAGES_BY_ROLE[session.roleKey]
