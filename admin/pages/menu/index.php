@@ -20,7 +20,7 @@
             <div class="tab-panel active" id="panel-edit">
                 <div class="menu-page-header">
                     <h2>Thực đơn</h2>
-                    <p>Thêm, sửa, ẩn món trực tiếp. Số lượng tồn kho quản lý ở trang <a href="<?= e(admin_url('warehouse')) ?>">Kho</a>.</p>
+                    <p>Thêm, sửa, ẩn món trực tiếp.</p>
                 </div>
  
                 <form class="menu-toolbar" method="get" action="<?= e(admin_url('menu')) ?>" role="search">
@@ -67,6 +67,7 @@
             <div class="tab-panel" id="panel-add">
                 <div class="menu-page-header">
                     <h2>Thêm món mới</h2>
+                    <p>Món mới có tồn kho là 0. Hãy nhập hàng ở mục Kho để món có thể bán.</p>
                 </div>
  
                 <form class="add-item-form" method="POST" enctype="multipart/form-data" action="<?= e(admin_url('menu')) ?>">
