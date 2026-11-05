@@ -125,6 +125,8 @@ function resetAddFormToAddMode() {
     if (editIdInput) editIdInput.value = '';
     const headerH2 = document.querySelector('#panel-add .menu-page-header h2');
     if (headerH2) headerH2.textContent = 'Thêm món mới';
+    const hintP = document.getElementById('addPanelHint');
+    if (hintP) hintP.textContent = 'Chọn danh mục có sẵn hoặc tạo danh mục mới, rồi nhập tên món và giá. Mô tả và ảnh không bắt buộc. Món mới có tồn kho là 0 và chưa bán được, hãy nhập hàng ở mục Kho.';
     const submitBtn = addItemFormEl.querySelector('.btn-submit');
     if (submitBtn) submitBtn.textContent = 'Thêm món + danh mục (nếu có)';
     const cancelBtn = document.getElementById('btnCancelEdit');
@@ -158,6 +160,8 @@ function openEditItemForm(id) {
 
     const headerH2 = document.querySelector('#panel-add .menu-page-header h2');
     if (headerH2) headerH2.textContent = 'Sửa món';
+    const hintP = document.getElementById('addPanelHint');
+    if (hintP) hintP.textContent = 'Chỉnh thông tin món rồi bấm "Lưu thay đổi". Số lượng tồn kho không đổi ở đây, hãy chỉnh ở mục Kho.';
     const submitBtn = addItemFormEl.querySelector('.btn-submit');
     if (submitBtn) submitBtn.textContent = 'Lưu thay đổi';
     const cancelBtn = document.getElementById('btnCancelEdit');
