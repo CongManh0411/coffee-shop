@@ -151,6 +151,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
+        // Trình duyệt chỉ đề nghị lưu mật khẩu khi ô mật khẩu đang là type="password".
+        // Nếu người dùng vừa bấm "Hiện" thì trả về dạng ẩn trước khi gửi.
+        if (passEl && passEl.type !== 'password') {
+            passEl.type = 'password';
+            if (toggleBtn) { toggleBtn.textContent = 'Hiện'; toggleBtn.setAttribute('aria-label', 'Hiện mật khẩu'); }
+        }
         if (errEl) errEl.hidden = true;
         if (submitBtn) submitBtn.disabled = true;
 
