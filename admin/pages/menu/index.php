@@ -67,7 +67,7 @@
             <div class="tab-panel" id="panel-add">
                 <div class="menu-page-header">
                     <h2>Thêm món mới</h2>
-                    <p>Món mới có tồn kho là 0. Hãy nhập hàng ở mục Kho để món có thể bán.</p>
+                    <p id="addPanelHint">Chọn danh mục có sẵn hoặc tạo danh mục mới, rồi nhập tên món và giá. Mô tả và ảnh không bắt buộc. Món mới có tồn kho là 0 và chưa bán được, hãy nhập hàng ở mục Kho.</p>
                 </div>
  
                 <form class="add-item-form" method="POST" enctype="multipart/form-data" action="<?= e(admin_url('menu')) ?>">
