@@ -169,8 +169,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         await navigator.credentials.store(new PasswordCredential({ id: userEl.value.trim(), password: passEl.value }));
                     }
                 } else {
+                    // Không tick: chỉ xóa tên đăng nhập do quán tự nhớ. Mật khẩu do trình duyệt lưu (bấm "Lưu"
+                    // trong hộp thoại của Chrome/Edge) vẫn được trình duyệt tự điền như bình thường.
                     localStorage.removeItem(REMEMBER_KEY);
-                    if (navigator.credentials && navigator.credentials.preventSilentAccess) await navigator.credentials.preventSilentAccess();
                 }
             } catch (e) { /* không ảnh hưởng việc đăng nhập */ }
             const home = PAGES_BY_ROLE[session.roleKey]
