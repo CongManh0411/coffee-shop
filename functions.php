@@ -1,5 +1,6 @@
 <?php
 // Shared business functions used by Public, Admin, and API routes.
+require_once __DIR__ . '/helpers/upload.php';
 require_once __DIR__ . '/api/modules/auth.php';
 require_once __DIR__ . '/api/modules/staff.php';
 require_once __DIR__ . '/api/modules/menu.php';

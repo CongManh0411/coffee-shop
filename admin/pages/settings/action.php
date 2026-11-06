@@ -1,5 +1,6 @@
 <?php
 // admin/pages/settings/action.php — Khai báo và xử lý trang Cài đặt Website & Quản lý Logo
+require_once __DIR__ . '/../../../helpers/upload.php';
 $title = 'Cài đặt Website';
 $bodyClass = 'admin-settings';
 $css = array('settings.css');
@@ -21,74 +22,27 @@ if ($method === 'POST' && isset($_POST['save_settings'])) {
         update_setting('shop_logo', 'assets/images/images.jpg');
     }
     // 2. Xử lý tải lên tệp ảnh logo mới
-    elseif (!empty($_FILES['shop_logo_file']) && $_FILES['shop_logo_file']['error'] === UPLOAD_ERR_OK) {
-        $uploadFile = $_FILES['shop_logo_file'];
-        $allowed = array(
-            'image/jpeg' => 'jpg',
-            'image/png'  => 'png',
-            'image/webp' => 'webp',
-            'image/gif'  => 'gif'
-        );
-
-        $finfo = finfo_open(FILEINFO_MIME_TYPE);
-        $mime = finfo_file($finfo, $uploadFile['tmp_name']);
-        finfo_close($finfo);
-
-        if (!isset($allowed[$mime])) {
-            $errorMessage = 'Định dạng ảnh logo không hợp lệ. Vui lòng chọn ảnh JPG, PNG, WEBP hoặc GIF.';
+    elseif (!empty($_FILES['shop_logo_file']) && $_FILES['shop_logo_file']['error'] !== UPLOAD_ERR_NO_FILE) {
+        // Logo: JPG, PNG, WEBP hoặc GIF, tối đa 5MB (kiểm tra nội dung thật trong helpers/upload.php)
+        list($logoPath, $uploadError) = upload_image_file($_FILES['shop_logo_file'], 'site', 'logo_');
+        if ($uploadError !== '') {
+            $errorMessage = $uploadError;
             $success = false;
-        } elseif ($uploadFile['size'] > 5 * 1024 * 1024) {
-            $errorMessage = 'Ảnh logo quá lớn (tối đa 5MB). Vui lòng chọn ảnh nhẹ hơn.';
-            $success = false;
-        } else {
-            $ext = $allowed[$mime];
-            $uploadDir = __DIR__ . '/../../../assets/images/uploads';
-            if (!is_dir($uploadDir)) {
-                @mkdir($uploadDir, 0750, true);
-            }
-            $uploadFilename = 'logo_' . time() . '.' . $ext;
-            $destPath = $uploadDir . '/' . $uploadFilename;
-
-            if (move_uploaded_file($uploadFile['tmp_name'], $destPath)) {
-                update_setting('shop_logo', 'assets/images/uploads/' . $uploadFilename);
-            } else {
-                $errorMessage = 'Không thể lưu tệp ảnh tải lên. Vui lòng kiểm tra quyền ghi thư mục assets/images/uploads.';
-                $success = false;
-            }
+        } elseif ($logoPath !== null) {
+            update_setting('shop_logo', $logoPath);
         }
     }
 
-    // Ảnh trang chủ và ba góc không gian
+    // Ảnh trang chủ và ba góc không gian (JPG, PNG, WEBP; không nhận GIF)
     foreach (array('space_garden', 'space_work', 'space_sofa', 'hero_main', 'hero_small', 'story') as $imageKey) {
         $field = $imageKey . '_image_file';
-        if (empty($_FILES[$field]) || $_FILES[$field]['error'] === UPLOAD_ERR_NO_FILE) continue;
-        $uploadFile = $_FILES[$field];
-        if ($uploadFile['error'] !== UPLOAD_ERR_OK) {
-            $errorMessage = 'Không thể nhận ảnh tải lên.';
+        if (empty($_FILES[$field])) continue;
+        list($imagePath, $uploadError) = upload_image_file($_FILES[$field], 'site', $imageKey . '_', 5 * 1024 * 1024, false);
+        if ($uploadError !== '') {
+            $errorMessage = $uploadError;
             $success = false;
-            continue;
-        }
-        $finfo = finfo_open(FILEINFO_MIME_TYPE);
-        $mime = finfo_file($finfo, $uploadFile['tmp_name']);
-        finfo_close($finfo);
-        $allowed = array('image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp');
-        if (!isset($allowed[$mime]) || $uploadFile['size'] > 5 * 1024 * 1024) {
-            $errorMessage = 'Ảnh phải là JPG, PNG hoặc WEBP và tối đa 5 MB.';
-            $success = false;
-            continue;
-        }
-        $uploadDir = __DIR__ . '/../../../assets/images/uploads';
-        if (!is_dir($uploadDir) && !@mkdir($uploadDir, 0750, true) && !is_dir($uploadDir)) {
-            $errorMessage = 'Không thể tạo thư mục lưu ảnh tải lên.';
-            $success = false;
-            continue;
-        }
-        $uploadFilename = $imageKey . '_' . bin2hex(random_bytes(6)) . '.' . $allowed[$mime];
-        if (move_uploaded_file($uploadFile['tmp_name'], $uploadDir . '/' . $uploadFilename)) {
-            update_setting($imageKey . '_image', 'assets/images/uploads/' . $uploadFilename);
-        } else {
-            $errorMessage = 'Không thể lưu ảnh tải lên.';
-            $success = false;
+        } elseif ($imagePath !== null) {
+            update_setting($imageKey . '_image', $imagePath);
         }
     }
     // 3. Xử lý các trường thông tin văn bản
