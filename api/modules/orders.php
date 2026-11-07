@@ -443,9 +443,7 @@ function orders_pay($data, $user)
                 $value = (int) $promotion['discount_value'];
                 $promotionId = (int) $promotion['promotion_id'];
             } else {
-                $fixedVouchers = array('GIAM10' => array('pct', 10), 'GIAM20' => array('pct', 20), 'GIAM5K' => array('vnd', 5000), 'GIAM20K' => array('vnd', 20000));
-                if (!isset($fixedVouchers[$voucherCode])) return array(null, 'Mã khuyến mãi không hợp lệ.');
-                list($type, $value) = $fixedVouchers[$voucherCode];
+                return array(null, 'Mã khuyến mãi không hợp lệ.');
             }
             $expectedDiscount = min($subtotal, $type === 'pct' ? (int) round($subtotal * $value / 100) : $value);
             if ($discount !== $expectedDiscount) return array(null, 'Mức giảm giá của mã không hợp lệ. Hãy áp dụng lại mã.');

@@ -20,12 +20,6 @@
     if (window.Cashier) return;
 
     // ---- CẤU HÌNH (quản lý có thể chỉnh trực tiếp ở đây) ----
-    const VOUCHERS = {                      // mã khuyến mãi: type 'pct' (%) hoặc 'vnd' (đ)
-        GIAM10:   { type: 'pct', value: 10,    label: 'Giảm 10%' },
-        GIAM20:   { type: 'pct', value: 20,    label: 'Giảm 20%' },
-        GIAM5K:   { type: 'vnd', value: 5000,  label: 'Giảm 5.000đ' },
-        GIAM20K:  { type: 'vnd', value: 20000, label: 'Giảm 20.000đ' },
-    };
     const LARGE_DISCOUNT_PCT = 20;          // giảm >= 20% hóa đơn  -> đánh dấu "giảm giá lớn" trong Nhật ký
     const LARGE_DISCOUNT_VND = 50000;       // hoặc giảm >= 50.000đ -> đánh dấu "giảm giá lớn"
     const BIG_ADJUST_VND = 200000;          // thu/chi quỹ >= 200.000đ -> đánh dấu trong Nhật ký
@@ -144,7 +138,7 @@
     }
     function applyVoucher(code, subtotal) {
         const c0 = String(code || '').trim().toUpperCase();
-        const v = VOUCHERS[c0] || promoFor(c0);
+        const v = promoFor(c0);
         if (!v) return null;
         const amt = v.type === 'pct' ? Math.round(subtotal * v.value / 100) : v.value;
         return { code: String(code).trim().toUpperCase(), label: v.label, type: v.type, value: v.value, amount: Math.min(subtotal, amt) };
@@ -233,7 +227,7 @@
     }
 
     window.Cashier = {
-        VOUCHERS, ORDER_TYPES, METHODS, CATEGORIES, LOG_TYPES,
+        ORDER_TYPES, METHODS, CATEGORIES, LOG_TYPES,
         esc, money, pad, fmtTime, fmtDT, me, isCashier, session,
         log, currentShift, shiftStore, shiftReady, syncShift, openShift, addMovement, closeShift, stats, methodKey,
         applyVoucher, refreshPromotions, manualDiscount, isLargeDiscount,
