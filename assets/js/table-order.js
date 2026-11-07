@@ -37,7 +37,7 @@ async function ensureOrder(table) {
  
 // ---- MENU: lấy từ API 'menu' (thực đơn do Quản lý quản lý ở trang Thực đơn) ----
 // Món bị ẩn không hiện để gọi. Món báo hết (soldOut) vẫn hiện nhưng không thêm được.
-// DEFAULT_MENU, itemImage, OPTION_CONFIG: lấy từ menu-data.js
+// itemImage, OPTION_CONFIG: lấy từ menu-data.js
 const escHtml = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 function menuFromData(data) {
     const out = [];

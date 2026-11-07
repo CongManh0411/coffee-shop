@@ -377,6 +377,13 @@ INSERT IGNORE INTO menu_stock (menu_item_id, quantity, min_quantity)
 SELECT item_id, stock, min_stock FROM menu_items;
 
 -- 4.5 Cai dat website & trang chu
+-- Ma khuyen mai mau (quan ly sua / them tai trang Van hanh)
+INSERT IGNORE INTO promotions (code, label, discount_type, discount_value) VALUES
+  ('GIAM10',  'Giảm 10%',     'pct', 10),
+  ('GIAM20',  'Giảm 20%',     'pct', 20),
+  ('GIAM5K',  'Giảm 5.000đ',  'vnd', 5000),
+  ('GIAM20K', 'Giảm 20.000đ', 'vnd', 20000);
+
 INSERT IGNORE INTO site_settings (setting_key, setting_value, setting_label) VALUES
 ('brand_name', 'Góc Nhỏ', 'Tên thương hiệu quán'),
 ('brand_tagline', 'COFFEE & TEA • EST. 2024', 'Khẩu hiệu dưới logo'),

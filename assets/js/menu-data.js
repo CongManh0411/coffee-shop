@@ -22,23 +22,6 @@ function itemImage(item, category) {
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${col}" stop-opacity=".25"/><stop offset="1" stop-color="${col}" stop-opacity=".6"/></linearGradient></defs><rect width="160" height="160" rx="18" fill="url(#g)"/><text x="80" y="102" font-size="72" text-anchor="middle">${emo}</text></svg>`;
     return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
 }
-const DEFAULT_MENU = [
-    { category: 'Cà phê', items: [
-        { id: 1, name: 'Cà phê sữa đá', desc: 'Phin truyền thống', price: 29000 },
-        { id: 2, name: 'Cà phê đen đá', desc: 'Đậm vị, không đường sữa', price: 25000 },
-        { id: 3, name: 'Cà phê đen nóng', desc: 'Pha phin nóng', price: 25000 },
-        { id: 7, name: 'Cà phê bạc xỉu', desc: 'Nhiều sữa, ít cà phê', price: 29000 },
-        { id: 8, name: 'Cà phê cappuccino', desc: 'Espresso, sữa tươi, bọt sữa', price: 45000 } ] },
-    { category: 'Trà sữa', items: [
-        { id: 4, name: 'Trà sữa trân châu', desc: 'Trân châu đen', price: 35000 },
-        { id: 5, name: 'Trà sữa matcha', desc: 'Matcha Nhật', price: 39000 } ] },
-    { category: 'Trà trái cây', items: [
-        { id: 9, name: 'Trà đào cam sả', desc: 'Đào miếng, cam, sả', price: 39000 },
-        { id: 10, name: 'Trà vải hoa hồng', desc: 'Vải, hoa hồng', price: 39000 } ] },
-    { category: 'Bánh', items: [
-        { id: 6, name: 'Bánh croissant', desc: 'Nướng giòn', price: 22000 },
-        { id: 11, name: 'Bánh tiramisu', desc: 'Lát 1 phần', price: 35000 } ] }
-];
 // Tùy chọn pha chế (áp dụng cho đồ uống, không áp dụng cho danh mục "Bánh")
 const NO_OPTION_CATEGORIES = ['Bánh'];
 const OPTION_CONFIG = {
