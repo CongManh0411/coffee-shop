@@ -96,19 +96,3 @@ function upload_delete_files($paths)
     }
 }
 
-// Chuyển $_FILES['images'] (nhiều file) thành danh sách file đơn để lặp foreach.
-function upload_files_list($files)
-{
-    if (empty($files['name']) || !is_array($files['name'])) return array();
-    $result = array();
-    foreach ($files['name'] as $i => $name) {
-        $result[] = array(
-            'name' => $name,
-            'type' => $files['type'][$i] ?? '',
-            'tmp_name' => $files['tmp_name'][$i] ?? '',
-            'error' => $files['error'][$i] ?? UPLOAD_ERR_NO_FILE,
-            'size' => $files['size'][$i] ?? 0,
-        );
-    }
-    return $result;
-}
