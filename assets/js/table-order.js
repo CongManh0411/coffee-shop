@@ -1,68 +1,26 @@
 /* =========================================
-   1. DỮ LIỆU STATE (BẮT ĐẦU TẤT CẢ BÀN ĐỀU TRỐNG)
+   1. DỮ LIỆU STATE (lấy từ máy chủ qua TablesStore, không còn lưu ở localStorage)
    ========================================== */
-let tables = [
-    { id: 1, name: "Bàn 01", status: "empty", time: "", total: 0, items: [] },
-    { id: 2, name: "Bàn 02", status: "empty", time: "", total: 0, items: [] },
-    { id: 3, name: "Bàn 03", status: "empty", time: "", total: 0, items: [] },
-    { id: 4, name: "Bàn 04", status: "empty", time: "", total: 0, items: [] },
-    { id: 5, name: "Bàn 05", status: "empty", time: "", total: 0, items: [] },
-    { id: 6, name: "Bàn 06", status: "empty", time: "", total: 0, items: [] },
-    { id: 7, name: "Bàn 07", status: "empty", time: "", total: 0, items: [] },
-    { id: 8, name: "Bàn 08", status: "empty", time: "", total: 0, items: [] }
-];
- 
-// ---- LƯU TRẠNG THÁI BÀN (localStorage) để trang Bếp, Thông báo và Thanh toán của Phục vụ đọc được ----
-const TABLES_KEY = 'coffee_tables_v1';
-// Trạng thái món do BẾP điều khiển (trang Kitchen.html): mỗi món đã xác nhận có kStatus = 'waiting' | 'making' | 'done'
-// (kèm startedAt / doneAt). Không còn giả lập theo giờ nữa.
-(function loadSavedTables() {
-    try { const s = JSON.parse(localStorage.getItem(TABLES_KEY)); if (Array.isArray(s)) tables = s; } catch (e) {} // cho phép danh sách rỗng: quản lý có thể xóa hết bàn
-    // Chuẩn hóa dữ liệu cũ (trước khi có "Xác nhận"): bỏ trạng thái 'pending' (gộp về occupied),
-    // đảm bảo mỗi món có lineId riêng + cờ confirmed để biết món nào đã khóa.
-    tables.forEach(t => {
-        if (t.status === 'pending') t.status = 'occupied';
-        if (Array.isArray(t.items)) {
-            t.items.forEach(i => {
-                if (!i.lineId) i.lineId = genLineId();
-                if (typeof i.confirmed !== 'boolean') i.confirmed = false;
-            });
-        }
-    });
-})();
-function genLineId() { return 'i' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
-function saveTables() { try { localStorage.setItem(TABLES_KEY, JSON.stringify(tables)); } catch (e) {} }
-// ---- ĐỒNG BỘ DANH SÁCH BÀN TỪ API (bảng dining_tables) ----
-// Danh sách bàn (id + tên) lấy từ máy chủ; trạng thái bàn/món vẫn ở localStorage cho tới khi chuyển đơn hàng vào DB.
-async function syncTablesFromApi() {
-    const apiList = await Api.get('tables');
-    const orders = await Api.get('orders');
-    const merged = apiList.map(a => {
-        const order = orders.find(o => o.orderType === 'dinein' && Number(o.tableId) === a.id);
-        return order ? orderToTable(order, a.id, a.name)
-                     : { id: a.id, name: a.name, status: 'empty', time: '', total: 0, items: [] };
-    });
-    orders.filter(o => o.orderType !== 'dinein').forEach(o => merged.push(orderToTable(o, -Number(o.id), o.tableName)));
-    tables = merged;
-    saveTables();
-}
+// Danh sách bàn + đơn đang mở do TablesStore (tables-store.js) tải từ API 'tables' và 'orders'.
+// Trạng thái món do BẾP điều khiển: mỗi món đã xác nhận có kStatus = 'waiting' | 'making' | 'done' (kèm startedAt / doneAt).
+let tables = [];
 
-function orderToTable(order, id, name) {
-    const items = (order.items || []).map(i => ({
-        lineId: String(i.id), id: i.menuId, name: i.name, price: Number(i.price), quantity: Number(i.quantity),
-        note: i.note || '', confirmed: i.status !== 'draft',
-        confirmedAt: i.confirmedAt ? new Date(i.confirmedAt).getTime() : 0,
-        kStatus: i.status === 'draft' ? undefined : i.status,
-        startedAt: i.startedAt ? new Date(i.startedAt).getTime() : undefined,
-        doneAt: i.doneAt ? new Date(i.doneAt).getTime() : undefined
-    }));
-    return {
-        id, orderId: Number(order.id), name, orderCode: order.order_code || '',
-        type: order.orderType === 'dinein' ? undefined : order.orderType,
-        customer: order.customer || '', address: order.address || '',
-        status: 'occupied', time: order.created_at ? new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
-        total: Number(order.subtotal) || 0, items
-    };
+// Trang này sửa trực tiếp các phần tử trong `tables` rồi báo cho TablesStore biết đó là bản hiện tại.
+function saveTables() { TablesStore.set(tables); }
+
+// Bất kỳ nơi nào làm TablesStore tải lại (vòng lặp 5 giây, hộp Thanh toán, ...) đều cập nhật màn hình này.
+TablesStore.subscribe(function (list) {
+    tables = list;
+    if (selectedTableId && !tables.some(t => t.id === selectedTableId)) {
+        selectedTableId = null;
+        switchView('view-tables'); // bàn đang gọi món vừa bị xóa / đã thanh toán xong ở nơi khác
+    }
+    renderTablesGrid();
+    if (selectedTableId) renderBillItems();
+});
+
+async function syncTablesFromApi() {
+    await TablesStore.refresh();
 }
 
 async function ensureOrder(table) {
@@ -77,23 +35,22 @@ async function ensureOrder(table) {
     return table.orderId;
 }
  
-// ---- MENU: đọc từ trang Menu của Quản lý (cùng key 'coffee_menu_data_v1' với menu.js) ----
-// Món Quản lý thêm/sửa/ẩn/xóa ở Menu.html sẽ hiện ngay ở đây. Món bị ẩn không hiện để gọi.
-// MENU_KEY, DEFAULT_MENU, itemImage, OPTION_CONFIG: lấy từ menu-data.js
+// ---- MENU: lấy từ API 'menu' (thực đơn do Quản lý quản lý ở trang Thực đơn) ----
+// Món bị ẩn không hiện để gọi. Món báo hết (soldOut) vẫn hiện nhưng không thêm được.
+// DEFAULT_MENU, itemImage, OPTION_CONFIG: lấy từ menu-data.js
 const escHtml = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 function menuFromData(data) {
     const out = [];
     (data || []).forEach(cat => (cat.items || []).forEach(it => {
         if (it.hidden) return;
         out.push({ id: it.id, name: it.name, category: cat.category,
-                   price: Number(it.price) || 0, desc: it.desc || '', img: it.img || '' });
+                   price: Number(it.price) || 0, desc: it.desc || '', img: it.img || '', soldOut: !!it.soldOut });
     }));
     return out;
 }
 async function loadMenuList() {
     const data = await Api.get('menu');
-    // InventoryAPI (inventory.js) vẫn đọc menu từ localStorage nên phải chép sang
-    try { localStorage.setItem(MENU_KEY, JSON.stringify(data)); } catch (e) {}
+    if (window.Cashier && Cashier.applyMenu) Cashier.applyMenu(data); // danh sách món báo hết
     if (window.InventoryAPI && InventoryAPI.sync) {
         try { await InventoryAPI.sync(); } catch (e) {}
     }
@@ -116,17 +73,15 @@ document.addEventListener("DOMContentLoaded", async function () {
     renderTablesGrid();
     renderCategoryTabs();
     renderMenuGrid();
+    let tick = 0;
     setInterval(async () => {
         if (document.visibilityState !== 'visible') return;
-        try {
-            await syncTablesFromApi();
-            if (selectedTableId && !tables.some(t => t.id === selectedTableId)) {
-                selectedTableId = null;
-                switchView('view-tables');
-            }
-            renderTablesGrid();
-            if (selectedTableId) renderBillItems();
-        } catch (err) { /* giữ bản cache hiện tại khi mạng tạm thời gián đoạn */ }
+        try { await syncTablesFromApi(); } // TablesStore báo lại cho màn hình qua subscribe ở trên
+        catch (err) { /* giữ bản hiện tại khi mạng tạm thời gián đoạn */ }
+        // Thực đơn, món báo hết và tồn kho thay đổi ở máy khác: nạp lại mỗi ~15 giây
+        if (++tick % 3 === 0) {
+            try { menuList = await loadMenuList(); renderCategoryTabs(); renderMenuGrid(); } catch (err) { }
+        }
     }, 5000);
     // ...phần còn lại giữ nguyên
     document.getElementById('categoryTabs').addEventListener('click', function (e) {
@@ -143,30 +98,6 @@ document.addEventListener("DOMContentLoaded", async function () {
 window.addEventListener('popstate', function () {
     const menuView = document.getElementById('view-menu');
     if (menuView && menuView.classList.contains('active')) showTablesView();
-});
- 
-// Quản lý sửa menu ở tab khác -> nạp lại danh sách món + danh mục
-window.addEventListener('storage', function (e) {
-    if (![MENU_KEY, InventoryAPI.KEY, 'coffee_soldout_v1'].includes(e.key)) return;
-    try { menuList = menuFromData(JSON.parse(localStorage.getItem(MENU_KEY))); } catch (err) {}
-    renderCategoryTabs();
-    renderMenuGrid();
-});
-
-// Quản lý thêm/sửa/xóa bàn hoặc thu ngân thanh toán ở tab khác -> nạp lại danh sách bàn
-window.addEventListener('storage', function (e) {
-    if (e.key !== TABLES_KEY) return;
-    try { const s = JSON.parse(e.newValue); if (Array.isArray(s)) tables = s; } catch (err) { return; }
-    if (selectedTableId && !tables.some(t => t.id === selectedTableId)) {
-        alert('Bàn này vừa bị quản lý xóa. Quay lại sơ đồ bàn.');
-        showTablesView();
-        return;
-    }
-    renderTablesGrid();
-    if (selectedTableId) {
-        const menuView = document.getElementById('view-menu');
-        if (menuView && menuView.classList.contains('active')) renderBillItems();
-    }
 });
  
 function renderSidebar() {
@@ -544,9 +475,10 @@ async function confirmOrder() {
 const isCashierRole = () => !!(window.Cashier && window.Cashier.isCashier());
 const isSoldOut = id => InventoryAPI.available(id) < 1 || !!(window.Cashier && window.Cashier.soldOutIds().some(x => String(x) === String(id)));
 
-function toggleSoldOut(id) {
+async function toggleSoldOut(id) {
     const m = menuList.find(x => x.id === id); if (!m) return;
-    window.Cashier.setSoldOut(id, m.name, !isSoldOut(id));
+    try { await window.Cashier.setSoldOut(id, m.name, !isSoldOut(id)); } // lưu ở máy chủ (menu_items.is_sold_out)
+    catch (err) { alert('Không cập nhật được trạng thái món: ' + err.message); }
     renderMenuGrid();
 }
 
@@ -600,9 +532,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 </span>`);
         }
     }
-});
-window.addEventListener('storage', function (e) {
-    if (e.key === 'coffee_soldout_v1') renderMenuGrid();
 });
 
 

@@ -4,23 +4,20 @@
 // Nạp ở: các trang Bàn, Đơn hàng, Ca, Lịch ca, Vận hành và Nhật ký.
 // Không tự chạy gì — chỉ cung cấp hàm cho waiter-pay.js, table-order.js, orders.js, shift.js, logs.js.
 //
-// DỮ LIỆU (localStorage):
-//   Ca tiền mặt: lấy từ API 'cashshift' -> { current: Ca|null, history: [Ca...] } (không còn dùng localStorage)
+// DỮ LIỆU (tất cả nằm trên máy chủ, không dùng localStorage):
+//   Ca tiền mặt  : API 'cashshift' -> { current: Ca|null, history: [Ca...] }
 //        Ca = { id, cashierId, cashierName, openedAt, openingCash,
 //               movements:[{id,time,kind:'in'|'out',category,amount,note,by}],
 //               closedAt, closedBy, countedCash, expectedCash, diff, reason, summary }
-//   'coffee_logs_v1'      : [{ id, time, actorId, actorName, role, type, text, amount, flag }]
-//   'coffee_soldout_v1'   : [menuId, ...]   (món tạm hết hàng)
-//   'qlcp_invoices'       : hóa đơn (dùng chung với Lịch sử / Doanh thu) — thêm các trường:
-//        shiftId, createdById, createdBy, orderType, subtotal, discount, voucher, paymentDetail, ref
-//
-// Ca tiền mặt (mở ca, thu/chi, kết ca) lưu trong database (API 'cashshift'). Nhật ký giao diện và món tạm hết vẫn lưu trong trình duyệt.
+//   Nhật ký thao tác : API 'logs' (bảng audit_logs) — log() gửi lên máy chủ, Quản lý xem ở Logs
+//   Món tạm hết      : API 'menu' (trường soldOut) và 'menu/soldout' (cột menu_items.is_sold_out)
+//   Khuyến mãi       : API 'ops/promotions' (giữ trong bộ nhớ trang)
+//   Hóa đơn          : API 'orders/invoices' (không còn bản sao ở trình duyệt)
+// ============================================================
 // ============================================================
 (function () {
     'use strict';
     if (window.Cashier) return;
-
-    const K = { SHIFT: 'coffee_cashshift_v1', LOGS: 'coffee_logs_v1', SOLD: 'coffee_soldout_v1', INV: 'qlcp_invoices' };
 
     // ---- CẤU HÌNH (quản lý có thể chỉnh trực tiếp ở đây) ----
     const VOUCHERS = {                      // mã khuyến mãi: type 'pct' (%) hoặc 'vnd' (đ)
@@ -43,9 +40,6 @@
     const pad = n => String(n).padStart(2, '0');
     const fmtTime = iso => { const d = new Date(iso); return isNaN(d) ? '—' : `${pad(d.getHours())}:${pad(d.getMinutes())}`; };
     const fmtDT = iso => { const d = new Date(iso); return isNaN(d) ? '—' : `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${fmtTime(iso)}`; };
-    const read = (k, d) => { try { const v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } };
-    const write = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { alert('Không lưu được dữ liệu. Kiểm tra lại trình duyệt.'); return false; } };
-    const uid = p => p + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
 
     function session() { try { return (typeof AuthAPI !== 'undefined' && AuthAPI.getSession()) || null; } catch (e) { return null; } }
     function me() {
@@ -55,17 +49,16 @@
     const isCashier = () => me().role === 'cashier';
 
     // ---------- NHẬT KÝ THAO TÁC (Quản lý xem ở Logs.html) ----------
+    // Gửi 1 dòng nhật ký lên máy chủ (người thực hiện / vai trò do máy chủ lấy từ phiên đăng nhập). Không chặn thao tác chính.
     function log(type, text, amount, flag) {
-        const a = me();
-        const list = read(K.LOGS, []);
-        list.push({ id: uid('L'), time: new Date().toISOString(), actorId: a.id, actorName: a.name, role: a.role, type, text, amount: Number(amount) || 0, flag: !!flag });
-        if (list.length > 3000) list.splice(0, list.length - 3000);
-        write(K.LOGS, list);
+        if (!window.Api) return Promise.resolve();
+        return Api.post('logs', { type, text: String(text || ''), amount: Math.abs(Number(amount) || 0), flag: !!flag })
+            .catch(err => { console.warn('Không ghi được nhật ký:', err.message); });
     }
     const LOG_TYPES = {
         discount: 'Giảm giá', discount_big: 'Giảm giá lớn', void_item: 'Hủy món', void_done: 'Hủy món đã làm',
         refund: 'Hoàn tiền', cash_in: 'Thu quỹ', cash_out: 'Chi quỹ', shift_open: 'Mở ca', shift_close: 'Kết ca',
-        shift_diff: 'Chênh lệch kết ca', soldout: 'Hết món', cancel_order: 'Hủy đơn'
+        shift_diff: 'Chênh lệch kết ca', soldout: 'Hết món', cancel_order: 'Hủy đơn', table: 'Thao tác bàn'
     };
 
     // ---------- CA LÀM (mở ca / kết ca) — lưu trong database qua API 'cashshift' ----------
@@ -134,8 +127,9 @@
 
     // ---------- KHUYẾN MÃI / GIẢM GIÁ ----------
     // Mã quản lý lưu trong database; waiter-pay.js tải danh sách mới trước khi kiểm tra.
+    let promoCache = [];
     function promoFor(c) {
-        const p = (read('coffee_promos_v1', []) || []).find(x => x.code === c && x.active !== false);
+        const p = promoCache.find(x => x.code === c && x.active !== false);
         if (!p) return null;
         const now = new Date(), d = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`, h = now.getHours();
         if ((p.from && d < p.from) || (p.to && d > p.to)) return null;
@@ -146,7 +140,7 @@
     async function refreshPromotions() {
         if (!window.Api) return;
         const promotions = await Api.get('ops/promotions');
-        write('coffee_promos_v1', Array.isArray(promotions) ? promotions : []);
+        promoCache = Array.isArray(promotions) ? promotions : [];
     }
     function applyVoucher(code, subtotal) {
         const c0 = String(code || '').trim().toUpperCase();
@@ -165,11 +159,17 @@
     }
 
     // ---------- HẾT MÓN ----------
-    const soldOutIds = () => read(K.SOLD, []);
-    function setSoldOut(id, name, flag) {
-        let l = soldOutIds().filter(x => x !== id);
-        if (flag) l.push(id);
-        write(K.SOLD, l);
+    // Danh sách món báo hết lấy từ API 'menu' (applyMenu); báo hết / bán lại gọi API 'menu/soldout'.
+    let soldOutSet = new Set();
+    const soldOutIds = () => Array.from(soldOutSet);
+    function applyMenu(data) {
+        const next = new Set();
+        (data || []).forEach(cat => (cat.items || []).forEach(it => { if (it.soldOut) next.add(it.id); }));
+        soldOutSet = next;
+    }
+    async function setSoldOut(id, name, flag) {
+        await Api.post('menu/soldout', { id: Number(id), soldOut: !!flag });
+        if (flag) soldOutSet.add(id); else soldOutSet.delete(id);
         log('soldout', `${flag ? 'Đánh dấu HẾT' : 'Mở bán lại'}: ${name}`, 0);
     }
 
@@ -233,11 +233,11 @@
     }
 
     window.Cashier = {
-        K, VOUCHERS, ORDER_TYPES, METHODS, CATEGORIES, LOG_TYPES,
-        esc, money, pad, fmtTime, fmtDT, read, write, uid, me, isCashier, session,
+        VOUCHERS, ORDER_TYPES, METHODS, CATEGORIES, LOG_TYPES,
+        esc, money, pad, fmtTime, fmtDT, me, isCashier, session,
         log, currentShift, shiftStore, shiftReady, syncShift, openShift, addMovement, closeShift, stats, methodKey,
         applyVoucher, refreshPromotions, manualDiscount, isLargeDiscount,
-        soldOutIds, setSoldOut,
+        soldOutIds, setSoldOut, applyMenu,
         receiptText, receiptHtml, printReceipt, printHtml, shiftReportHtml
     };
 })();

@@ -2,7 +2,7 @@
 // logs.js — NHẬT KÝ THAO TÁC & BÁO CÁO KẾT CA (Logs.html, chỉ Quản lý)
 // ------------------------------------------------------------
 // Thu ngân tự thực hiện các thao tác nhạy cảm (giảm giá, hủy món, hoàn tiền, thu/chi, chênh lệch kết ca)
-// mà KHÔNG cần duyệt; mọi thao tác được ghi vào 'coffee_logs_v1' để Quản lý xem lại ở đây.
+// mà KHÔNG cần duyệt; mọi thao tác được ghi vào máy chủ (API 'logs', bảng audit_logs) để Quản lý xem lại ở đây.
 // Mục có flag = true là mục "cần chú ý": giảm giá lớn, hủy món đã làm, hoàn tiền, thu/chi lớn, lệch tiền kết ca.
 // ============================================================
 (function () {
@@ -16,10 +16,23 @@
     const { esc, money, fmtTime, fmtDT } = C;
     const ROLE = { manager: 'Quản lý', waiter: 'Phục vụ', cashier: 'Thu ngân', kitchen: 'Bếp' };
     let tab = 'logs', reportShift = null;
+    let logs = [], stockLogs = [], loadErr = '';
+
+    // Nạp dữ liệu từ máy chủ: nhật ký thao tác, ca tiền mặt, và (khi đang xem tab Kho) lịch sử kho
+    async function reload() {
+        loadErr = '';
+        try {
+            const jobs = [Api.get('logs').then(l => { logs = l; }), C.syncShift()];
+            if (tab === 'stock') jobs.push(InventoryAPI.getHistory().then(l => { stockLogs = l; }));
+            await Promise.all(jobs);
+        } catch (err) { loadErr = 'Không tải được dữ liệu từ máy chủ: ' + err.message; }
+        render();
+        if (loadErr) $('lgNote').textContent = loadErr;
+    }
 
     function fillFilters() {
-        const logs = C.read(C.K.LOGS, []);
-        $('fType').innerHTML = '<option value="">Tất cả</option>' + Object.entries(C.LOG_TYPES).map(([k, v]) => `<option value="${k}">${v}</option>`).join('');
+        const curType = $('fType').value;
+        $('fType').innerHTML = '<option value="">Tất cả</option>' + Object.entries(C.LOG_TYPES).map(([k, v]) => `<option value="${k}" ${k === curType ? 'selected' : ''}>${v}</option>`).join('');
         const names = [...new Set(logs.map(l => l.actorName))];
         const cur = $('fWho').value;
         $('fWho').innerHTML = '<option value="">Tất cả</option>' + names.map(n => `<option ${n === cur ? 'selected' : ''}>${esc(n)}</option>`).join('');
@@ -31,7 +44,7 @@
         $('lgHead').innerHTML = '<tr><th>Thời gian</th><th>Người thực hiện</th><th>Thao tác</th><th>Chi tiết</th><th>Số tiền</th></tr>';
         const type = $('fType').value, who = $('fWho').value, days = Number($('fRange').value), flag = $('fFlag').checked;
         const since = days ? new Date(new Date().setHours(0, 0, 0, 0) - (days - 1) * 86400000).getTime() : 0;
-        const list = C.read(C.K.LOGS, []).filter(l => (!type || l.type === type) && (!who || l.actorName === who) && (!flag || l.flag) && new Date(l.time).getTime() >= since).reverse();
+        const list = logs.filter(l => (!type || l.type === type) && (!who || l.actorName === who) && (!flag || l.flag) && new Date(l.time).getTime() >= since).reverse();
         $('lgSub').textContent = `${list.length} thao tác${list.filter(l => l.flag).length ? ` • ${list.filter(l => l.flag).length} mục cần chú ý` : ''}`;
         $('lgBody').innerHTML = list.length ? list.map(l => `<tr>
             <td>${fmtDT(l.time)}</td><td><b>${esc(l.actorName)}</b><br><small>${esc(ROLE[l.role] || l.role)}</small></td>
@@ -63,12 +76,11 @@
         $('lgTitle').textContent = 'Nhật ký kho theo ly / phần';
         $('lgFilters').hidden = true;
         $('lgHead').innerHTML = '<tr><th>Thời gian</th><th>Người thực hiện</th><th>Món</th><th>Thao tác</th><th>Biến động</th><th>Hóa đơn / Ghi chú</th></tr>';
-        const list = InventoryAPI.getLog().slice().reverse();
-        const typeLabel = { import: 'Nhập kho', adjust: 'Điều chỉnh', sale: 'Bán hàng', rollback: 'Hoàn tác' };
+        const list = stockLogs; // máy chủ đã sắp mới -> cũ
         $('lgSub').textContent = `${list.length} biến động kho`;
-        $('lgBody').innerHTML = list.length ? list.map(l => `<tr><td>${fmtDT(new Date(l.ts).toISOString())}</td>
-            <td>${esc(l.actor)}</td><td>${esc(l.name)}</td><td>${esc(typeLabel[l.type] || l.type)}</td>
-            <td>${l.delta > 0 ? '+' : ''}${l.delta} ${esc(l.unit)}</td><td>${esc(l.ref)}</td></tr>`).join('')
+        $('lgBody').innerHTML = list.length ? list.map(l => `<tr><td>${fmtDT(new Date(String(l.ts).replace(' ', 'T')).toISOString())}</td>
+            <td>${esc(l.actor)}</td><td>${esc(l.name)}</td><td>${esc(l.typeName || l.type)}</td>
+            <td>${l.delta > 0 ? '+' : ''}${l.delta} ${esc(l.unit)}</td><td>${esc(l.ref || l.note || '')}</td></tr>`).join('')
             : '<tr><td colspan="6"><div class="empty-table-state">Chưa có biến động kho.</div></td></tr>';
         $('lgNote').textContent = 'Hủy hay hoàn tiền không tự nhập lại món đã pha; quản lý điều chỉnh ở trang Kho khi cần.';
     }
@@ -81,6 +93,7 @@
             tab = b.dataset.tab;
             document.querySelectorAll('#lgTabs .topnav-item').forEach(x => x.classList.toggle('active', x === b));
             render();
+            reload(); // lấy dữ liệu mới nhất của tab vừa mở
         });
         ['fType', 'fRange', 'fWho', 'fFlag'].forEach(id => $(id).addEventListener('change', renderLogs));
         $('lgBody').addEventListener('click', e => {
@@ -90,7 +103,7 @@
         });
         $('lgClose').onclick = () => $('lgModal').classList.remove('active');
         $('lgPrint').onclick = () => { if (reportShift) C.printHtml('Báo cáo kết ca', C.shiftReportHtml(reportShift)); };
-        render();
-        window.addEventListener('storage', e => { if ([C.K.LOGS, C.K.SHIFT, InventoryAPI.LOG_KEY].includes(e.key)) render(); });
+        reload();
+        setInterval(reload, 15000); // Thu ngân / Phục vụ ghi thêm nhật ký ở máy khác -> tự cập nhật
     });
 })();

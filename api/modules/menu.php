@@ -3,7 +3,7 @@
 function menu_list()
 {
     $cats  = db()->fetchAll("SELECT category_id, category_name FROM categories ORDER BY category_id");
-    $items = db()->fetchAll("SELECT item_id, category_id, item_name, description, price, image, is_hidden
+    $items = db()->fetchAll("SELECT item_id, category_id, item_name, description, price, image, is_hidden, is_sold_out
                              FROM menu_items ORDER BY item_id");
     $out = array();
     $pos = array();
@@ -19,9 +19,19 @@ function menu_list()
             'price'  => (int) $i['price'],
             'img'    => $i['image'] ?? '',
             'hidden' => (int) $i['is_hidden'] === 1,
+            'soldOut' => (int) $i['is_sold_out'] === 1,
         );
     }
     return $out;
+}
+
+// Thu ngân / Quản lý báo hết món hoặc mở bán lại (cột menu_items.is_sold_out).
+function menu_set_sold_out($id, $soldOut)
+{
+    $cur = db()->fetchOne("SELECT item_id FROM menu_items WHERE item_id = ?", array((int) $id));
+    if (!$cur) return 'Không tìm thấy món.';
+    db()->execute("UPDATE menu_items SET is_sold_out = ? WHERE item_id = ?", array($soldOut ? 1 : 0, (int) $id));
+    return '';
 }
 
 function menu_resolve_category($d)

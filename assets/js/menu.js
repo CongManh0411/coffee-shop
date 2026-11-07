@@ -29,17 +29,9 @@ tabs.forEach(tab => {
 // ============================================================
 // MenuAPI — gọi backend (api/modules/menu.php)
 // ============================================================
-const MENU_STORAGE_KEY = MENU_KEY; // khai báo trong menu-data.js
-
-// Bản sao cho các trang chưa có API (Bán hàng, Kho) đọc bằng localStorage
-function mirrorMenu(data) {
-    try { localStorage.setItem(MENU_STORAGE_KEY, JSON.stringify(data)); } catch (e) {}
-}
-
-try { localStorage.removeItem('coffee_menu_recipes_v1'); } catch (e) {}
-
 const MenuAPI = {
     async deleteItem(id) {
+        try { await TablesStore.refresh(); } catch (e) { /* máy chủ vẫn kiểm tra lại khi xóa */ }
         if ((window.InventoryAPI && InventoryAPI.reserved()[String(id)]) > 0) {
             throw new Error('Không thể xóa món đang có trong đơn hàng.');
         }
@@ -243,5 +235,4 @@ if (btnCancelEditEl) {
 // Tìm kiếm + phân trang do server xử lý qua URL (?page=menu&q=...&p=...).
 
 // Giữ nguyên HTML PHP ban đầu, không gọi API để dựng lại danh sách.
-mirrorMenu(currentMenuData);
 attachMenuItemEvents();

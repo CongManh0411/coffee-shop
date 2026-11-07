@@ -1,8 +1,7 @@
-// shifts.js — XẾP LỊCH CA (Shifts.html, vai trò Quản lý). Dữ liệu lưu trong DB (API 'shifts'); đồng thời chép sang 'coffee_shifts_v1' cho trang Lịch ca làm của nhân viên đọc.
+// shifts.js — XẾP LỊCH CA (Shifts.html, vai trò Quản lý). Dữ liệu lưu trong DB (API 'shifts'); trang Lịch ca của nhân viên do PHP đọc thẳng từ DB.
 // Ca: { id, staffId, date: 'YYYY-MM-DD', start: 'HH:MM', end: 'HH:MM' }. Kiểm tra: giờ trong 6h30–22h, kết thúc sau bắt đầu, không trùng ca khác của cùng người.
 (function () {
     'use strict';
-    const SHIFTS_KEY = 'coffee_shifts_v1';
     const OPEN = 6 * 60 + 30, CLOSE = 22 * 60;
     const DAYS = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'CN'];
     const $ = id => document.getElementById(id);
@@ -24,9 +23,7 @@
             .map(x => ({ id: x.id ?? x.staffId, fullName: x.fullName ?? x.name ?? x.full_name, role: x.role ?? x.roleLabel ?? '' }));
     }
     async function fetchShifts() {
-        const list = await Api.get('shifts');
-        try { localStorage.setItem(SHIFTS_KEY, JSON.stringify(list)); } catch (e) {}
-        return list;
+        return Api.get('shifts');
     }
     async function reload(silent) {
         try { [staff, shifts] = await Promise.all([fetchStaff(), fetchShifts()]); }

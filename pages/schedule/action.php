@@ -12,7 +12,7 @@ if ($roleKey === 'cashier' || $roleKey === 'waiter') {
 } elseif ($roleKey === 'kitchen') {
     $scripts = array('notifications.js');
 }
-// Bảng lịch tuần do PHP in ra từ MySQL nên không còn nạp schedule.js (bản cũ vẽ từ localStorage).
+// Bảng lịch tuần do PHP in ra từ MySQL. shift-register.js (chỉ Thu ngân) gọi API 'shifts/register' để tự đăng ký ca.
 if ($roleKey === 'cashier') {
     $scripts[] = 'shift-register.js';
 }

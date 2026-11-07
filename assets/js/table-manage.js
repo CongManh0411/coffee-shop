@@ -1,9 +1,7 @@
 // table-manage.js — Trang Quản lý bàn (vai trò Quản lý): chỉ thêm / sửa tên / xóa bàn.
-// Danh sách bàn lấy từ API (bảng dining_tables); trạng thái bàn vẫn dùng key 'coffee_tables_v1' với trang Bàn của Phục vụ (table-order.js), Bếp và Thanh toán của Phục vụ,
-// nên bàn thêm/sửa/xóa ở đây sẽ hiện ngay trên sơ đồ bàn của Phục vụ.
+// Danh sách bàn lấy từ API (bảng dining_tables) và trạng thái bàn (trống / đang phục vụ) từ các đơn đang mở trên máy chủ,
+// qua TablesStore (tables-store.js). Bàn thêm/sửa/xóa ở đây hiện trên sơ đồ bàn của Phục vụ ở lần tải lại kế tiếp (~5 giây).
 (function () {
-    const TABLES_KEY = 'coffee_tables_v1';
-
     const $ = id => document.getElementById(id);
     const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     const norm = s => String(s).trim().replace(/\s+/g, ' ').toLowerCase();
@@ -14,43 +12,18 @@
         pending: { text: 'Chờ thanh toán', badge: 'badge-pending' }
     };
 
-    // Danh sách bàn (id + tên) nằm trong DB. Trạng thái bàn (đang phục vụ, món...) vẫn ở localStorage
-    // cho tới khi chuyển đơn hàng vào DB, nên sau mỗi lần lấy danh sách từ API ta trộn vào localStorage:
-    // giữ nguyên trạng thái bàn cũ, thêm bàn mới (trống), bỏ bàn đã bị xóa, cập nhật tên.
-    function readLocal() {
-        try { const s = JSON.parse(localStorage.getItem(TABLES_KEY)); if (Array.isArray(s)) return s; } catch (e) { }
-        return [];
-    }
-    function writeLocal(list) {
-        try { localStorage.setItem(TABLES_KEY, JSON.stringify(list)); } catch (e) { }
-    }
-    async function pull() {
-        const apiList = await Api.get('tables');
-        const local = readLocal();
-        const extra = local.filter(t => t.type); // đơn mang đi/giao hàng của Thu ngân: giữ nguyên
-        const merged = apiList.map(a => {
-            const old = local.find(t => !t.type && Number(t.id) === a.id);
-            return old ? Object.assign({}, old, { id: a.id, name: a.name })
-                : { id: a.id, name: a.name, status: 'empty', time: '', total: 0, items: [] };
-        });
-        writeLocal(merged.concat(extra));
-        return merged;
-    }
-
     let editingId = null;   // null = đang thêm bàn mới
     let deletingId = null;
     let current = [];       // danh sách bàn mới nhất từ máy chủ
 
     // ---------- Hiển thị danh sách ----------
     async function refresh(silent) {
-        try { current = await pull(); }
+        try { current = (await TablesStore.refresh()).filter(t => !t.type); }
         catch (err) { if (silent !== true) alert('Không tải được danh sách bàn: ' + err.message); }
         render();
     }
     function render() {
         const list = current;
-        const local = readLocal();
-        list.forEach(t => { const o = local.find(x => !x.type && Number(x.id) === t.id); t.status = o ? o.status : 'empty'; t.time = o ? o.time : ''; });
         const count = s => list.filter(t => t.status === s).length;
         $('tableSummary').textContent = list.length
             ? `Tổng cộng ${list.length} bàn — ${count('empty')} trống, ${count('occupied')} đang phục vụ, ${count('pending')} chờ thanh toán`
@@ -124,7 +97,7 @@
 
     // ---------- Xóa ----------
     function localStatus(id) {
-        const t = readLocal().find(x => !x.type && Number(x.id) === id);
+        const t = TablesStore.list().find(x => !x.type && Number(x.id) === id);
         return t ? t.status : 'empty';
     }
     function openDeleteModal(id) {
@@ -172,9 +145,7 @@
             if (e.key !== 'Escape') return;
             closeTableModal(); closeDeleteModal();
         });
-        // trạng thái bàn đổi ở tab khác (Phục vụ gọi món, Thu ngân thanh toán) -> cập nhật lại
-        // (trạng thái bàn lấy từ localStorage nên chỉ cần vẽ lại, không gọi API)
-        window.addEventListener('storage', e => { if (e.key === TABLES_KEY) render(); });
-        setInterval(() => refresh(true), 5000); // quản lý khác thêm/xóa bàn -> tự cập nhật
+        // Phục vụ gọi món, Thu ngân thanh toán, quản lý khác thêm/xóa bàn -> tải lại từ máy chủ mỗi 5 giây
+        setInterval(() => refresh(true), 5000);
     });
 })();

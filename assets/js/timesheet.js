@@ -5,24 +5,19 @@
 //        (giờ vào, giờ ra, tổng giờ, tiền) + nút "Xác nhận" -> bấm Xác nhận là hết ca, quay lại màn hình
 //        nhân viên -> cuối cùng nhân viên tự bấm "Đăng xuất".
 //
-// - Giờ vào: ghi ở lần đầu nhân viên mở trang sau khi đăng nhập trong ngày (session hiện chỉ lưu {roleKey, name}
-//   nên chưa có giờ đăng nhập thật; khi có backend hãy ghi giờ này ngay lúc login).
-// - Giờ ra: đúng lúc bấm "Xác nhận". Mỗi ngày chỉ có 1 lần giao ca; sau khi Xác nhận là hết.
+// - Giờ vào: ghi ở lần đầu nhân viên mở trang sau khi đăng nhập trong ngày (API 'attendance/clock-in', giờ do máy chủ ghi).
+// - Giờ ra: đúng lúc bấm "Xác nhận" (API 'attendance/clock-out'). Mỗi ngày chỉ có 1 lần giao ca; sau khi Xác nhận là hết.
 // - Tiền = số phút làm x lương/giờ (đổi HOURLY_RATE bên dưới). Chỉ hiện tiền của chính người đang đăng nhập.
-// - Giờ ra này cũng được trang Lịch ca làm đọc: giao ca sớm hơn giờ đăng ký thì bảng tự hiện "Nghỉ sớm".
 //
-// DỮ LIỆU — localStorage key 'coffee_timesheet_v1', mảng:
+// DỮ LIỆU — bảng `timesheets` trên máy chủ (mỗi nhân viên một dòng mỗi ngày), API trả về:
 //   { staffId: 3, date: '2026-10-05', clockIn: 1790000000000, clockOut: 1790018000000 | null }  (mili-giây)
-// Khi nối backend: thay load()/save() và nơi ghi giờ vào bằng API; nên để backend tự tính tiền.
+// Ca đã xếp lấy từ API 'shifts'. Trình duyệt chỉ giữ bản sao trong bộ nhớ trang, không dùng localStorage.
 // ============================================================
 (function () {
     'use strict';
     if (window.WaiterTimesheet) return;
 
     const HOURLY_RATE = 21000; // đồng / giờ — mức chung cho cả quán
-    const TS_KEY = 'coffee_timesheet_v1';
-    const STAFF_KEY = 'coffee_staff_v1';
-    const SHIFTS_KEY = 'coffee_shifts_v1';
 
     const $ = id => document.getElementById(id);
     const pad = n => String(n).padStart(2, '0');
@@ -40,53 +35,37 @@
         return `${m} phút`;
     }
 
-    // ---------- Dữ liệu ----------
-    function load() {
-        try { const t = JSON.parse(localStorage.getItem(TS_KEY)); return Array.isArray(t) ? t : []; } catch (e) { return []; }
-    }
-    function save(list) { try { localStorage.setItem(TS_KEY, JSON.stringify(list)); } catch (e) {} }
+    // ---------- Dữ liệu (từ máy chủ, giữ trong bộ nhớ trang) ----------
+    let record = null;      // bản ghi chấm công hôm nay của người đang đăng nhập
+    let shiftsCache = [];   // ca đã xếp (API 'shifts')
 
     function currentStaff() {
         const session = AuthAPI.getSession();
         if (!session) return null;
-        let staff = [];
-        try { staff = JSON.parse(localStorage.getItem(STAFF_KEY)) || []; } catch (e) {}
-        if (!Array.isArray(staff) || !staff.length) {
-            staff = [{ id: 1, fullName: 'Nguyễn Văn A' }, { id: 2, fullName: 'Phạm Văn D' }, { id: 3, fullName: 'Lê Văn C' }]; // giống staff.js
-        }
-        const me = session.staffId != null ? staff.find(s => String(s.id) === String(session.staffId)) : staff.find(s => s.fullName === session.name);
-        return me ? { id: me.id, name: me.fullName } : { id: session.staffId != null ? session.staffId : session.name, name: session.name };
+        return { id: session.staffId != null ? session.staffId : session.name, name: session.name };
     }
 
     function todayRecord() {
-        const me = currentStaff();
-        if (!me) return null;
-        const today = dateKey(new Date());
-        return load().find(r => String(r.staffId) === String(me.id) && r.date === today) || null;
+        return record; // máy chủ đã chọn đúng bản ghi của hôm nay
     }
 
-    // Ghi GIỜ VÀO nếu hôm nay chưa có bản ghi (đã có — kể cả đã giao ca — thì giữ nguyên, mỗi ngày 1 lần)
-    function recordClockIn() {
-        const me = currentStaff();
-        if (!me) return null;
-        const list = load();
-        const today = dateKey(new Date());
-        let rec = list.find(r => String(r.staffId) === String(me.id) && r.date === today);
-        if (!rec) {
-            rec = { staffId: me.id, date: today, clockIn: Date.now(), clockOut: null };
-            list.push(rec);
-            save(list);
-        }
-        return rec;
+    async function loadShifts() {
+        try { shiftsCache = await Api.get('shifts'); } catch (e) { /* giữ bản đang có */ }
     }
 
-    // Ca đã xếp của 1 người trong 1 ngày (quản lý xếp ở Shifts.html)
+    // Ghi GIỜ VÀO nếu hôm nay chưa có bản ghi (đã có — kể cả đã giao ca — thì máy chủ giữ nguyên, mỗi ngày 1 lần)
+    async function recordClockIn() {
+        if (!currentStaff()) return null;
+        try { record = await Api.post('attendance/clock-in'); }
+        catch (e) { return null; }
+        refreshButton();
+        return record;
+    }
+
+    // Ca đã xếp của 1 người trong 1 ngày (Quản lý xếp ở trang Xếp ca)
     function shiftsOf(staffId, date) {
-        try {
-            const raw = JSON.parse(localStorage.getItem(SHIFTS_KEY));
-            if (Array.isArray(raw)) return raw.filter(s => String(s.staffId) === String(staffId) && s.date === date).sort((a, b) => toMin(a.start) - toMin(b.start));
-        } catch (e) {}
-        return [];
+        return shiftsCache.filter(s => String(s.staffId) === String(staffId) && s.date === date)
+            .sort((a, b) => toMin(a.start) - toMin(b.start));
     }
     const at = (date, hhmm) => new Date(`${date}T${hhmm}:00`).getTime();
 
@@ -105,16 +84,8 @@
     }
 
     function registeredText(me, date) {
-        try {
-            const raw = JSON.parse(localStorage.getItem(SHIFTS_KEY));
-            if (Array.isArray(raw)) {
-                const mine = raw.filter(s => String(s.staffId) === String(me.id) && s.date === date)
-                    .sort((a, b) => toMin(a.start) - toMin(b.start))
-                    .map(s => `${fmtClockMin(toMin(s.start))} – ${fmtClockMin(toMin(s.end))}`);
-                if (mine.length) return mine.join(', ');
-            }
-        } catch (e) {}
-        return 'Không có ca đăng ký';
+        const mine = shiftsOf(me.id, date).map(s => `${fmtClockMin(toMin(s.start))} – ${fmtClockMin(toMin(s.end))}`);
+        return mine.length ? mine.join(', ') : 'Không có ca đăng ký';
     }
 
     // ---------- Nút ở sidebar ----------
@@ -190,23 +161,28 @@
         wrap.addEventListener('click', e => { if (e.target === wrap) closeModal(); });
         document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 
-        // Xác nhận = giao ca: chốt giờ ra, hết ca, thoát popup về lại màn hình nhân viên
-        $('hoConfirm').addEventListener('click', () => {
-            const me = currentStaff();
-            const list = load();
-            const today = dateKey(new Date());
-            const rec = list.find(r => String(r.staffId) === String(me.id) && r.date === today);
-            let busy = 0;
-            try { busy = (JSON.parse(localStorage.getItem('coffee_tables_v1')) || []).filter(t => t.status !== 'empty').length; } catch (err) {}
-            if (busy && !window.confirm(`Còn ${busy} bàn đang có khách hoặc chưa thanh toán. Vẫn giao ca?`)) return;
-            if (rec && !rec.clockOut) { rec.clockOut = Date.now(); save(list); }
-            closeModal();
-            refreshButton();
+        // Xác nhận = giao ca: chốt giờ ra (máy chủ ghi), hết ca, thoát popup về lại màn hình nhân viên
+        $('hoConfirm').addEventListener('click', async () => {
+            const btn = $('hoConfirm');
+            btn.disabled = true;
+            try {
+                let busy = 0;
+                try { await TablesStore.refresh(); busy = TablesStore.busyCount(); } catch (err) {}
+                if (busy && !window.confirm(`Còn ${busy} bàn đang có khách hoặc chưa thanh toán. Vẫn giao ca?`)) return;
+                const rec = todayRecord();
+                if (rec && !rec.clockOut) {
+                    try { record = await Api.post('attendance/clock-out'); }
+                    catch (err) { return alert('Không ghi được giờ ra ca: ' + err.message); }
+                }
+                closeModal();
+                refreshButton();
+            } finally { btn.disabled = false; }
         });
     }
 
-    function openHandover() {
-        recordClockIn(); // phòng khi chưa có bản ghi hôm nay
+    async function openHandover() {
+        await Promise.all([recordClockIn(), loadShifts()]); // phòng khi chưa có bản ghi hôm nay; lấy ca đã xếp để tính lương
+        if (!todayRecord()) return alert('Không tải được dữ liệu chấm công từ máy chủ. Hãy thử lại.');
         buildModal();
         renderModal();
         $('hoBackdrop').classList.add('active');

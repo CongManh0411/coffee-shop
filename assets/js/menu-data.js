@@ -1,6 +1,5 @@
 // menu-data.js — DỮ LIỆU THỰC ĐƠN DÙNG CHUNG (nạp trước menu.js / table-order.js)
 // Một nơi duy nhất giữ: tên danh mục/món chuẩn, ảnh món, tùy chọn (size, đường, đá, topping).
-const MENU_KEY = 'coffee_menu_data_v2';
 const ICON_BY_CAT = { 'Cà phê': ['☕', '#6b4f3a'], 'Trà sữa': ['🧋', '#b08968'], 'Trà trái cây': ['🍑', '#d97757'], 'Bánh': ['🥐', '#c9a27a'] };
 // Ảnh minh họa tự sinh (SVG) khi món chưa có ảnh riêng — không cần mạng. Quản lý có thể tải ảnh thật ở trang Thực đơn.
 // Ảnh có sẵn theo tên món (đã đối chiếu tên). Món chưa có ảnh (Bánh...) dùng ảnh SVG tự sinh bên dưới.

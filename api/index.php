@@ -146,6 +146,42 @@ try {
             }
             json_error('Sai phương thức.', 405);
             break;
+        case 'menu/soldout':
+            require_role(array('manager', 'cashier'));
+            if ($method !== 'POST') json_error('Sai phương thức.', 405);
+            $in = json_input();
+            $err = menu_set_sold_out((int) ($in['id'] ?? 0), !empty($in['soldOut']));
+            if ($err) json_error($err, 404);
+            json_ok();
+            break;
+        case 'logs':
+            if ($method === 'GET') {
+                require_role(array('manager'));
+                json_ok(auditlog_list());
+            }
+            if ($method === 'POST') {
+                $me = require_role(array('manager', 'cashier', 'waiter'));
+                $err = auditlog_create(json_input(), $me);
+                if ($err) json_error($err, 422);
+                json_ok();
+            }
+            json_error('Sai phương thức.', 405);
+            break;
+        case 'attendance':
+            $me = require_login();
+            if ($method !== 'GET') json_error('Sai phương thức.', 405);
+            json_ok(attendance_today($me));
+            break;
+        case 'attendance/clock-in':
+            $me = require_login();
+            if ($method !== 'POST') json_error('Sai phương thức.', 405);
+            json_ok(attendance_clock_in($me));
+            break;
+        case 'attendance/clock-out':
+            $me = require_login();
+            if ($method !== 'POST') json_error('Sai phương thức.', 405);
+            json_ok(attendance_clock_out($me));
+            break;
         case 'tables':
             if ($method === 'GET') { require_login(); json_ok(tables_list()); }
             require_role(array('manager'));
@@ -186,6 +222,15 @@ try {
                 json_ok();
             }
             json_error('Sai phương thức.', 405);
+            break;
+        case 'shifts/register':
+            $me = require_role(array('cashier'));
+            if ($method === 'GET') json_ok(shifts_register_state($me));
+            if ($method !== 'POST') json_error('Sai phương thức.', 405);
+            $in = json_input();
+            list($added, $removed, $skipped, $err) = shifts_register_apply($in['changes'] ?? null, $me);
+            if ($err) json_error($err, 422);
+            json_ok(array('added' => $added, 'removed' => $removed, 'skipped' => $skipped));
             break;
         case 'shifts/copy':
             require_role(array('manager'));

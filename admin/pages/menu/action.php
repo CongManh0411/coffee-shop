@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/../../../functions.php';
-$adminMenuItems = admin_menu_items(); // toàn bộ món: dùng cho dữ liệu JSON (sửa / ẩn / đồng bộ localStorage)
+$adminMenuItems = admin_menu_items(); // toàn bộ món: dùng cho dữ liệu JSON (sửa / ẩn)
 $adminSearch = request_search('q');
 $adminPager = paginate(admin_menu_count($adminSearch), request_page('p'), 10);
 $adminPageItems = admin_menu_items($adminSearch, $adminPager['perPage'], $adminPager['offset']);
