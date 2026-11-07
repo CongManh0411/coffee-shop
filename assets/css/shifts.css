@@ -69,7 +69,8 @@
     }
 
     #schedule-app .sch-table-wrap {
-        display: none;
+        display: block;
+        overflow-x: auto;
     }
 
     #schedule-app .shf-mobile-schedule {
@@ -153,3 +154,14 @@
 /* ---- BT03: bảng danh sách ca sắp tới (PHP + MySQL) ---- */
 .shf-upcoming { margin-top: 28px; }
 .shf-upcoming h3 { margin: 0 0 6px; font-size: 17px; }
+
+/* Xếp ca bằng form PHP (không dùng JavaScript) */
+.shf-inline-form { margin: 0; display: contents; }
+.shf-link-btn { display: inline-block; padding: 8px 14px; border: 1px solid #c99a5b; border-radius: 8px; background: #fffaf3; color: #5a3d28; font: inherit; font-size: 13px; text-align: center; text-decoration: none; }
+.shf-link-btn:hover { background: #f5e9d8; }
+a.shf-shift, a.shf-add { box-sizing: border-box; text-decoration: none; text-align: center; display: block; }
+a.shf-shift { text-align: left; }
+.shf-ok { margin: 0 0 12px; padding: 8px 12px; border-radius: 8px; background: #e8f3e3; color: #2f5a1f; font-size: 13px; }
+.shf-panel { max-width: 420px; margin: 0 0 16px; padding: 18px 20px; background: #fffaf3; border: 1px solid #e3d2b4; border-radius: 12px; }
+.shf-panel h3 { margin: 0 0 4px; font-family: "Playfair Display", serif; color: #3b2313; }
+.shf-panel-actions { display: flex; gap: 10px; align-items: center; }

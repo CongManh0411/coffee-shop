@@ -27,63 +27,15 @@ tabs.forEach(tab => {
 
 // ============================================================
 // ============================================================
-// MenuAPI — gọi backend (api/modules/menu.php)
-// ============================================================
-const MenuAPI = {
-    async deleteItem(id) {
-        try { await TablesStore.refresh(); } catch (e) { /* máy chủ vẫn kiểm tra lại khi xóa */ }
-        if ((window.InventoryAPI && InventoryAPI.reserved()[String(id)]) > 0) {
-            throw new Error('Không thể xóa món đang có trong đơn hàng.');
-        }
-        await Api.del('menu&id=' + id);
-        if (window.InventoryAPI) InventoryAPI.drop(id);
-        return true;
-    },
-    async toggleHideItem(id) {
-        let item = null;
-        currentMenuData.forEach(c => c.items.forEach(it => { if (String(it.id) === String(id)) item = it; }));
-        if (!item) throw new Error('Không tìm thấy món.');
-        await Api.put('menu&id=' + id, { hidden: !item.hidden });
-        return true;
-    },
-};
-
-// ============================================================
 // DỮ LIỆU PHP CHO CÁC THAO TÁC (tab Sửa món)
 // ============================================================
 const menuDataEl = document.getElementById('adminMenuData');
 let currentMenuData = menuDataEl ? JSON.parse(menuDataEl.textContent) : [];
 
+// Chỉ nút "Sửa" cần JavaScript (đổ dữ liệu vào form). Ẩn/hiện và xóa món là form POST xử lý bằng PHP.
 function attachMenuItemEvents() {
-    document.querySelectorAll('#menuCategoryList button[data-action]').forEach(btn => {
-        btn.addEventListener('click', async () => {
-            const action = btn.dataset.action;
-            const id = btn.dataset.id;
-
-            if (action === 'edit') {
-                openEditItemForm(id);
-                return;
-            }
-
-            if (action === 'delete' && !confirm('Xoá món này?')) return;
-
-            const rowEl = btn.closest('.menu-item');
-            const rowButtons = rowEl ? rowEl.querySelectorAll('button[data-action]') : [btn];
-            rowButtons.forEach(b => (b.disabled = true));
-
-            try {
-                if (action === 'delete') {
-                    await MenuAPI.deleteItem(id);
-                } else if (action === 'hide') {
-                    await MenuAPI.toggleHideItem(id);
-                }
-                window.location.reload();
-            } catch (err) {
-                console.error('Không thực hiện được thao tác:', err);
-                alert(err.message || 'Có lỗi xảy ra. Vui lòng thử lại.');
-                rowButtons.forEach(b => (b.disabled = false));
-            }
-        });
+    document.querySelectorAll('#menuCategoryList button[data-action="edit"]').forEach(btn => {
+        btn.addEventListener('click', () => openEditItemForm(btn.dataset.id));
     });
 }
 

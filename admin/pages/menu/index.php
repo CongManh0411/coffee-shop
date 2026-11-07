@@ -20,7 +20,7 @@
             <div class="tab-panel active" id="panel-edit">
                 <div class="menu-page-header">
                     <h2>Thực đơn</h2>
-                    <p>Thêm, sửa, ẩn món trực tiếp.</p>
+                    <p>Thêm, sửa, ẩn, xóa món trực tiếp.</p>
                 </div>
  
                 <form class="menu-toolbar" method="get" action="<?= e(admin_url('menu')) ?>" role="search">
@@ -49,8 +49,18 @@
                                         <div class="menu-item-price"><?= e(number_format($item['price'], 0, ',', '.')) ?>đ</div>
                                         <div class="menu-item-actions">
                                             <button type="button" class="btn-outline" data-action="edit" data-id="<?= $item['id'] ?>">Sửa</button>
-                                            <button type="button" class="btn-outline" data-action="hide" data-id="<?= $item['id'] ?>"><?= $item['hidden'] ? 'Hiện' : 'Ẩn' ?></button>
-                                            <button type="button" class="btn-danger" data-action="delete" data-id="<?= $item['id'] ?>">Xóa</button>
+                                            <form method="post" action="<?= e(admin_url('menu', array_filter(array('q' => $adminSearch, 'p' => $adminPager['page'] > 1 ? $adminPager['page'] : null)))) ?>" class="menu-inline-form">
+                                                <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
+                                                <input type="hidden" name="menu_action" value="toggle_hide">
+                                                <input type="hidden" name="id" value="<?= $item['id'] ?>">
+                                                <button type="submit" class="btn-outline"><?= $item['hidden'] ? 'Hiện' : 'Ẩn' ?></button>
+                                            </form>
+                                            <form method="post" action="<?= e(admin_url('menu', array_filter(array('q' => $adminSearch, 'p' => $adminPager['page'] > 1 ? $adminPager['page'] : null)))) ?>" class="menu-inline-form" onsubmit="return confirm('Xóa món này?');">
+                                                <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
+                                                <input type="hidden" name="menu_action" value="delete">
+                                                <input type="hidden" name="id" value="<?= $item['id'] ?>">
+                                                <button type="submit" class="btn-danger">Xóa</button>
+                                            </form>
                                         </div>
                                     </div>
                                 </div>
