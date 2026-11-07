@@ -188,26 +188,6 @@ function public_menu_category_summary()
     );
 }
 
-function admin_shifts()
-{
-    return db()->fetchAll(
-        "SELECT s.shift_id, s.shift_date, s.start_time, s.end_time,
-                st.staff_id, st.full_name, st.role
-         FROM shifts s
-         JOIN staff st ON st.staff_id = s.staff_id
-         ORDER BY s.shift_date, s.start_time, st.full_name"
-    );
-}
-
-function admin_tables()
-{
-    return db()->fetchAll(
-        "SELECT table_id, table_name, is_active
-         FROM dining_tables
-         ORDER BY table_id"
-    );
-}
-
 function get_menu_item($id)
 {
     return db()->fetchOne(
@@ -231,18 +211,6 @@ function public_related_menu_items($categoryId, $exceptId, $limit = 3)
          ORDER BY m.item_id ASC
          LIMIT ?",
         array((int) $categoryId, (int) $exceptId, max(1, min(6, (int) $limit)))
-    );
-}
-
-function public_menu_categories()
-{
-    return db()->fetchAll(
-        "SELECT c.category_id, c.category_name
-         FROM categories c
-         JOIN menu_items m ON m.category_id = c.category_id
-         WHERE m.is_hidden = 0
-         GROUP BY c.category_id, c.category_name
-         ORDER BY c.category_id"
     );
 }
 
