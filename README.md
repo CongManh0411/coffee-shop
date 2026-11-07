@@ -51,7 +51,7 @@ Cấu hình localhost mặc định dùng user `root` và mật khẩu trống �
 
 Tài khoản, thực đơn (kể cả món tạm hết), bàn, trạng thái bàn / đơn đang mở, ca làm, đăng ký ca, chấm công giao ca, ca tiền mặt, nhật ký thao tác, đơn hàng, đặt bàn, hàng chờ, khách hàng, khuyến mãi, nhà cung cấp, vật tư kho và đơn giao hàng đều được lưu ở MySQL. Kho theo ly/phần và lịch sử biến động kho được lưu MySQL; thanh toán trừ kho tại máy chủ cùng giao dịch với hóa đơn. Ứng dụng không còn đọc hay ghi `localStorage` / `sessionStorage`: trình duyệt chỉ giữ bản sao tạm trong bộ nhớ của trang và tải lại từ API (trạng thái bàn mỗi ~5 giây), nên dữ liệu đồng bộ giữa các thiết bị. Dữ liệu cũ còn trong localStorage của trình duyệt không được chuyển sang database.
 
-Bản nâng cấp từ trước: chạy thêm `database/migrate_timesheets.sql` trong phpMyAdmin để tạo bảng `timesheets` (chấm công). Database mới nhập `database/coffee.sql` đã có sẵn bảng này.
+Bản nâng cấp từ trước: nhập lại `database/coffee.sql` trong phpMyAdmin để tạo bảng `timesheets` (chấm công); các bảng dùng `CREATE TABLE IF NOT EXISTS` nên không ghi đè dữ liệu đã có.
 
 Đơn giao hàng nhập tay được lưu vào database. Kết nối webhook GrabFood, ShopeeFood và BeFood chưa có. Đơn giao hàng chưa tự tạo hóa đơn doanh thu khi hoàn tất.
 

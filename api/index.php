@@ -101,6 +101,33 @@ try {
             if ($method !== 'GET') json_error('Sai phương thức.', 405);
             json_ok(ops_promotion_list());
             break;
+        case 'staff/roster':
+            require_login();
+            if ($method !== 'GET') json_error('Sai phương thức.', 405);
+            json_ok(staff_roster());
+            break;
+        case 'shifts/register':
+            $me = require_role(array('cashier'));
+            if ($method !== 'POST') json_error('Sai phương thức.', 405);
+            $err = shifts_register($me['staffId'], json_input());
+            if ($err) json_error($err, 422);
+            json_ok();
+            break;
+        case 'timesheet':
+            $me = require_login();
+            if ($method !== 'GET') json_error('Sai phương thức.', 405);
+            json_ok(timesheet_today($me['staffId']));
+            break;
+        case 'timesheet/clock-in':
+            $me = require_login();
+            if ($method !== 'POST') json_error('Sai phương thức.', 405);
+            json_ok(timesheet_clock_in($me['staffId']));
+            break;
+        case 'timesheet/clock-out':
+            $me = require_login();
+            if ($method !== 'POST') json_error('Sai phương thức.', 405);
+            json_ok(timesheet_clock_out($me['staffId']));
+            break;
         case 'staff':
             $me = require_role(array('manager'));
             if ($method === 'GET') {
@@ -167,21 +194,6 @@ try {
             }
             json_error('Sai phương thức.', 405);
             break;
-        case 'attendance':
-            $me = require_login();
-            if ($method !== 'GET') json_error('Sai phương thức.', 405);
-            json_ok(attendance_today($me));
-            break;
-        case 'attendance/clock-in':
-            $me = require_login();
-            if ($method !== 'POST') json_error('Sai phương thức.', 405);
-            json_ok(attendance_clock_in($me));
-            break;
-        case 'attendance/clock-out':
-            $me = require_login();
-            if ($method !== 'POST') json_error('Sai phương thức.', 405);
-            json_ok(attendance_clock_out($me));
-            break;
         case 'tables':
             if ($method === 'GET') { require_login(); json_ok(tables_list()); }
             require_role(array('manager'));
@@ -222,15 +234,6 @@ try {
                 json_ok();
             }
             json_error('Sai phương thức.', 405);
-            break;
-        case 'shifts/register':
-            $me = require_role(array('cashier'));
-            if ($method === 'GET') json_ok(shifts_register_state($me));
-            if ($method !== 'POST') json_error('Sai phương thức.', 405);
-            $in = json_input();
-            list($added, $removed, $skipped, $err) = shifts_register_apply($in['changes'] ?? null, $me);
-            if ($err) json_error($err, 422);
-            json_ok(array('added' => $added, 'removed' => $removed, 'skipped' => $skipped));
             break;
         case 'shifts/copy':
             require_role(array('manager'));

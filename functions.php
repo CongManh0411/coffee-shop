@@ -6,13 +6,13 @@ require_once __DIR__ . '/api/modules/staff.php';
 require_once __DIR__ . '/api/modules/menu.php';
 require_once __DIR__ . '/api/modules/tables.php';
 require_once __DIR__ . '/api/modules/shifts.php';
+require_once __DIR__ . '/api/modules/timesheet.php';
 require_once __DIR__ . '/api/modules/orders.php';
 require_once __DIR__ . '/api/modules/cashshift.php';
 require_once __DIR__ . '/api/modules/reservations.php';
 require_once __DIR__ . '/api/modules/ops.php';
 require_once __DIR__ . '/api/modules/warehouse.php';
 require_once __DIR__ . '/api/modules/auditlog.php';
-require_once __DIR__ . '/api/modules/attendance.php';
 
 // Escape ký tự đặc biệt của LIKE (% _ \\) để từ khóa được so khớp đúng nghĩa đen.
 function like_escape($text)

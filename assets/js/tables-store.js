@@ -6,7 +6,7 @@
 // Mỗi phần tử là 1 "bàn" (hoặc 1 đơn mang đi / giao hàng, có trường `type`):
 //   { id, orderId?, orderCode?, name, type?, customer, address, status: 'empty'|'occupied', time, total,
 //     items: [{ lineId, id (menuId), name, price, quantity, note, confirmed, confirmedAt, kStatus?, startedAt?, doneAt? }] }
-// Dùng chung cho: table-order.js, waiter-pay.js, orders.js, notifications.js, table-manage.js, inventory.js, timesheet.js.
+// Dùng chung cho: table-order.js, waiter-pay.js, orders.js, notifications.js, inventory.js, timesheet.js.
 // ============================================================
 (function () {
     'use strict';

@@ -18,12 +18,13 @@ function shifts_row($r)
         'start'   => substr($r['start_time'], 0, 5),
         'end'     => substr($r['end_time'], 0, 5),
         'registered' => (int) ($r['registered'] ?? 0) === 1,
+        'leftAt'  => !empty($r['left_at']) ? substr($r['left_at'], 11, 5) : null,
     );
 }
 
 function shifts_list()
 {
-    $rows = db()->fetchAll("SELECT shift_id, staff_id, shift_date, start_time, end_time, registered
+    $rows = db()->fetchAll("SELECT shift_id, staff_id, shift_date, start_time, end_time, registered, left_at
                             FROM shifts ORDER BY shift_date, start_time");
     return array_map('shifts_row', $rows);
 }
@@ -167,118 +168,59 @@ function shifts_clear_week($weekStart)
 }
 
 // ---------------------------------------------------------------
-// Thu ngân tự đăng ký ca (thay cho shift-register.js ghi thẳng vào trình duyệt).
-// Quy tắc: mỗi người tối đa 1 ca/ngày, mỗi khung giờ tối đa SHIFT_MAX_CASHIER_PER_SLOT thu ngân,
-// không đăng ký / hủy được ca đã bắt đầu, ca do Quản lý xếp thì khóa.
+// Thu ngân tự đăng ký / hủy ca theo 3 khung giờ cố định (thay cho shift-register.js ghi localStorage).
+// Quy tắc: mỗi người tối đa 1 ca / ngày; mỗi khung giờ nhận tối đa SHIFT_MAX_CASHIER_PER_SLOT thu ngân;
+// không đăng ký / hủy ca đã bắt đầu; ca do Quản lý xếp (registered = 0) thì không tự hủy được.
 // ---------------------------------------------------------------
-define('SHIFT_REGISTER_DAYS', 14);
 define('SHIFT_MAX_CASHIER_PER_SLOT', 1);
 
 function shifts_register_slots()
 {
-    return array(
-        array('key' => 'sang',  'label' => 'Ca sáng',  'start' => '06:30', 'end' => '14:00'),
-        array('key' => 'chieu', 'label' => 'Ca chiều', 'start' => '11:00', 'end' => '19:00'),
-        array('key' => 'toi',   'label' => 'Ca tối',   'start' => '17:00', 'end' => '22:00'),
-    );
+    return array('06:30-14:00', '11:00-19:00', '17:00-22:00');
 }
 
-function shifts_register_slot_ok($start, $end)
+// $d = {date:'YYYY-MM-DD', start:'HH:MM', end:'HH:MM', register:true|false}. Trả về chuỗi lỗi hoặc ''.
+function shifts_register($staffId, $d)
 {
-    foreach (shifts_register_slots() as $s) {
-        if ($s['start'] === $start && $s['end'] === $end) return true;
-    }
-    return false;
-}
+    $staffId = (int) $staffId;
+    $date  = (string) ($d['date'] ?? '');
+    $start = (string) ($d['start'] ?? '');
+    $end   = (string) ($d['end'] ?? '');
+    $register = !empty($d['register']);
+    if (!shifts_valid_date($date)) return 'Ngày không hợp lệ.';
+    if (!in_array($start . '-' . $end, shifts_register_slots(), true)) return 'Khung giờ không hợp lệ.';
+    if (strtotime($date . ' ' . $start . ':00') <= time()) return 'Ca đã bắt đầu hoặc đã qua.';
 
-function shifts_register_started($date, $start)
-{
-    return strtotime($date . ' ' . $start . ':00') <= time();
-}
-
-// Ca của chính người đăng nhập + các khung giờ đã đủ thu ngân (do người khác giữ) trong 14 ngày tới.
-function shifts_register_state($me)
-{
-    $from = date('Y-m-d');
-    $to = date('Y-m-d', strtotime($from . ' +' . (SHIFT_REGISTER_DAYS - 1) . ' days'));
-    $mine = db()->fetchAll(
-        "SELECT shift_id, staff_id, shift_date, start_time, end_time, registered
-         FROM shifts WHERE staff_id = ? AND shift_date BETWEEN ? AND ? ORDER BY shift_date, start_time",
-        array((int) $me['staffId'], $from, $to)
-    );
-    $others = db()->fetchAll(
-        "SELECT sh.shift_date, sh.start_time, sh.end_time, COUNT(*) AS c
-         FROM shifts sh JOIN staff st ON st.staff_id = sh.staff_id
-         WHERE st.role = 'cashier' AND sh.staff_id <> ? AND sh.shift_date BETWEEN ? AND ?
-         GROUP BY sh.shift_date, sh.start_time, sh.end_time",
-        array((int) $me['staffId'], $from, $to)
-    );
-    $full = array();
-    foreach ($others as $o) {
-        if ((int) $o['c'] >= SHIFT_MAX_CASHIER_PER_SLOT) {
-            $full[] = $o['shift_date'] . '|' . substr($o['start_time'], 0, 5) . '|' . substr($o['end_time'], 0, 5);
+    return db()->transaction(function () use ($staffId, $date, $start, $end, $register) {
+        $err = shifts_lock_staff($staffId);
+        if ($err) return $err;
+        if (!$register) {
+            db()->execute(
+                "DELETE FROM shifts WHERE staff_id = ? AND shift_date = ? AND start_time = ? AND end_time = ? AND registered = 1",
+                array($staffId, $date, $start . ':00', $end . ':00')
+            );
+            return '';
         }
-    }
-    return array(
-        'days'   => SHIFT_REGISTER_DAYS,
-        'slots'  => shifts_register_slots(),
-        'mine'   => array_map('shifts_row', $mine),
-        'full'   => $full,
-        'maxPerSlot' => SHIFT_MAX_CASHIER_PER_SLOT,
-    );
-}
-
-// $changes: [{date, start, end, checked}]. Trả về [added, removed, skipped[]].
-function shifts_register_apply($changes, $me)
-{
-    if (!is_array($changes)) return array(0, 0, array(), 'Dữ liệu đăng ký không hợp lệ.');
-    $staffId = (int) $me['staffId'];
-    $lockName = 'coffee_shift_register';
-    db()->fetchOne("SELECT GET_LOCK('" . $lockName . "', 5) AS l");
-    try {
-        return db()->transaction(function () use ($changes, $staffId) {
-            $added = 0; $removed = 0; $skipped = array();
-            $today = date('Y-m-d');
-            $last = date('Y-m-d', strtotime($today . ' +' . (SHIFT_REGISTER_DAYS - 1) . ' days'));
-            foreach ($changes as $c) {
-                $date = is_array($c) ? ($c['date'] ?? '') : '';
-                $start = is_array($c) ? ($c['start'] ?? '') : '';
-                $end = is_array($c) ? ($c['end'] ?? '') : '';
-                $checked = is_array($c) && !empty($c['checked']);
-                if (!shifts_valid_date($date) || $date < $today || $date > $last || !shifts_register_slot_ok($start, $end)) continue;
-                if (shifts_register_started($date, $start)) continue;
-
-                $mine = db()->fetchOne(
-                    "SELECT shift_id, start_time, end_time, registered FROM shifts WHERE staff_id = ? AND shift_date = ? FOR UPDATE",
-                    array($staffId, $date)
-                );
-                $isMineSlot = $mine && substr($mine['start_time'], 0, 5) === $start && substr($mine['end_time'], 0, 5) === $end;
-
-                if ($checked && !$isMineSlot) {
-                    if ($mine) { $skipped[] = $date . ': đã có ca khác'; continue; }
-                    $row = db()->fetchOne(
-                        "SELECT COUNT(*) AS c FROM shifts sh JOIN staff st ON st.staff_id = sh.staff_id
-                         WHERE sh.shift_date = ? AND sh.start_time = ? AND sh.end_time = ? AND st.role = 'cashier'",
-                        array($date, $start . ':00', $end . ':00')
-                    );
-                    if ((int) $row['c'] >= SHIFT_MAX_CASHIER_PER_SLOT) { $skipped[] = $date . ' ' . $start . '–' . $end . ': đã đủ người'; continue; }
-                    $err = shifts_lock_staff($staffId);
-                    if ($err) throw new ApiException($err, 422);
-                    $err = shifts_validate($staffId, $date, $start, $end);
-                    if ($err) { $skipped[] = $date . ': ' . $err; continue; }
-                    db()->execute(
-                        "INSERT INTO shifts (staff_id, shift_date, start_time, end_time, registered) VALUES (?, ?, ?, ?, 1)",
-                        array($staffId, $date, $start . ':00', $end . ':00')
-                    );
-                    $added++;
-                } elseif (!$checked && $isMineSlot && (int) $mine['registered'] === 1) {
-                    db()->execute("DELETE FROM shifts WHERE shift_id = ?", array((int) $mine['shift_id']));
-                    $removed++;
-                }
-            }
-            return array($added, $removed, $skipped, '');
-        });
-    } finally {
-        db()->fetchOne("SELECT RELEASE_LOCK('" . $lockName . "') AS l");
-    }
+        $mine = db()->fetchOne(
+            "SELECT shift_id, start_time, end_time FROM shifts WHERE staff_id = ? AND shift_date = ?",
+            array($staffId, $date)
+        );
+        if ($mine) {
+            if (substr($mine['start_time'], 0, 5) === $start && substr($mine['end_time'], 0, 5) === $end) return '';
+            return 'Đã có ca khác trong ngày.';
+        }
+        $row = db()->fetchOne(
+            "SELECT COUNT(*) AS n FROM shifts s JOIN staff st ON st.staff_id = s.staff_id
+             WHERE s.shift_date = ? AND s.start_time = ? AND s.end_time = ? AND st.role = 'cashier'",
+            array($date, $start . ':00', $end . ':00')
+        );
+        if ((int) ($row['n'] ?? 0) >= SHIFT_MAX_CASHIER_PER_SLOT) return 'Khung giờ này đã đủ người.';
+        $err = shifts_validate($staffId, $date, $start, $end);
+        if ($err) return $err;
+        db()->execute(
+            "INSERT INTO shifts (staff_id, shift_date, start_time, end_time, registered) VALUES (?, ?, ?, ?, 1)",
+            array($staffId, $date, $start . ':00', $end . ':00')
+        );
+        return '';
+    });
 }

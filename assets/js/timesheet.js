@@ -5,13 +5,15 @@
 //        (giờ vào, giờ ra, tổng giờ, tiền) + nút "Xác nhận" -> bấm Xác nhận là hết ca, quay lại màn hình
 //        nhân viên -> cuối cùng nhân viên tự bấm "Đăng xuất".
 //
-// - Giờ vào: ghi ở lần đầu nhân viên mở trang sau khi đăng nhập trong ngày (API 'attendance/clock-in', giờ do máy chủ ghi).
-// - Giờ ra: đúng lúc bấm "Xác nhận" (API 'attendance/clock-out'). Mỗi ngày chỉ có 1 lần giao ca; sau khi Xác nhận là hết.
+// - Giờ vào: ghi ở lần đầu nhân viên mở trang sau khi đăng nhập trong ngày (session hiện chỉ lưu {roleKey, name}
+//   nên chưa có giờ đăng nhập thật; khi có backend hãy ghi giờ này ngay lúc login).
+// - Giờ ra: đúng lúc bấm "Xác nhận". Mỗi ngày chỉ có 1 lần giao ca; sau khi Xác nhận là hết.
 // - Tiền = số phút làm x lương/giờ (đổi HOURLY_RATE bên dưới). Chỉ hiện tiền của chính người đang đăng nhập.
+// - Giờ ra này cũng được trang Lịch ca làm đọc: giao ca sớm hơn giờ đăng ký thì bảng tự hiện "Nghỉ sớm".
 //
-// DỮ LIỆU — bảng `timesheets` trên máy chủ (mỗi nhân viên một dòng mỗi ngày), API trả về:
+// DỮ LIỆU — bảng MySQL `timesheets` qua API: GET 'timesheet', POST 'timesheet/clock-in', POST 'timesheet/clock-out'.
 //   { staffId: 3, date: '2026-10-05', clockIn: 1790000000000, clockOut: 1790018000000 | null }  (mili-giây)
-// Ca đã xếp lấy từ API 'shifts'. Trình duyệt chỉ giữ bản sao trong bộ nhớ trang, không dùng localStorage.
+// Ca đã xếp lấy từ API 'shifts'. Không còn dùng localStorage cho ca, nhân viên và chấm công.
 // ============================================================
 (function () {
     'use strict';
@@ -35,9 +37,9 @@
         return `${m} phút`;
     }
 
-    // ---------- Dữ liệu (từ máy chủ, giữ trong bộ nhớ trang) ----------
-    let record = null;      // bản ghi chấm công hôm nay của người đang đăng nhập
-    let shiftsCache = [];   // ca đã xếp (API 'shifts')
+    // ---------- Dữ liệu (MySQL qua API, giữ bản nhớ tạm trong biến để vẽ popup mỗi giây) ----------
+    let todayRec = null;   // bản ghi chấm công hôm nay của chính mình
+    let allShifts = [];    // ca đã xếp (API 'shifts')
 
     function currentStaff() {
         const session = AuthAPI.getSession();
@@ -45,27 +47,23 @@
         return { id: session.staffId != null ? session.staffId : session.name, name: session.name };
     }
 
-    function todayRecord() {
-        return record; // máy chủ đã chọn đúng bản ghi của hôm nay
-    }
+    function todayRecord() { return todayRec; }
 
     async function loadShifts() {
-        try { shiftsCache = await Api.get('shifts'); } catch (e) { /* giữ bản đang có */ }
+        try { allShifts = await Api.get('shifts'); } catch (e) { /* giữ bản cũ */ }
     }
 
-    // Ghi GIỜ VÀO nếu hôm nay chưa có bản ghi (đã có — kể cả đã giao ca — thì máy chủ giữ nguyên, mỗi ngày 1 lần)
+    // Ghi GIỜ VÀO nếu hôm nay chưa có bản ghi (máy chủ giữ nguyên nếu đã có, kể cả đã giao ca)
     async function recordClockIn() {
         if (!currentStaff()) return null;
-        try { record = await Api.post('attendance/clock-in'); }
-        catch (e) { return null; }
+        try { todayRec = await Api.post('timesheet/clock-in'); } catch (e) { /* mất mạng: thử lại lần sau */ }
         refreshButton();
-        return record;
+        return todayRec;
     }
 
-    // Ca đã xếp của 1 người trong 1 ngày (Quản lý xếp ở trang Xếp ca)
+    // Ca đã xếp của 1 người trong 1 ngày (quản lý xếp ở trang Lịch ca)
     function shiftsOf(staffId, date) {
-        return shiftsCache.filter(s => String(s.staffId) === String(staffId) && s.date === date)
-            .sort((a, b) => toMin(a.start) - toMin(b.start));
+        return allShifts.filter(s => String(s.staffId) === String(staffId) && s.date === date).sort((a, b) => toMin(a.start) - toMin(b.start));
     }
     const at = (date, hhmm) => new Date(`${date}T${hhmm}:00`).getTime();
 
@@ -161,28 +159,21 @@
         wrap.addEventListener('click', e => { if (e.target === wrap) closeModal(); });
         document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 
-        // Xác nhận = giao ca: chốt giờ ra (máy chủ ghi), hết ca, thoát popup về lại màn hình nhân viên
+        // Xác nhận = giao ca: chốt giờ ra, hết ca, thoát popup về lại màn hình nhân viên
         $('hoConfirm').addEventListener('click', async () => {
-            const btn = $('hoConfirm');
-            btn.disabled = true;
-            try {
-                let busy = 0;
-                try { await TablesStore.refresh(); busy = TablesStore.busyCount(); } catch (err) {}
-                if (busy && !window.confirm(`Còn ${busy} bàn đang có khách hoặc chưa thanh toán. Vẫn giao ca?`)) return;
-                const rec = todayRecord();
-                if (rec && !rec.clockOut) {
-                    try { record = await Api.post('attendance/clock-out'); }
-                    catch (err) { return alert('Không ghi được giờ ra ca: ' + err.message); }
-                }
-                closeModal();
-                refreshButton();
-            } finally { btn.disabled = false; }
+            let busy = 0;
+            try { await TablesStore.refresh(); busy = TablesStore.busyCount(); } catch (err) {}
+            if (busy && !window.confirm(`Còn ${busy} bàn đang có khách hoặc chưa thanh toán. Vẫn giao ca?`)) return;
+            try { todayRec = await Api.post('timesheet/clock-out'); }
+            catch (err) { alert('Không giao ca được: ' + err.message); return; }
+            closeModal();
+            refreshButton();
         });
     }
 
     async function openHandover() {
-        await Promise.all([recordClockIn(), loadShifts()]); // phòng khi chưa có bản ghi hôm nay; lấy ca đã xếp để tính lương
-        if (!todayRecord()) return alert('Không tải được dữ liệu chấm công từ máy chủ. Hãy thử lại.');
+        await Promise.all([recordClockIn(), loadShifts()]); // phòng khi chưa có bản ghi hôm nay
+        if (!todayRec) { alert('Không tải được dữ liệu chấm công. Hãy tải lại trang.'); return; }
         buildModal();
         renderModal();
         $('hoBackdrop').classList.add('active');
