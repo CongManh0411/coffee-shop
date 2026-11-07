@@ -1,52 +1,16 @@
-// Kho thành phẩm (theo số ly / phần) — kết nối MySQL qua API, đồng bộ bộ nhớ đệm trình duyệt
+// Kho thành phẩm (theo số ly / phần) — kết nối MySQL qua API; tồn kho giữ trong bộ nhớ trang (không dùng localStorage)
 (function () {
     'use strict';
     if (window.InventoryAPI) return;
 
-    const KEY = 'coffee_portion_stock_v1';
-    const LOG_KEY = 'coffee_portion_stock_log_v1';
-    const SALE_KEY = 'coffee_portion_stock_sales_v1';
-    const MENU_STORAGE = 'coffee_menu_data_v2';
-    const TABLES_KEY = 'coffee_tables_v1';
-    const PENDING_KEY = 'coffee_pending_orders_v1';
-
     let cachedItems = null;
-
-    const read = (key, fallback) => {
-        try {
-            const v = JSON.parse(localStorage.getItem(key));
-            return v == null ? fallback : v;
-        } catch (_) {
-            return fallback;
-        }
-    };
-
-    const write = (key, data) => {
-        try {
-            localStorage.setItem(key, JSON.stringify(data));
-            return true;
-        } catch (_) {
-            return false;
-        }
-    };
 
     const unitFor = category => category === 'Bánh' ? 'phần' : 'ly';
     const positiveInt = value => Number.isSafeInteger(Number(value)) && Number(value) >= 0;
 
-    const actor = () => {
-        try {
-            const u = (window.SERVER_USER || (window.AuthAPI && AuthAPI.getSession()));
-            return u ? (u.name || u.fullName || u.username || u.roleKey || 'Nhân viên') : 'Nhân viên';
-        } catch (_) {
-            return 'Nhân viên';
-        }
-    };
-
     // Khởi tạo từ dữ liệu ban đầu nếu được PHP in sẵn trên trang
     if (window.INITIAL_WAREHOUSE_DATA && Array.isArray(window.INITIAL_WAREHOUSE_DATA.items)) {
-        const stockCache = {};
         cachedItems = window.INITIAL_WAREHOUSE_DATA.items.map(it => {
-            stockCache[String(it.id)] = { stock: Number(it.stock), minLevel: Number(it.minLevel) };
             return {
                 ...it,
                 id: String(it.id),
@@ -57,56 +21,18 @@
                 minLevel: Number(it.minLevel)
             };
         });
-        write(KEY, stockCache);
     }
 
+    // Chưa đồng bộ với máy chủ (sync) thì chưa có danh sách món: trả về rỗng, các trang gọi sync() trước khi vẽ.
     function menuItems() {
-        if (cachedItems !== null) return cachedItems;
-        const menu = read(MENU_STORAGE, typeof DEFAULT_MENU !== 'undefined' ? DEFAULT_MENU : []);
-        return (Array.isArray(menu) ? menu : []).flatMap(cat =>
-            (cat.items || []).map(item => ({
-                id: String(item.id),
-                name: item.name,
-                category: cat.category,
-                unit: unitFor(cat.category)
-            }))
-        );
+        return cachedItems !== null ? cachedItems : [];
     }
 
     function getAll() {
-        if (cachedItems !== null) return cachedItems.map(item => ({ ...item }));
-        const items = menuItems(), raw = read(KEY, {}), stock = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
-        return items.map(m => {
-            const old = stock[m.id] || {};
-            return {
-                ...m,
-                stock: positiveInt(old.stock) ? Number(old.stock) : 0,
-                minLevel: positiveInt(old.minLevel) ? Number(old.minLevel) : 10
-            };
-        });
+        return menuItems().map(item => ({ ...item }));
     }
 
     const get = id => getAll().find(x => x.id === String(id));
-
-    function log(type, item, delta, ref) {
-        const logs = read(LOG_KEY, []);
-        logs.push({
-            ts: Date.now(),
-            type,
-            itemId: item.id,
-            name: item.name,
-            unit: item.unit,
-            delta,
-            ref: ref || '',
-            actor: actor()
-        });
-        write(LOG_KEY, logs.slice(-1500));
-    }
-
-    function getLog() {
-        const logs = read(LOG_KEY, []);
-        return Array.isArray(logs) ? logs : [];
-    }
 
     // Đồng bộ số lượng tồn kho từ MySQL qua API
     async function sync() {
@@ -114,12 +40,7 @@
         try {
             const res = await Api.get('warehouse');
             if (res && Array.isArray(res.items)) {
-                const stockCache = {};
                 cachedItems = res.items.map(it => {
-                    stockCache[String(it.id)] = {
-                        stock: Number(it.stock || 0),
-                        minLevel: Number(it.minLevel ?? 10)
-                    };
                     return {
                         ...it,
                         id: String(it.id),
@@ -130,7 +51,6 @@
                         minLevel: Number(it.minLevel ?? 10)
                     };
                 });
-                write(KEY, stockCache);
                 window.dispatchEvent(new CustomEvent('inventory-updated', { detail: res }));
                 return getAll();
             }
@@ -215,24 +135,15 @@
         return qty;
     }
 
-    // Tính số ly/phần đang được đặt ở các bàn đang mở
+    // Tính số ly/phần đang được đặt ở các bàn / đơn đang mở (lấy từ TablesStore, tức là từ máy chủ)
     function reserved(excludeTableId) {
         const sum = {};
-        const tables = read(TABLES_KEY, []);
-        (Array.isArray(tables) ? tables : []).forEach(table => {
+        const tables = window.TablesStore ? TablesStore.list() : [];
+        tables.forEach(table => {
             if (excludeTableId != null && String(table.id) === String(excludeTableId)) return;
             (table.items || []).forEach(i => {
                 if (i.id == null) return;
                 const n = Number(i.quantity || 0);
-                if (n > 0) sum[String(i.id)] = (sum[String(i.id)] || 0) + n;
-            });
-        });
-        const pending = read(PENDING_KEY, []);
-        (Array.isArray(pending) ? pending : []).forEach(p => {
-            if ((Array.isArray(tables) ? tables : []).some(t => String(t.id) === String(p.tableId))) return;
-            (p.items || []).forEach(i => {
-                if (i.id == null) return;
-                const n = Number(i.quantity || i.qty || 0);
                 if (n > 0) sum[String(i.id)] = (sum[String(i.id)] || 0) + n;
             });
         });
@@ -252,9 +163,8 @@
         return left >= n ? { ok: true, left } : { ok: false, left, error: `${item.name} chỉ còn ${left} ${item.unit} có thể đặt (tồn kho ${item.stock}).` };
     }
 
-    function validateSale(lines, invoiceId) {
-        const sold = read(SALE_KEY, {});
-        if (invoiceId && sold[invoiceId]) return { ok: false, error: `Hóa đơn ${invoiceId} đã được trừ kho trước đó.` };
+    // Kiểm tra tồn kho đủ cho các dòng hàng (máy chủ vẫn kiểm tra lại và trừ kho khi thanh toán).
+    function validateSale(lines) {
         const summary = totals(lines);
         if (!summary || !Object.keys(summary).length) return { ok: false, error: 'Hóa đơn không có số lượng món hợp lệ.' };
         const items = getAll();
@@ -268,14 +178,14 @@
         return { ok: true, details };
     }
 
+    // Món bị xóa khỏi thực đơn: bỏ khỏi bản sao trong bộ nhớ
     function drop(id) {
-        const data = read(KEY, {});
-        delete data[String(id)];
-        return write(KEY, data);
+        if (cachedItems !== null) cachedItems = cachedItems.filter(x => x.id !== String(id));
+        return true;
     }
 
     window.InventoryAPI = {
-        KEY, LOG_KEY, SALE_KEY, getAll, get, menuItems, adjust, setLevel, sync, getHistory,
-        getLog, reserved, available, canReserve, validateSale, drop
+        getAll, get, menuItems, adjust, setLevel, sync, getHistory,
+        reserved, available, canReserve, validateSale, drop
     };
 })();

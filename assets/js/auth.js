@@ -47,7 +47,6 @@ const AuthAPI = {
     async logout() {
         try { await Api.post('auth/logout'); } catch (err) {}
         window.SERVER_USER = null;
-        try { sessionStorage.clear(); } catch (err) {}
         window.location.replace((window.COFFEE_ROOT || './') + 'admin/index.php?page=login');
     },
     getSession() { return window.SERVER_USER || null; },
@@ -112,26 +111,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const toggleBtn = document.getElementById('togglePass');
     const submitBtn = form.querySelector('.login-btn');
 
-    // "Lưu mật khẩu": nhớ tên đăng nhập (localStorage) và nhờ trình duyệt lưu mật khẩu
-    // qua Credential Management API. Mật khẩu KHÔNG bao giờ được lưu bởi mã của quán.
+    // "Lưu mật khẩu": nhờ trình duyệt lưu / điền sẵn tài khoản qua Credential Management API (trình quản lý mật khẩu của trình duyệt).
+    // Mã của quán KHÔNG lưu tên đăng nhập hay mật khẩu ở đâu cả (không dùng localStorage). Tick "Ghi nhớ" còn làm máy chủ giữ phiên 30 ngày.
+    // mediation 'silent': chỉ điền khi trình duyệt có sẵn thông tin và người dùng đã cho phép tự đăng nhập; không hiện hộp chọn tài khoản.
     const rememberEl = document.getElementById('rememberMe');
-    const REMEMBER_KEY = 'coffee_remember_username';
-    try {
-        const savedUser = localStorage.getItem(REMEMBER_KEY);
-        if (savedUser && userEl) {
-            userEl.value = savedUser;
-            if (rememberEl) rememberEl.checked = true;
-            if (passEl) passEl.focus();
-        }
-    } catch (e) { /* localStorage có thể bị chặn */ }
-
-    // Điền sẵn mật khẩu CHỈ khi lần đăng nhập gần nhất có tick "Lưu mật khẩu" (REMEMBER_KEY còn tồn tại)
-    // và thông tin trình duyệt lưu khớp đúng tài khoản đó. Không tick -> form trống, đăng nhập tài khoản khác thoải mái.
-    let remembered = null;
-    try { remembered = localStorage.getItem(REMEMBER_KEY); } catch (e) {}
-    if (remembered && window.PasswordCredential && navigator.credentials && navigator.credentials.get && window.isSecureContext) {
-        navigator.credentials.get({ password: true, mediation: 'optional' }).then((cred) => {
-            if (cred && cred.password && cred.id === remembered) {
+    if (window.PasswordCredential && navigator.credentials && navigator.credentials.get && window.isSecureContext) {
+        navigator.credentials.get({ password: true, mediation: 'silent' }).then((cred) => {
+            if (cred && cred.password) {
                 if (userEl) userEl.value = cred.id;
                 if (passEl) passEl.value = cred.password;
                 if (rememberEl) rememberEl.checked = true;
@@ -164,12 +150,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const session = await AuthAPI.login(userEl.value, passEl.value, rememberEl && rememberEl.checked);
             try {
                 if (rememberEl && rememberEl.checked) {
-                    localStorage.setItem(REMEMBER_KEY, userEl.value.trim());
                     if (window.PasswordCredential && navigator.credentials && navigator.credentials.store) {
                         await navigator.credentials.store(new PasswordCredential({ id: userEl.value.trim(), password: passEl.value }));
                     }
                 } else {
-                    localStorage.removeItem(REMEMBER_KEY);
                     if (navigator.credentials && navigator.credentials.preventSilentAccess) await navigator.credentials.preventSilentAccess();
                 }
             } catch (e) { /* không ảnh hưởng việc đăng nhập */ }

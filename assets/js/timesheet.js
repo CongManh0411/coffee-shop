@@ -162,7 +162,7 @@
         // Xác nhận = giao ca: chốt giờ ra, hết ca, thoát popup về lại màn hình nhân viên
         $('hoConfirm').addEventListener('click', async () => {
             let busy = 0;
-            try { busy = (JSON.parse(localStorage.getItem('coffee_tables_v1')) || []).filter(t => t.status !== 'empty').length; } catch (err) {}
+            try { await TablesStore.refresh(); busy = TablesStore.busyCount(); } catch (err) {}
             if (busy && !window.confirm(`Còn ${busy} bàn đang có khách hoặc chưa thanh toán. Vẫn giao ca?`)) return;
             try { todayRec = await Api.post('timesheet/clock-out'); }
             catch (err) { alert('Không giao ca được: ' + err.message); return; }

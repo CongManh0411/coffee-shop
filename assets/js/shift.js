@@ -6,7 +6,7 @@
 //    = đầu ca + bán tiền mặt + thu − chi. Ghi THU / CHI (mua đá, đồ lặt vặt, tiền tip...).
 // 3) KẾT CA: nhập tiền đếm thực tế -> hệ thống so với tiền theo sổ. Lệch thì BẮT BUỘC ghi lý do,
 //    vẫn cho kết ca, và ghi Nhật ký (đánh dấu) cho Quản lý xem. Sau đó hiện / in BÁO CÁO KẾT CA.
-// Dữ liệu: 'coffee_cashshift_v1' (xem cashier-core.js).
+// Dữ liệu: ca tiền mặt nằm trong database (API 'cashshift', xem cashier-core.js); trang này không lưu gì ở trình duyệt.
 // ============================================================
 (function () {
     'use strict';
@@ -35,8 +35,8 @@
                 <label>Tiền đầu ca (đ)<input type="number" id="openCash" min="0" inputmode="numeric" placeholder="vd: 500000"></label>
                 <button class="cs-btn" id="btnOpen">Mở ca</button>
             </div><p class="cs-msg" id="openMsg" hidden></p></div>${historyHtml(st)}`;
-        $('btnOpen').onclick = () => {
-            const r = C.openShift($('openCash').value);
+        $('btnOpen').onclick = async () => {
+            const r = await C.openShift($('openCash').value);
             if (!r.ok) { $('openMsg').textContent = r.error; $('openMsg').hidden = false; return; }
             render();
         };
@@ -100,8 +100,8 @@
         // thu / chi
         const fillCat = () => { $('mvCat').innerHTML = C.CATEGORIES[$('mvKind').value].map(c => `<option>${c}</option>`).join(''); };
         fillCat(); $('mvKind').onchange = fillCat;
-        $('btnMv').onclick = () => {
-            const r = C.addMovement($('mvKind').value, $('mvCat').value, $('mvAmt').value, $('mvNote').value);
+        $('btnMv').onclick = async () => {
+            const r = await C.addMovement($('mvKind').value, $('mvCat').value, $('mvAmt').value, $('mvNote').value);
             if (!r.ok) { $('mvMsg').textContent = r.error; $('mvMsg').hidden = false; return; }
             render();
         };
@@ -116,9 +116,9 @@
             $('btnClose').disabled = diff !== 0 && !$('cntReason').value.trim();
         };
         $('cntCash').oninput = upd; $('cntReason').oninput = upd;
-        $('btnClose').onclick = () => {
+        $('btnClose').onclick = async () => {
             if (!confirm('Kết ca? Sau khi kết ca sẽ không thu tiền được cho đến khi mở ca mới.')) return;
-            const r = C.closeShift($('cntCash').value, $('cntReason').value);
+            const r = await C.closeShift($('cntCash').value, $('cntReason').value);
             if (!r.ok) { $('clMsg').textContent = r.error; $('clMsg').hidden = false; return; }
             render(); viewReport(r.shift);
         };
@@ -130,17 +130,18 @@
         if (sh) renderOpen(el, sh); else renderOpenForm(el);
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', async () => {
         $('shClose').onclick = () => $('shModal').classList.remove('active');
         $('shPrint').onclick = () => { if (reportShift) C.printHtml('Báo cáo kết ca', C.shiftReportHtml(reportShift)); };
         $('shRoot').addEventListener('click', e => {
             const b = e.target.closest('[data-rep]'); if (!b) return;
             const s = C.shiftStore().history.find(x => x.id === b.dataset.rep); if (s) viewReport(s);
         });
+        await C.shiftReady; // đợi dữ liệu ca từ máy chủ rồi mới vẽ (tránh hiện nhầm form "Mở ca")
         render();
-        // cập nhật số liệu khi có hóa đơn mới (ở tab khác) — không vẽ lại khi đang gõ
-        window.addEventListener('storage', e => {
-            if ([C.K.INV, C.K.SHIFT].includes(e.key) && !(document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName))) render();
-        });
+        // Có hóa đơn mới / ca đổi ở máy khác: tải lại ca từ máy chủ mỗi 10 giây rồi vẽ lại — không vẽ khi đang gõ
+        const typing = () => document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName);
+        document.addEventListener('cashier:shift-updated', () => { if (!typing()) render(); });
+        setInterval(() => { if (!typing()) C.syncShift(); }, 10000);
     });
 })();

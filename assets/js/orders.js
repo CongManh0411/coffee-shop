@@ -2,7 +2,7 @@
 // orders.js — QUẢN LÝ ĐƠN HÀNG (Orders.html, Thu ngân)
 // ------------------------------------------------------------
 // 3 tab:
-//   - Đang xử lý   : mọi bàn / đơn mang đi / giao hàng đang có món (đọc 'coffee_tables_v1'),
+//   - Đang xử lý   : mọi bàn / đơn mang đi / giao hàng đang có món (lấy từ máy chủ qua TablesStore),
 //                    kèm trạng thái pha chế do Bếp đặt (Chờ pha chế / Đang làm / Đã xong). Nút "Thanh toán".
 //   - Đã hoàn thành: hóa đơn HÔM NAY còn hiệu lực. Nút "In" và "Hoàn tiền" (chỉ hóa đơn của CA ĐANG MỞ).
 //   - Đã hủy / hoàn: hóa đơn hôm nay đã hủy + lý do + người thực hiện.
@@ -20,7 +20,7 @@
     let tab = 'processing';
     let invoices = [];
 
-    const readTables = () => C.read('coffee_tables_v1', []);
+    const readTables = () => TablesStore.list();
     const readInv = () => invoices;
     const lineState = i => i.kStatus ? i.kStatus : ((Number(i.readyAt) || 0) > Date.now() ? 'making' : 'done');
     const STATE_TXT = { waiting: 'Chờ pha chế', making: 'Đang làm', done: 'Đã xong' };
@@ -29,27 +29,8 @@
 
     async function refreshOrdersFromServer() {
         try {
-            const [active, invoiceRows] = await Promise.all([Api.get('orders'), Api.get('orders/invoices?status=all')]);
+            const [, invoiceRows] = await Promise.all([TablesStore.refresh(), Api.get('orders/invoices?status=all')]);
             invoices = invoiceRows;
-            const tables = readTables().filter(t => !t.type && !t.orderId && t.status === 'empty');
-            active.forEach(order => {
-                const id = order.orderType === 'dinein' ? Number(order.tableId) : -Number(order.id);
-                tables.push({
-                    id, orderId: Number(order.id), orderCode: order.order_code,
-                    type: order.orderType === 'dinein' ? undefined : order.orderType,
-                    name: order.tableName, customer: order.customer || '', address: order.address || '',
-                    status: 'occupied', time: order.created_at || '', total: Number(order.subtotal) || 0,
-                    items: (order.items || []).map(i => ({
-                        lineId: String(i.id), id: i.menuId, name: i.name, price: Number(i.price),
-                        quantity: Number(i.quantity), note: i.note || '', confirmed: i.status !== 'draft',
-                        kStatus: i.status === 'draft' ? undefined : i.status,
-                        confirmedAt: i.confirmedAt ? new Date(i.confirmedAt).getTime() : 0,
-                        startedAt: i.startedAt ? new Date(i.startedAt).getTime() : 0,
-                        doneAt: i.doneAt ? new Date(i.doneAt).getTime() : 0
-                    }))
-                });
-            });
-            C.write('coffee_tables_v1', tables);
             render();
         } catch (err) { $('ordNote').textContent = 'Không tải được đơn từ máy chủ: ' + err.message; }
     }
@@ -143,6 +124,5 @@
         render();
         refreshOrdersFromServer();
         setInterval(refreshOrdersFromServer, 3000);
-        window.addEventListener('storage', e => { if (['coffee_tables_v1', C.K.SHIFT].includes(e.key)) render(); });
     });
 })();

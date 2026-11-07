@@ -4,25 +4,22 @@
 // - (Thu ngân cũng dùng) Thêm nút "Thông báo", "Thanh toán", "Giao ca" vào sidebar của Phục vụ / Thu ngân, có chấm đỏ + số tin mới (giống Zalo/Facebook).
 // - Bấm vào: hiện từng bàn đang có món, bàn nào ĐỦ MÓN (mang ra được) / THIẾU mấy món,
 //   và từng món đang ở trạng thái: Đã xong / Đang làm / Chờ làm (do BẾP đặt ở trang Kitchen.html, trường kStatus).
-// - Dữ liệu lấy từ bàn trong localStorage ('coffee_tables_v1'): mỗi món đã Xác nhận có startAt/readyAt
-//   (xem confirmOrder trong table-order.js). Trạng thái được TÍNH từ thời gian hiện tại nên không cần
-//   backend; khi nối backend chỉ cần thay readTables() bằng dữ liệu thật (món có trạng thái từ bếp).
+// - Dữ liệu lấy từ máy chủ qua TablesStore (tables-store.js): mỗi món đã Xác nhận có kStatus do Bếp đặt
+//   (waiting / making / done) kèm doneAt. TablesStore được tải lại định kỳ nên bảng và chấm đỏ luôn mới.
 // - Bàn tự biến mất khỏi danh sách khi Phục vụ thanh toán xong (bàn về trống).
 // ============================================================
 (function () {
     'use strict';
 
-    const TABLES_KEY = 'coffee_tables_v1';
-    const SEEN_KEY = 'coffee_notif_seen_v1'; // mốc thời gian lần cuối Phục vụ mở xem thông báo
+    let seenAt = null; // mốc thời gian lần cuối xem thông báo (chỉ trong trang này; mỗi lần mở trang tính lại từ lúc đó)
+    let storeLoaded = false; // đã có dữ liệu bàn từ máy chủ chưa (tránh báo "vừa xong" cho món đã xong từ trước)
 
     const $ = id => document.getElementById(id);
     const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-    function readTables() {
-        try { const s = JSON.parse(localStorage.getItem(TABLES_KEY)); return Array.isArray(s) ? s : []; } catch (e) { return []; }
-    }
-    function getSeen() { const v = Number(localStorage.getItem(SEEN_KEY)); return v > 0 ? v : null; }
-    function setSeen(t) { try { localStorage.setItem(SEEN_KEY, String(t)); } catch (e) {} }
+    function readTables() { return TablesStore.list(); }
+    function getSeen() { return seenAt; }
+    function setSeen(t) { seenAt = t; }
 
     // ---------- Phân tích trạng thái 1 bàn ----------
     // state món: 'done' (đã xong) | 'making' (đang làm) | 'waiting' (chờ tới lượt)
@@ -79,6 +76,7 @@
         setTimeout(() => el.remove(), 6000);
     }
     function checkNewlyDone() {
+        if (!storeLoaded) return;
         const now = Date.now(), cur = new Set(), fresh = [];
         analyzeAll(now).forEach(a => a.lines.forEach(l => {
             if (l.state !== 'done') return;
@@ -221,7 +219,7 @@
         // Không có Thông báo / Thanh toán vì đó là việc của Phục vụ & Thu ngân.
         if (role === 'kitchen') {
             menu.appendChild(handBtn);
-            withTimesheet(() => { window.WaiterTimesheet.recordClockIn(); window.WaiterTimesheet.refreshButton(); });
+            withTimesheet(() => { window.WaiterTimesheet.recordClockIn(); }); // máy chủ ghi giờ vào; nút Giao ca tự cập nhật
             return;
         }
 
@@ -234,7 +232,7 @@
         menu.insertBefore(payBtn, shiftLink);
         menu.appendChild(handBtn);
         // Vừa vào trang sau khi đăng nhập: tự ghi GIỜ VÀO ca hôm nay
-        withTimesheet(() => { window.WaiterTimesheet.recordClockIn(); window.WaiterTimesheet.refreshButton(); });
+        withTimesheet(() => { window.WaiterTimesheet.recordClockIn(); }); // máy chủ ghi giờ vào; nút Giao ca tự cập nhật
 
         const backdrop = document.createElement('div');
         backdrop.className = 'notif-backdrop';
@@ -261,19 +259,20 @@
         backdrop.addEventListener('click', closePanel);
         document.addEventListener('keydown', e => { if (e.key === 'Escape' && panelOpen) closePanel(); });
 
-        checkNewlyDone(); // khởi tạo mốc: món đã xong từ trước không báo lại
-        // Cập nhật mỗi giây: số trên chấm đỏ, và danh sách nếu đang mở (đếm ngược "còn Ns", món xong tự đổi trạng thái)
-        setInterval(() => {
+        // Mỗi lần TablesStore có dữ liệu mới từ máy chủ: lần đầu chỉ ghi nhận mốc, các lần sau báo món vừa xong
+        TablesStore.subscribe(() => {
+            storeLoaded = true;
             checkNewlyDone();
-            if (panelOpen) { setSeen(Date.now()); renderPanel(); }
-            updateBadge();
-        }, 1000);
-        // Bếp báo xong món / quản lý sửa bàn ở tab khác -> cập nhật ngay
-        window.addEventListener('storage', e => {
-            if (e.key !== TABLES_KEY) return;
             if (panelOpen) renderPanel();
             updateBadge();
         });
+        TablesStore.refresh({ maxAge: 5000 }).catch(() => {});
+        // Cập nhật mỗi giây: số trên chấm đỏ, và danh sách nếu đang mở (món xong tự đổi trạng thái); dữ liệu bàn tải lại mỗi ~5 giây
+        setInterval(() => {
+            TablesStore.refresh({ maxAge: 5000 }).catch(() => {});
+            if (panelOpen) { setSeen(Date.now()); renderPanel(); }
+            updateBadge();
+        }, 1000);
         updateBadge();
     }
 

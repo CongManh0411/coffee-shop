@@ -79,6 +79,8 @@
     async function loadData() {
         if (window.Api) {
             try {
+                // Số "còn đặt" trừ đi món đang nằm trong đơn mở => cần đơn mở mới nhất từ máy chủ
+                if (window.TablesStore) { try { await TablesStore.refresh({ maxAge: 5000 }); } catch (e) { /* dùng bản đang có */ } }
                 const items = await API.sync();
                 const res = { items };
                 if (res && res.items) {
@@ -262,12 +264,12 @@
             });
         }
 
-        // Lắng nghe sự kiện đồng bộ từ storage hoặc custom event
-        window.addEventListener('storage', e => {
-            if ([API.KEY, API.LOG_KEY, 'coffee_tables_v1', 'coffee_menu_data_v2'].includes(e.key)) {
-                loadData();
-            }
-        });
+        // Kho / đơn hàng đổi ở máy khác: tải lại từ máy chủ mỗi 15 giây (không làm gián đoạn khi đang nhập liệu)
+        setInterval(() => {
+            if (document.visibilityState !== 'visible') return;
+            if (document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) return;
+            loadData();
+        }, 15000);
         window.addEventListener('inventory-updated', e => {
             if (e.detail && Array.isArray(e.detail.items)) {
                 renderStats(e.detail.stats, e.detail.items);

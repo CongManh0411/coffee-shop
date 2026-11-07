@@ -12,6 +12,7 @@ require_once __DIR__ . '/api/modules/cashshift.php';
 require_once __DIR__ . '/api/modules/reservations.php';
 require_once __DIR__ . '/api/modules/ops.php';
 require_once __DIR__ . '/api/modules/warehouse.php';
+require_once __DIR__ . '/api/modules/auditlog.php';
 
 // Escape ký tự đặc biệt của LIKE (% _ \\) để từ khóa được so khớp đúng nghĩa đen.
 function like_escape($text)

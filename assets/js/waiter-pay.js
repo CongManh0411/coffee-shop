@@ -2,13 +2,14 @@
 // waiter-pay.js — POPUP THANH TOÁN (Phục vụ VÀ Thu ngân đều dùng được)
 // ------------------------------------------------------------
 // Luồng: "Thanh toán" (sidebar) -> chọn bàn/đơn -> xem hóa đơn -> [Thu ngân: khuyến mãi / giảm giá]
-//        -> chọn TIỀN MẶT / QR / THẺ / VÍ ĐIỆN TỬ -> "Xác nhận thanh toán" -> lưu hóa đơn vào 'qlcp_invoices'
+//        -> chọn TIỀN MẶT / QR / THẺ / VÍ ĐIỆN TỬ -> "Xác nhận thanh toán" -> máy chủ lưu hóa đơn (API 'orders/pay')
 //        -> in hoặc gửi hóa đơn.
 // Khác biệt theo vai trò:
 //   - Thu ngân: có khuyến mãi/giảm giá, hủy được cả món đã làm xong (bắt buộc ghi lý do),
 //               bắt buộc đang MỞ CA mới thanh toán được. Mọi thao tác nhạy cảm ghi vào Nhật ký (Quản lý xem ở Logs.html).
 //   - Phục vụ : như trước (không giảm giá, chỉ hủy món chưa xong).
-// Đơn mang đi / giao hàng (bàn có trường `type`) sẽ được XÓA khỏi danh sách sau khi thanh toán xong.
+// Đơn mang đi / giao hàng (bàn có trường `type`) biến mất khỏi danh sách sau khi thanh toán xong (máy chủ đã chốt đơn).
+// Danh sách bàn / đơn lấy từ TablesStore (tables-store.js), tải lại từ máy chủ sau mỗi thao tác.
 // Cần cashier-core.js (window.Cashier) — nạp trước trong Table.html / Orders.html.
 // ============================================================
 (function () {
@@ -16,8 +17,6 @@
     if (window.WaiterPay) return;
 
     const C = window.Cashier;
-    const TABLES_KEY = 'coffee_tables_v1';
-    const INVOICE_KEY = 'qlcp_invoices';
     const QR_LIB = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
     const METHOD_LABEL = { cash: 'Tiền mặt', qr: 'Mã QR', card: 'Thẻ', ewallet: 'Ví điện tử' };
     const METHOD_ICON = { cash: 'ri-money-dollar-circle-line', qr: 'ri-qr-code-line', card: 'ri-bank-card-line', ewallet: 'ri-wallet-3-line' };
@@ -33,10 +32,8 @@
     }
 
     // ---------- Dữ liệu ----------
-    function readTables() { try { const t = JSON.parse(localStorage.getItem(TABLES_KEY)); return Array.isArray(t) ? t : []; } catch (e) { return []; } }
-    function writeTables(list) { try { localStorage.setItem(TABLES_KEY, JSON.stringify(list)); return true; } catch (e) { return false; } }
-    function readInvoices() { try { const t = JSON.parse(localStorage.getItem(INVOICE_KEY)); return Array.isArray(t) ? t : []; } catch (e) { return []; } }
-    function writeInvoices(list) { try { localStorage.setItem(INVOICE_KEY, JSON.stringify(list)); return true; } catch (e) { return false; } }
+    // Bàn / đơn đang mở lấy từ TablesStore (đã tải từ máy chủ); sau mỗi thao tác ta tải lại để thấy kết quả thật.
+    const readTables = () => TablesStore.list();
 
     const lineState = (i, now) => i.kStatus ? i.kStatus : ((Number(i.readyAt) || 0) > now ? 'making' : 'done');
 
@@ -48,34 +45,16 @@
     }
     const payableTables = now => readTables().map(t => ({ t, bill: billOf(t, now) })).filter(x => x.bill.items.length > 0);
 
-    function syncPageState() {
-        try {
-            if (typeof tables !== 'undefined' && Array.isArray(tables)) {
-                tables.splice(0, tables.length, ...readTables());
-                if (typeof renderTablesGrid === 'function') renderTablesGrid();
-                const mv = document.getElementById('view-menu');
-                if (typeof selectedTableId !== 'undefined' && selectedTableId && mv && mv.classList.contains('active') && typeof renderBillItems === 'function') {
-                    if (!tables.some(t => t.id === selectedTableId) && typeof showTablesView === 'function') showTablesView();
-                    else renderBillItems();
-                }
-            }
-        } catch (e) {}
-        if (typeof window.onOrdersChanged === 'function') window.onOrdersChanged(); // trang Đơn hàng vẽ lại
+    // Tải lại bàn / đơn từ máy chủ: table-order.js (subscribe) tự vẽ lại sơ đồ bàn, trang Đơn hàng vẽ lại qua onOrdersChanged.
+    async function syncPageState() {
+        try { await TablesStore.refresh(); } catch (e) { /* mạng gián đoạn: vòng tải kế tiếp sẽ cập nhật */ }
+        if (typeof window.onOrdersChanged === 'function') window.onOrdersChanged();
     }
 
-    // Bàn không còn món: bàn thật -> về trống; đơn mang đi/giao hàng -> xóa hẳn
-    function releaseIfEmpty(list, t) {
-        if ((t.items || []).length) return;
-        if (t.type) { const idx = list.indexOf(t); if (idx >= 0) list.splice(idx, 1); return; }
-        t.status = 'empty'; t.time = ''; t.total = 0;
-        delete t.orderId; delete t.orderCode;
-    }
-
-    // Bỏ 1 phần của 1 món. force = true (Thu ngân hủy món ĐÃ LÀM) -> bắt buộc có reason. Trả về true nếu đã xóa.
+    // Bỏ 1 phần của 1 món. force = true (Thu ngân hủy món ĐÃ LÀM) -> bắt buộc có reason. Trả về true nếu đã hủy.
     async function removeOne(tableId, lineId, reason) {
         const now = Date.now();
-        const list = readTables();
-        const t = list.find(x => x.id === tableId);
+        const t = readTables().find(x => x.id === tableId);
         if (!t) return false;
         const item = (t.items || []).find(i => i.lineId === lineId && i.confirmed);
         if (!item) return false;
@@ -83,17 +62,13 @@
         if (done && !(isCashier() && reason)) return false;
         try { await Api.post('orders/items/cancel', { itemId: Number(lineId), reason: reason || '' }); }
         catch (err) { alert('Không thể hủy món trên máy chủ: ' + err.message); return false; }
-        const nm = item.name, pr = item.price;
-        item.quantity -= 1;
-        if (item.quantity <= 0) t.items = t.items.filter(i => i !== item);
-        t.total = t.items.reduce((sum, i) => sum + i.price * i.quantity, 0);
-        releaseIfEmpty(list, t);
-        writeTables(list);
+        const nm = item.name, pr = item.price, tableName = t.name;
+        const itemsLeft = t.items.reduce((n, i) => n + i.quantity, 0) - 1;
         if (C) {
-            if (done) C.log('void_done', `Hủy món ĐÃ LÀM: 1 × ${nm} (${t.name}). Lý do: ${reason}`, pr, true);
-            else C.log('void_item', `Hủy món chưa xong: 1 × ${nm} (${t.name})${t.items.length ? '' : ' — đơn bị hủy hoàn toàn'}`, pr, false);
+            if (done) C.log('void_done', `Hủy món ĐÃ LÀM: 1 × ${nm} (${tableName}). Lý do: ${reason}`, pr, true);
+            else C.log('void_item', `Hủy món chưa xong: 1 × ${nm} (${tableName})${itemsLeft > 0 ? '' : ' — đơn bị hủy hoàn toàn'}`, pr, false);
         }
-        syncPageState();
+        await syncPageState();
         return true;
     }
 
@@ -278,8 +253,7 @@
 
     async function commitPayment() {
         const now = Date.now();
-        const list = readTables();
-        const t = list.find(x => x.id === state.tableId);
+        const t = readTables().find(x => x.id === state.tableId);
         if (!t || !state.method) return;
         const bill = billOf(t, now);
         if (!bill.items.length) return;
@@ -292,13 +266,9 @@
         if (cv.disc > 0 && C.isLargeDiscount(cv.disc, cv.sub) && !window.confirm(`Giảm giá lớn: ${money(cv.disc)}. Thao tác sẽ được ghi vào Nhật ký cho Quản lý. Tiếp tục?`)) return;
 
         const sh = C ? C.currentShift() : null, who = C ? C.me() : { id: null, name: '' };
-        const invoices = readInvoices();
-        let n = invoices.length + 1, id;
-        do { id = 'HD' + String(n++).padStart(3, '0'); } while (invoices.some(i => i.id === id));
-        id = t.orderCode || id;
         const m = state.method;
         let inv = {
-            id, tableName: t.name, createdAt: new Date(now).toISOString(),
+            id: t.orderCode || '', tableName: t.name, createdAt: new Date(now).toISOString(),
             paymentMethod: m === 'cash' ? 'cash' : (m === 'card' ? 'card' : 'transfer'), // Lịch sử/Doanh thu: QR & ví = "Chuyển khoản"
             paymentDetail: m === 'cash' ? undefined : m,
             ref: state.ref || undefined,
@@ -326,29 +296,18 @@
             shiftId: sh ? sh.id : undefined,
             createdById: who.id, createdBy: who.name, createdRole: who.role
         });
-        invoices.push(inv);
-        if (!writeInvoices(invoices)) {
-            alert('Hóa đơn đã thanh toán và trừ kho trên máy chủ. Không lưu được bản sao trên trình duyệt; xem hóa đơn tại Lịch sử.');
-        }
+        const id = inv.id, tableName = t.name;
         if (window.InventoryAPI && InventoryAPI.sync) {
             try { await InventoryAPI.sync(); } catch (_) { alert('Đã thanh toán trên máy chủ. Hãy tải lại trang để cập nhật tồn kho.'); }
         }
         if (C && cv.disc > 0) {
             const large = C.isLargeDiscount(cv.disc, cv.sub);
-            C.log(large ? 'discount_big' : 'discount', `Giảm ${money(cv.disc)} / ${money(cv.sub)} cho ${t.name} (${cv.code ? 'mã ' + cv.code : 'thủ công'}) — ${id}`, cv.disc, large);
+            C.log(large ? 'discount_big' : 'discount', `Giảm ${money(cv.disc)} / ${money(cv.sub)} cho ${tableName} (${cv.code ? 'mã ' + cv.code : 'thủ công'}) — ${id}`, cv.disc, large);
         }
 
-        t.items = (t.items || []).filter(i => !i.confirmed);
-        t.total = t.items.reduce((s, i) => s + i.price * i.quantity, 0);
-        if (serverInvoice.nextOrder) {
-            t.orderId = Number(serverInvoice.nextOrder.id);
-            t.orderCode = serverInvoice.nextOrder.code;
-        }
-        releaseIfEmpty(list, t);
-        writeTables(list);
-        syncPageState();
+        await syncPageState(); // bàn trở về trống / đơn mới (món chưa gửi bếp) lấy từ máy chủ
         state.last = inv;
-        renderPaid({ id, name: t.name, method: m, total: cv.total, given, change: given - cv.total });
+        renderPaid({ id, name: tableName, method: m, total: cv.total, given, change: given - cv.total });
     }
 
     function renderPaid(r) {
@@ -444,10 +403,19 @@
         $('wpBackdrop').classList.add('active');
         if ($('navPay')) $('navPay').classList.add('active');
         if (timer) clearInterval(timer);
-        const t = tableId != null ? readTables().find(x => x.id === tableId) : null;
-        if (t && billOf(t, Date.now()).items.length) { state.view = 'bill'; state.tableId = t.id; renderBill(); }
-        else renderList();
-        timer = setInterval(() => { if (state.view === 'list') renderList(); }, 2000);
+        const enter = () => {
+            const t = tableId != null ? readTables().find(x => x.id === tableId) : null;
+            if (t && billOf(t, Date.now()).items.length) { state.view = 'bill'; state.tableId = t.id; renderBill(); }
+            else renderList();
+        };
+        enter();
+        // Lấy dữ liệu mới nhất từ máy chủ rồi vẽ lại nếu người dùng chưa chọn gì
+        TablesStore.refresh().then(() => { if (state.view === 'list') enter(); }).catch(() => {});
+        timer = setInterval(() => {
+            if (state.view !== 'list') return;
+            TablesStore.refresh({ maxAge: 2000 }).catch(() => {});
+            renderList();
+        }, 2000);
     }
 
     window.WaiterPay = { open };

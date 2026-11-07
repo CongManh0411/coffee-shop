@@ -49,7 +49,9 @@ Cấu hình localhost mặc định dùng user `root` và mật khẩu trống �
 
 Đây là ứng dụng mô phỏng phục vụ bài tập, chạy trên localhost/XAMPP; cần cấu hình riêng và rà soát bảo mật trước khi triển khai dịch vụ thật.
 
-Tài khoản, thực đơn, bàn, ca làm, đơn hàng, đặt bàn, hàng chờ, khách hàng, khuyến mãi, nhà cung cấp, vật tư kho và đơn giao hàng được lưu ở MySQL. Kho theo ly/phần và lịch sử biến động kho được lưu MySQL; thanh toán trừ kho tại máy chủ cùng giao dịch với hóa đơn. Trình duyệt chỉ giữ bộ nhớ đệm tồn kho. Trạng thái ca tiền mặt, nhật ký giao diện chung và món tạm hết vẫn còn lưu phía trình duyệt; các phần này chưa đồng bộ đầy đủ giữa các thiết bị. Dữ liệu cũ trong localStorage không tự chuyển sang database.
+Tài khoản, thực đơn (kể cả món tạm hết), bàn, trạng thái bàn / đơn đang mở, ca làm, đăng ký ca, chấm công giao ca, ca tiền mặt, nhật ký thao tác, đơn hàng, đặt bàn, hàng chờ, khách hàng, khuyến mãi, nhà cung cấp, vật tư kho và đơn giao hàng đều được lưu ở MySQL. Kho theo ly/phần và lịch sử biến động kho được lưu MySQL; thanh toán trừ kho tại máy chủ cùng giao dịch với hóa đơn. Ứng dụng không còn đọc hay ghi `localStorage` / `sessionStorage`: trình duyệt chỉ giữ bản sao tạm trong bộ nhớ của trang và tải lại từ API (trạng thái bàn mỗi ~5 giây), nên dữ liệu đồng bộ giữa các thiết bị. Dữ liệu cũ còn trong localStorage của trình duyệt không được chuyển sang database.
+
+Bản nâng cấp từ trước: nhập lại `database/coffee.sql` trong phpMyAdmin để tạo bảng `timesheets` (chấm công); các bảng dùng `CREATE TABLE IF NOT EXISTS` nên không ghi đè dữ liệu đã có.
 
 Đơn giao hàng nhập tay được lưu vào database. Kết nối webhook GrabFood, ShopeeFood và BeFood chưa có. Đơn giao hàng chưa tự tạo hóa đơn doanh thu khi hoàn tất.
 
