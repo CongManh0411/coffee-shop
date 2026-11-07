@@ -11,18 +11,15 @@
 // - Tiền = số phút làm x lương/giờ (đổi HOURLY_RATE bên dưới). Chỉ hiện tiền của chính người đang đăng nhập.
 // - Giờ ra này cũng được trang Lịch ca làm đọc: giao ca sớm hơn giờ đăng ký thì bảng tự hiện "Nghỉ sớm".
 //
-// DỮ LIỆU — localStorage key 'coffee_timesheet_v1', mảng:
+// DỮ LIỆU — bảng MySQL `timesheets` qua API: GET 'timesheet', POST 'timesheet/clock-in', POST 'timesheet/clock-out'.
 //   { staffId: 3, date: '2026-10-05', clockIn: 1790000000000, clockOut: 1790018000000 | null }  (mili-giây)
-// Khi nối backend: thay load()/save() và nơi ghi giờ vào bằng API; nên để backend tự tính tiền.
+// Ca đã xếp lấy từ API 'shifts'. Không còn dùng localStorage cho ca, nhân viên và chấm công.
 // ============================================================
 (function () {
     'use strict';
     if (window.WaiterTimesheet) return;
 
     const HOURLY_RATE = 21000; // đồng / giờ — mức chung cho cả quán
-    const TS_KEY = 'coffee_timesheet_v1';
-    const STAFF_KEY = 'coffee_staff_v1';
-    const SHIFTS_KEY = 'coffee_shifts_v1';
 
     const $ = id => document.getElementById(id);
     const pad = n => String(n).padStart(2, '0');
@@ -40,53 +37,33 @@
         return `${m} phút`;
     }
 
-    // ---------- Dữ liệu ----------
-    function load() {
-        try { const t = JSON.parse(localStorage.getItem(TS_KEY)); return Array.isArray(t) ? t : []; } catch (e) { return []; }
-    }
-    function save(list) { try { localStorage.setItem(TS_KEY, JSON.stringify(list)); } catch (e) {} }
+    // ---------- Dữ liệu (MySQL qua API, giữ bản nhớ tạm trong biến để vẽ popup mỗi giây) ----------
+    let todayRec = null;   // bản ghi chấm công hôm nay của chính mình
+    let allShifts = [];    // ca đã xếp (API 'shifts')
 
     function currentStaff() {
         const session = AuthAPI.getSession();
         if (!session) return null;
-        let staff = [];
-        try { staff = JSON.parse(localStorage.getItem(STAFF_KEY)) || []; } catch (e) {}
-        if (!Array.isArray(staff) || !staff.length) {
-            staff = [{ id: 1, fullName: 'Nguyễn Văn A' }, { id: 2, fullName: 'Phạm Văn D' }, { id: 3, fullName: 'Lê Văn C' }]; // giống staff.js
-        }
-        const me = session.staffId != null ? staff.find(s => String(s.id) === String(session.staffId)) : staff.find(s => s.fullName === session.name);
-        return me ? { id: me.id, name: me.fullName } : { id: session.staffId != null ? session.staffId : session.name, name: session.name };
+        return { id: session.staffId != null ? session.staffId : session.name, name: session.name };
     }
 
-    function todayRecord() {
-        const me = currentStaff();
-        if (!me) return null;
-        const today = dateKey(new Date());
-        return load().find(r => String(r.staffId) === String(me.id) && r.date === today) || null;
+    function todayRecord() { return todayRec; }
+
+    async function loadShifts() {
+        try { allShifts = await Api.get('shifts'); } catch (e) { /* giữ bản cũ */ }
     }
 
-    // Ghi GIỜ VÀO nếu hôm nay chưa có bản ghi (đã có — kể cả đã giao ca — thì giữ nguyên, mỗi ngày 1 lần)
-    function recordClockIn() {
-        const me = currentStaff();
-        if (!me) return null;
-        const list = load();
-        const today = dateKey(new Date());
-        let rec = list.find(r => String(r.staffId) === String(me.id) && r.date === today);
-        if (!rec) {
-            rec = { staffId: me.id, date: today, clockIn: Date.now(), clockOut: null };
-            list.push(rec);
-            save(list);
-        }
-        return rec;
+    // Ghi GIỜ VÀO nếu hôm nay chưa có bản ghi (máy chủ giữ nguyên nếu đã có, kể cả đã giao ca)
+    async function recordClockIn() {
+        if (!currentStaff()) return null;
+        try { todayRec = await Api.post('timesheet/clock-in'); } catch (e) { /* mất mạng: thử lại lần sau */ }
+        refreshButton();
+        return todayRec;
     }
 
-    // Ca đã xếp của 1 người trong 1 ngày (quản lý xếp ở Shifts.html)
+    // Ca đã xếp của 1 người trong 1 ngày (quản lý xếp ở trang Lịch ca)
     function shiftsOf(staffId, date) {
-        try {
-            const raw = JSON.parse(localStorage.getItem(SHIFTS_KEY));
-            if (Array.isArray(raw)) return raw.filter(s => String(s.staffId) === String(staffId) && s.date === date).sort((a, b) => toMin(a.start) - toMin(b.start));
-        } catch (e) {}
-        return [];
+        return allShifts.filter(s => String(s.staffId) === String(staffId) && s.date === date).sort((a, b) => toMin(a.start) - toMin(b.start));
     }
     const at = (date, hhmm) => new Date(`${date}T${hhmm}:00`).getTime();
 
@@ -105,16 +82,8 @@
     }
 
     function registeredText(me, date) {
-        try {
-            const raw = JSON.parse(localStorage.getItem(SHIFTS_KEY));
-            if (Array.isArray(raw)) {
-                const mine = raw.filter(s => String(s.staffId) === String(me.id) && s.date === date)
-                    .sort((a, b) => toMin(a.start) - toMin(b.start))
-                    .map(s => `${fmtClockMin(toMin(s.start))} – ${fmtClockMin(toMin(s.end))}`);
-                if (mine.length) return mine.join(', ');
-            }
-        } catch (e) {}
-        return 'Không có ca đăng ký';
+        const mine = shiftsOf(me.id, date).map(s => `${fmtClockMin(toMin(s.start))} – ${fmtClockMin(toMin(s.end))}`);
+        return mine.length ? mine.join(', ') : 'Không có ca đăng ký';
     }
 
     // ---------- Nút ở sidebar ----------
@@ -191,22 +160,20 @@
         document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 
         // Xác nhận = giao ca: chốt giờ ra, hết ca, thoát popup về lại màn hình nhân viên
-        $('hoConfirm').addEventListener('click', () => {
-            const me = currentStaff();
-            const list = load();
-            const today = dateKey(new Date());
-            const rec = list.find(r => String(r.staffId) === String(me.id) && r.date === today);
+        $('hoConfirm').addEventListener('click', async () => {
             let busy = 0;
             try { busy = (JSON.parse(localStorage.getItem('coffee_tables_v1')) || []).filter(t => t.status !== 'empty').length; } catch (err) {}
             if (busy && !window.confirm(`Còn ${busy} bàn đang có khách hoặc chưa thanh toán. Vẫn giao ca?`)) return;
-            if (rec && !rec.clockOut) { rec.clockOut = Date.now(); save(list); }
+            try { todayRec = await Api.post('timesheet/clock-out'); }
+            catch (err) { alert('Không giao ca được: ' + err.message); return; }
             closeModal();
             refreshButton();
         });
     }
 
-    function openHandover() {
-        recordClockIn(); // phòng khi chưa có bản ghi hôm nay
+    async function openHandover() {
+        await Promise.all([recordClockIn(), loadShifts()]); // phòng khi chưa có bản ghi hôm nay
+        if (!todayRec) { alert('Không tải được dữ liệu chấm công. Hãy tải lại trang.'); return; }
         buildModal();
         renderModal();
         $('hoBackdrop').classList.add('active');

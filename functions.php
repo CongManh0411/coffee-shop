@@ -6,6 +6,7 @@ require_once __DIR__ . '/api/modules/staff.php';
 require_once __DIR__ . '/api/modules/menu.php';
 require_once __DIR__ . '/api/modules/tables.php';
 require_once __DIR__ . '/api/modules/shifts.php';
+require_once __DIR__ . '/api/modules/timesheet.php';
 require_once __DIR__ . '/api/modules/orders.php';
 require_once __DIR__ . '/api/modules/cashshift.php';
 require_once __DIR__ . '/api/modules/reservations.php';

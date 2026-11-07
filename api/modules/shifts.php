@@ -17,12 +17,14 @@ function shifts_row($r)
         'date'    => $r['shift_date'],
         'start'   => substr($r['start_time'], 0, 5),
         'end'     => substr($r['end_time'], 0, 5),
+        'registered' => (int) ($r['registered'] ?? 0) === 1,
+        'leftAt'  => !empty($r['left_at']) ? substr($r['left_at'], 11, 5) : null,
     );
 }
 
 function shifts_list()
 {
-    $rows = db()->fetchAll("SELECT shift_id, staff_id, shift_date, start_time, end_time
+    $rows = db()->fetchAll("SELECT shift_id, staff_id, shift_date, start_time, end_time, registered, left_at
                             FROM shifts ORDER BY shift_date, start_time");
     return array_map('shifts_row', $rows);
 }
@@ -163,4 +165,62 @@ function shifts_clear_week($weekStart)
     $end = date('Y-m-d', strtotime($weekStart . ' +6 days'));
     $n = db()->execute("DELETE FROM shifts WHERE shift_date BETWEEN ? AND ?", array($weekStart, $end));
     return array($n, '');
+}
+
+// ---------------------------------------------------------------
+// Thu ngân tự đăng ký / hủy ca theo 3 khung giờ cố định (thay cho shift-register.js ghi localStorage).
+// Quy tắc: mỗi người tối đa 1 ca / ngày; mỗi khung giờ nhận tối đa SHIFT_MAX_CASHIER_PER_SLOT thu ngân;
+// không đăng ký / hủy ca đã bắt đầu; ca do Quản lý xếp (registered = 0) thì không tự hủy được.
+// ---------------------------------------------------------------
+define('SHIFT_MAX_CASHIER_PER_SLOT', 1);
+
+function shifts_register_slots()
+{
+    return array('06:30-14:00', '11:00-19:00', '17:00-22:00');
+}
+
+// $d = {date:'YYYY-MM-DD', start:'HH:MM', end:'HH:MM', register:true|false}. Trả về chuỗi lỗi hoặc ''.
+function shifts_register($staffId, $d)
+{
+    $staffId = (int) $staffId;
+    $date  = (string) ($d['date'] ?? '');
+    $start = (string) ($d['start'] ?? '');
+    $end   = (string) ($d['end'] ?? '');
+    $register = !empty($d['register']);
+    if (!shifts_valid_date($date)) return 'Ngày không hợp lệ.';
+    if (!in_array($start . '-' . $end, shifts_register_slots(), true)) return 'Khung giờ không hợp lệ.';
+    if (strtotime($date . ' ' . $start . ':00') <= time()) return 'Ca đã bắt đầu hoặc đã qua.';
+
+    return db()->transaction(function () use ($staffId, $date, $start, $end, $register) {
+        $err = shifts_lock_staff($staffId);
+        if ($err) return $err;
+        if (!$register) {
+            db()->execute(
+                "DELETE FROM shifts WHERE staff_id = ? AND shift_date = ? AND start_time = ? AND end_time = ? AND registered = 1",
+                array($staffId, $date, $start . ':00', $end . ':00')
+            );
+            return '';
+        }
+        $mine = db()->fetchOne(
+            "SELECT shift_id, start_time, end_time FROM shifts WHERE staff_id = ? AND shift_date = ?",
+            array($staffId, $date)
+        );
+        if ($mine) {
+            if (substr($mine['start_time'], 0, 5) === $start && substr($mine['end_time'], 0, 5) === $end) return '';
+            return 'Đã có ca khác trong ngày.';
+        }
+        $row = db()->fetchOne(
+            "SELECT COUNT(*) AS n FROM shifts s JOIN staff st ON st.staff_id = s.staff_id
+             WHERE s.shift_date = ? AND s.start_time = ? AND s.end_time = ? AND st.role = 'cashier'",
+            array($date, $start . ':00', $end . ':00')
+        );
+        if ((int) ($row['n'] ?? 0) >= SHIFT_MAX_CASHIER_PER_SLOT) return 'Khung giờ này đã đủ người.';
+        $err = shifts_validate($staffId, $date, $start, $end);
+        if ($err) return $err;
+        db()->execute(
+            "INSERT INTO shifts (staff_id, shift_date, start_time, end_time, registered) VALUES (?, ?, ?, ?, 1)",
+            array($staffId, $date, $start . ':00', $end . ':00')
+        );
+        return '';
+    });
 }
