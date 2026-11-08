@@ -357,7 +357,9 @@ function get_item_badge($index, $catFilter, $price) {
         </div>
 
         <!-- Reservation Form -->
-        <form id="reservationForm" class="reservation-form">
+        <form id="reservationForm" class="reservation-form" method="post" action="index.php?page=home#booking">
+            <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
+            <input type="hidden" name="reservation_submit" value="1">
             <div class="form-heading">
                 <span>ĐẶT BÀN TRƯỚC</span>
                 <small>Vui lòng điền thông tin của bạn</small>
@@ -365,35 +367,35 @@ function get_item_badge($index, $catFilter, $price) {
 
             <div class="form-group">
                 <label for="resName">Họ và tên của bạn</label>
-                <input id="resName" name="name" autocomplete="name" maxlength="150" required placeholder="Ví dụ: Nguyễn Văn A">
+                <input id="resName" name="name" autocomplete="name" maxlength="150" value="<?= e($resOld['name']) ?>" required placeholder="Ví dụ: Nguyễn Văn A">
             </div>
 
             <div class="form-group">
                 <label for="resPhone">Số điện thoại liên hệ</label>
-                <input id="resPhone" name="phone" type="tel" autocomplete="tel" maxlength="30" required placeholder="Ví dụ: <?= e($shopPhone) ?>">
+                <input id="resPhone" name="phone" type="tel" autocomplete="tel" maxlength="30" value="<?= e($resOld['phone']) ?>" required placeholder="Ví dụ: <?= e($shopPhone) ?>">
             </div>
 
             <div class="form-row">
                 <div class="form-group">
                     <label for="reservedAt">Ngày và giờ bạn đến</label>
-                    <input name="reservedAt" id="reservedAt" type="datetime-local" required>
+                    <input name="reservedAt" id="reservedAt" type="datetime-local" min="<?= e(date('Y-m-d\TH:i', (int) (ceil((time() + 1800) / 900) * 900))) ?>" value="<?= e($resOld['reservedAt']) ?>" required>
                 </div>
 
                 <div class="form-group">
                     <label for="partySizeSelect">Số lượng khách</label>
                     <select name="partySize" id="partySizeSelect" required>
-                        <option value="1">1 khách</option>
-                        <option value="2" selected>2 khách</option>
-                        <option value="3">3 khách</option>
-                        <option value="4">4 khách</option>
-                        <option value="5">5 khách</option>
-                        <option value="6">6 khách</option>
-                        <option value="7">7 khách</option>
-                        <option value="8">8 khách</option>
-                        <option value="10">10 khách</option>
-                        <option value="12">12 khách</option>
-                        <option value="15">15 khách</option>
-                        <option value="20">20 khách (Nhóm lớn)</option>
+                        <option value="1"<?= $resOld['partySize'] === '1' ? ' selected' : '' ?>>1 khách</option>
+                        <option value="2"<?= $resOld['partySize'] === '2' ? ' selected' : '' ?>>2 khách</option>
+                        <option value="3"<?= $resOld['partySize'] === '3' ? ' selected' : '' ?>>3 khách</option>
+                        <option value="4"<?= $resOld['partySize'] === '4' ? ' selected' : '' ?>>4 khách</option>
+                        <option value="5"<?= $resOld['partySize'] === '5' ? ' selected' : '' ?>>5 khách</option>
+                        <option value="6"<?= $resOld['partySize'] === '6' ? ' selected' : '' ?>>6 khách</option>
+                        <option value="7"<?= $resOld['partySize'] === '7' ? ' selected' : '' ?>>7 khách</option>
+                        <option value="8"<?= $resOld['partySize'] === '8' ? ' selected' : '' ?>>8 khách</option>
+                        <option value="10"<?= $resOld['partySize'] === '10' ? ' selected' : '' ?>>10 khách</option>
+                        <option value="12"<?= $resOld['partySize'] === '12' ? ' selected' : '' ?>>12 khách</option>
+                        <option value="15"<?= $resOld['partySize'] === '15' ? ' selected' : '' ?>>15 khách</option>
+                        <option value="20"<?= $resOld['partySize'] === '20' ? ' selected' : '' ?>>20 khách (Nhóm lớn)</option>
                     </select>
                 </div>
             </div>
@@ -412,14 +414,14 @@ function get_item_badge($index, $catFilter, $price) {
 
             <div class="form-group">
                 <label for="resNote">Ghi chú thêm <span class="optional">(không bắt buộc)</span></label>
-                <textarea id="resNote" name="note" maxlength="500" rows="3" placeholder="Ví dụ: cần bàn gần cửa sổ, ghế trẻ em hoặc tổ chức sinh nhật..."></textarea>
+                <textarea id="resNote" name="note" maxlength="500" rows="3" placeholder="Ví dụ: cần bàn gần cửa sổ, ghế trẻ em hoặc tổ chức sinh nhật..."><?= e($resOld['note']) ?></textarea>
             </div>
 
             <!-- Anti-spam Honeypot Trap -->
             <label class="form-trap" aria-hidden="true">Website<input name="website" tabindex="-1" autocomplete="off"></label>
 
             <!-- Status message container -->
-            <p id="reservationMessage" class="reservation-message" role="status" aria-live="polite" hidden></p>
+            <p id="reservationMessage" class="reservation-message<?= $reservationFlash ? ' ' . e($reservationFlash['type']) : '' ?>" role="status" aria-live="polite"<?= $reservationFlash ? '' : ' hidden' ?>><?= $reservationFlash ? ($reservationFlash['type'] === 'error' ? '⚠️ ' : '') . e($reservationFlash['text']) : '' ?></p>
 
             <button class="button button-dark booking-submit" type="submit">
                 <span>Gửi yêu cầu đặt bàn</span>

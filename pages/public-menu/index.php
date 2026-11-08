@@ -19,16 +19,33 @@
     </section>
     <section class="public-menu-list" aria-label="Danh sách thực đơn">
         <div class="public-menu-heading"><div><p class="eyebrow">THỰC ĐƠN</p><h2>Chọn món bạn thích.</h2></div><p>Giá và món hiện có được cập nhật trực tiếp từ quán.</p></div>
-        <form id="menuSearchForm" class="catalog-search" role="search">
+        <form id="menuSearchForm" class="catalog-search" role="search" method="get" action="index.php">
+            <input type="hidden" name="page" value="public-menu">
+            <?php if ($pmCategoryName !== ''): ?><input type="hidden" name="category" value="<?= e($pmCategoryName) ?>"><?php endif; ?>
             <label for="menuSearch" class="sr-only">Tìm món</label>
-            <input type="search" id="menuSearch" name="q" placeholder="Tìm món theo tên hoặc mô tả…" maxlength="100" autocomplete="off">
+            <input type="search" id="menuSearch" name="q" placeholder="Tìm món theo tên hoặc mô tả…" maxlength="100" autocomplete="off" value="<?= e($pmSearch) ?>">
             <button type="submit">Tìm</button>
-            <a id="menuSearchClear" class="catalog-search-clear" href="index.php?page=public-menu" hidden>Xóa lọc</a>
+            <?php if ($pmSearch !== ''): ?><a id="menuSearchClear" class="catalog-search-clear" href="<?= e(pm_url($pmCategoryName, '')) ?>">Xóa lọc</a><?php endif; ?>
         </form>
-        <nav id="menuCategories" class="menu-category-tabs" aria-label="Lọc theo danh mục"></nav>
-        <p id="menuStatus" class="menu-status" role="status">Đang tải thực đơn…</p>
-        <div id="publicMenuGrid" class="public-menu-grid"></div>
-        <div id="menuPagination"></div>
+        <nav id="menuCategories" class="menu-category-tabs" aria-label="Lọc theo danh mục">
+            <a class="menu-category-tab<?= $pmCategoryName === '' ? ' is-active' : '' ?>" href="<?= e(pm_url('', $pmSearch)) ?>">Tất cả</a>
+            <?php foreach ($pmCategories as $c): ?>
+                <a class="menu-category-tab<?= $pmCategoryName === $c['category_name'] ? ' is-active' : '' ?>" href="<?= e(pm_url($c['category_name'], $pmSearch)) ?>"><?= e($c['category_name']) ?></a>
+            <?php endforeach; ?>
+        </nav>
+        <?php if ($pmError): ?>
+            <p id="menuStatus" class="menu-status is-error" role="status"><?= e($pmError) ?></p>
+        <?php elseif (!$pmItems): ?>
+            <p id="menuStatus" class="menu-status" role="status"><?= $pmSearch !== '' ? 'Không có món nào khớp với “' . e($pmSearch) . '”.' : 'Chưa có món nào trong danh mục này.' ?></p>
+        <?php elseif ($pmSearch !== ''): ?>
+            <p id="menuStatus" class="menu-status" role="status">Tìm thấy <?= (int) $pmPager['total'] ?> món cho “<?= e($pmSearch) ?>”.</p>
+        <?php endif; ?>
+        <div id="publicMenuGrid" class="public-menu-grid">
+            <?php foreach ($pmItems as $item): ?>
+                <article class="public-menu-card"><div class="public-menu-photo"><img src="<?= e(menu_item_image($item)) ?>" alt="<?= e($item['item_name']) ?>" loading="lazy"><span><?= e($item['category_name']) ?></span></div><div class="public-menu-card-body"><div><h3><?= e($item['item_name']) ?></h3><p><?= e($item['description'] ?? '') ?></p></div><strong><?= e(money($item['price'])) ?></strong></div></article>
+            <?php endforeach; ?>
+        </div>
+        <div id="menuPagination"><?= render_pagination($pmPager['page'], $pmPager['pages'], array('page' => 'public-menu') + ($pmCategoryName !== '' ? array('category' => $pmCategoryName) : array()) + ($pmSearch !== '' ? array('q' => $pmSearch) : array())) ?></div>
     </section>
     <section class="menu-booking-banner"><div><p class="eyebrow">MỘT CHỖ NGỒI ĐANG CHỜ BẠN</p><h2>Hẹn nhau ở <?= e(brand_name()) ?> nhé.</h2></div><a class="button button-dark" href="index.php?page=home#booking">Đặt bàn <span aria-hidden="true">→</span></a></section>
 </main>

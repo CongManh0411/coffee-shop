@@ -187,36 +187,5 @@
         });
     }
 
-    // Handle form submit
-    form.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        message.hidden = true;
-        submit.disabled = true;
-        const originalText = submit.innerHTML;
-        submit.innerHTML = '<span>⏳ Đang gửi yêu cầu đặt bàn…</span>';
-
-        const data = Object.fromEntries(new FormData(form).entries());
-        data.partySize = Number(data.partySize);
-
-        try {
-            await Api.post('reservations/public', data);
-            message.textContent = '🎉 Quán đã nhận yêu cầu đặt bàn thành công! Nhân viên Góc Nhỏ sẽ sớm liên hệ qua số điện thoại để xác nhận giữ bàn cho bạn.';
-            message.className = 'reservation-message success';
-            form.reset();
-            dateInput.min = minDateISO;
-            dateInput.value = localDefault.toISOString().slice(0, 16);
-            if (partySelect) partySelect.value = '2';
-            partyPills.forEach(p => {
-                p.classList.toggle('is-active', p.getAttribute('data-size') === '2');
-            });
-        } catch (error) {
-            message.textContent = '⚠️ ' + (error.message || 'Chưa gửi được yêu cầu. Vui lòng kiểm tra lại thông tin hoặc gọi hotline quán.');
-            message.className = 'reservation-message error';
-        } finally {
-            message.hidden = false;
-            submit.disabled = false;
-            submit.innerHTML = originalText;
-            message.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }
-    });
+    // Gửi form: do PHP xử lý (POST /index.php?page=home), không còn gọi API bằng JavaScript.
 })();
