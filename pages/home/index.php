@@ -227,7 +227,6 @@ function get_item_badge($index, $catFilter, $price) {
                 <p class="eyebrow">THỰC ĐƠN ĐƯỢC YÊU THÍCH</p>
                 <h2>Món ngon phải thử hôm nay.</h2>
             </div>
-            <p>Từ ly cà phê pha phin truyền thống đậm vị đến tách trà trái cây mát lành, mỗi món uống đều được pha chế tỉ mỉ và phục vụ thật vừa vặn.</p>
         </div>
 
         <!-- Category filter tabs -->
