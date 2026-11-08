@@ -16,6 +16,7 @@
         <span>Mật khẩu</span>
         <div class="login-pass">
           <input type="password" id="password" name="password" autocomplete="current-password" required>
+          <button type="button" class="login-eye" data-toggle-password="password" aria-pressed="false" aria-label="Hiện hoặc ẩn mật khẩu">Hiện</button>
         </div>
       </label>
 

@@ -83,7 +83,7 @@
                         </div>
                         <div class="form-group">
                             <label for="password">Mật khẩu</label>
-                            <input type="password" id="password" name="password" minlength="12" maxlength="72" autocomplete="new-password" placeholder="<?= $editing ? 'Để trống nếu không đổi mật khẩu' : 'Ít nhất 12 ký tự' ?>"<?= $editing ? '' : ' required' ?>>
+                            <div class="pass-wrap"><input type="password" id="password" name="password" minlength="12" maxlength="72" autocomplete="new-password" placeholder="<?= $editing ? 'Để trống nếu không đổi mật khẩu' : 'Ít nhất 12 ký tự' ?><button type="button" class="pass-eye" data-toggle-password="password" aria-pressed="false" aria-label="Hiện hoặc ẩn mật khẩu">Hiện</button></div>"<?= $editing ? '' : ' required' ?>>
                             <small>Mật khẩu mới cần ít nhất 12 ký tự. Khi sửa hồ sơ, để trống nếu không đổi mật khẩu.</small>
                         </div>
                     </div>

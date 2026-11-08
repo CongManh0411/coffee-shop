@@ -190,3 +190,9 @@
 a.topnav-item { text-decoration: none; display: inline-block; }
 .staff-inline-form { margin: 0; display: inline; }
 .staff-link-btn { display: inline-block; text-decoration: none; text-align: center; }
+
+/* Nút Hiện/Ẩn mật khẩu */
+.pass-wrap { position: relative; display: flex; align-items: center; }
+.pass-wrap input { width: 100%; padding-right: 62px; }
+.pass-eye { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); border: none; background: none; color: #8a6a55; font-size: 12px; font-weight: 600; cursor: pointer; padding: 6px 8px; }
+.pass-eye:hover { color: #4a2a18; }
