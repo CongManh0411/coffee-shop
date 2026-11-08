@@ -65,6 +65,7 @@ Bản nâng cấp từ trước: nhập lại `database/coffee.sql` trong phpMyA
 - `config/`, `helpers/`, `classes/`: cấu hình và lớp dùng chung.
 - `layouts/`, `assets/`: giao diện, CSS, JavaScript và ảnh.
 - `database/coffee.sql`: schema và dữ liệu menu mẫu ban đầu.
+- `database/demo_data.sql`: dữ liệu demo cho mọi chức năng, nhập sau `coffee.sql` trên database mới.
 - `database/create_manager.php`: tạo quản lý đầu tiên, chỉ chạy được từ CLI.
 - `database/replace_demo_accounts.php`: thay tài khoản mẫu cũ trên database đang dùng, chỉ chạy được từ CLI.
 
