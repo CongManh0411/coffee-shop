@@ -51,6 +51,8 @@ Cấu hình localhost mặc định dùng user `root` và mật khẩu trống �
 
 Tài khoản, thực đơn (kể cả món tạm hết), bàn, trạng thái bàn / đơn đang mở, ca làm, đăng ký ca, chấm công giao ca, ca tiền mặt, nhật ký thao tác, đơn hàng, đặt bàn, hàng chờ, khách hàng, khuyến mãi, nhà cung cấp, vật tư kho và đơn giao hàng đều được lưu ở MySQL. Kho theo ly/phần và lịch sử biến động kho được lưu MySQL; thanh toán trừ kho tại máy chủ cùng giao dịch với hóa đơn. Ứng dụng không còn đọc hay ghi `localStorage` / `sessionStorage`: trình duyệt chỉ giữ bản sao tạm trong bộ nhớ của trang và tải lại từ API (trạng thái bàn mỗi ~5 giây), nên dữ liệu đồng bộ giữa các thiết bị. Dữ liệu cũ còn trong localStorage của trình duyệt không được chuyển sang database.
 
+Muốn có dữ liệu demo cho mọi chức năng (nhân viên, lịch ca, 14 ngày đơn hàng, ca thu ngân, kho, đặt bàn, giao hàng, nhật ký): sau khi nhập `database/coffee.sql`, nhập thêm `database/demo_data.sql` trên database mới. Mật khẩu chung của tài khoản demo là `Demo@2026pass` (`quanly`, `thungan1`, `thungan2`, `phucvu1-3`, `bep1`, `bep2`). Ngày giờ trong file tính theo lúc nhập nên dữ liệu luôn mới. Trước khi dùng thật hãy chạy `php database/replace_demo_accounts.php` để tắt các tài khoản này.
+
 Bản nâng cấp từ trước: nhập lại `database/coffee.sql` trong phpMyAdmin để tạo bảng `timesheets` (chấm công); các bảng dùng `CREATE TABLE IF NOT EXISTS` nên không ghi đè dữ liệu đã có.
 
 Đơn giao hàng nhập tay được lưu vào database. Kết nối webhook GrabFood, ShopeeFood và BeFood chưa có. Đơn giao hàng chưa tự tạo hóa đơn doanh thu khi hoàn tất.

@@ -1,5 +1,5 @@
 <?php
-// api/modules/timesheet.php — Chấm công theo ngày (bảng timesheets), thay cho localStorage 'coffee_timesheet_v1'.
+// api/modules/timesheet.php — Chấm công theo ngày (bảng timesheets).
 // Mỗi nhân viên có tối đa 1 bản ghi / ngày: giờ vào ghi lần đầu mở trang, giờ ra ghi khi bấm "Giao ca".
 
 function timesheet_row($r)
