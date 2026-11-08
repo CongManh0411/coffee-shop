@@ -135,3 +135,7 @@
     font-weight: 700;
 }
 
+
+/* Kho: link dạng nút (thay cho nút JavaScript) */
+a.topnav-item { text-decoration: none; display: inline-block; }
+.wh-link-btn { display: inline-block; text-decoration: none; text-align: center; }

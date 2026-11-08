@@ -93,6 +93,7 @@
 
 /* ---- Nút thao tác (Sửa / Ẩn / Xóa) ---- */
 .menu-item-actions { display: flex; gap: 8px; }
+.menu-inline-form { margin: 0; display: flex; }
 
 /* ---- Ảnh món ---- */
 .menu-item-thumb { width: 56px; height: 56px; border-radius: 10px; object-fit: cover; margin-right: 12px; flex: none; }

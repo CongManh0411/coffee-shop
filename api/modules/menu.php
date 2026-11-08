@@ -180,6 +180,26 @@ function menu_update($id, $d)
     return '';
 }
 
+// Món đang nằm trong đơn chưa thanh toán (orders.status = 'open') thì không được xóa
+function menu_in_open_order($id)
+{
+    $r = db()->fetchOne(
+        "SELECT COUNT(*) AS n FROM order_items oi JOIN orders o ON o.order_id = oi.order_id
+         WHERE oi.menu_item_id = ? AND o.status = 'open'",
+        array((int) $id)
+    );
+    return (int) ($r['n'] ?? 0) > 0;
+}
+
+// Ẩn / hiện món trên thực đơn. Trả về chuỗi lỗi, rỗng nếu thành công.
+function menu_toggle_hidden($id)
+{
+    $cur = db()->fetchOne("SELECT is_hidden FROM menu_items WHERE item_id = ?", array((int) $id));
+    if (!$cur) return 'Không tìm thấy món.';
+    db()->execute("UPDATE menu_items SET is_hidden = ? WHERE item_id = ?", array((int) $cur['is_hidden'] === 1 ? 0 : 1, (int) $id));
+    return '';
+}
+
 function menu_delete($id)
 {
     $cur = db()->fetchOne("SELECT image FROM menu_items WHERE item_id = ?", array((int) $id));

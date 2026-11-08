@@ -102,3 +102,7 @@
 @media print {
     .sidebar, .mobile-topbar, .cs-noprint { display: none !important; }
 }
+
+/* Nhật ký: link dạng nút */
+a.topnav-item { text-decoration: none; display: inline-block; }
+a.btn-outline { display: inline-block; text-decoration: none; }

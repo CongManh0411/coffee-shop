@@ -1,100 +1,121 @@
-<!-- pages/staff/index.php — giao diện trang "Nhân viên" (header/footer do index.php gốc in) -->
+<!-- admin/pages/staff/index.php — giao diện trang "Nhân viên". PHP in danh sách bằng foreach; thêm/sửa/xóa là form POST. -->
+    <?php $formOpen = $staffForm !== null; $editing = $formOpen && (int) $staffForm['id'] > 0; ?>
     <main class="main">
-        <!-- Thanh điều hướng ngang — các thao tác trong trang Nhân viên -->
         <nav class="topnav">
-            <button class="topnav-item active" data-action="list">Danh sách nhân viên</button>
-            <button class="topnav-item" data-action="add">Thêm nhân viên</button>
+            <a class="topnav-item<?= $formOpen ? '' : ' active' ?>" href="<?= e(admin_url('staff')) ?>">Danh sách nhân viên</a>
+            <a class="topnav-item<?= $formOpen && !$editing ? ' active' : '' ?>" href="<?= e(admin_url('staff', array('add' => 1))) ?>">Thêm nhân viên</a>
         </nav>
 
         <div class="main-content">
-            <!-- ============ PANEL: Danh sách nhân viên ============ -->
+            <?php if ($staffSavedMessage): ?><div class="menu-empty-state" role="status"><?= e($staffSavedMessage) ?></div><?php endif; ?>
+            <?php if ($staffError && !$formOpen): ?><div class="menu-empty-state" role="alert"><?= e($staffError) ?></div><?php endif; ?>
+
+            <?php if (!$formOpen): ?>
             <div class="tab-panel active" id="panel-list">
                 <div class="menu-page-header">
                     <h2>Nhân viên</h2>
                     <p>Danh sách tài khoản, chức vụ và thông tin liên hệ của nhân viên.</p>
                 </div>
-
                 <div class="staff-list" id="staffList">
-                    <!-- Danh sách nhân viên sẽ được đổ vào đây -->
+                    <?php foreach ($staffRows as $st): ?>
+                        <div class="staff-item">
+                            <div class="staff-info">
+                                <div class="staff-name"><?= e($st['fullName']) ?></div>
+                                <div class="staff-username">@<?= e($st['username']) ?></div>
+                                <div class="staff-contact">
+                                    <span><i class="ri-phone-line"></i> <?= $st['phone'] ? e($st['phone']) : '<em>Chưa có SĐT</em>' ?></span>
+                                    <span><i class="ri-mail-line"></i> <?= $st['email'] ? e($st['email']) : '<em>Chưa có email</em>' ?></span>
+                                    <span><i class="ri-user-line"></i> <?= $st['gender'] ? e($st['gender']) : '<em>Chưa rõ giới tính</em>' ?></span>
+                                    <span><i class="ri-cake-2-line"></i> <?= $st['birthDate'] ? e(date('d/m/Y', strtotime($st['birthDate']))) . ' (' . staff_age_of($st['birthDate']) . ' tuổi)' : '<em>Chưa có ngày sinh</em>' ?></span>
+                                </div>
+                            </div>
+                            <div class="staff-actions">
+                                <div class="staff-role"><?= e($st['role']) ?></div>
+                                <div class="action-buttons">
+                                    <a class="btn-outline staff-link-btn" href="<?= e(admin_url('staff', array('edit' => $st['id']))) ?>">Sửa</a>
+                                    <form method="post" action="<?= e(admin_url('staff')) ?>" class="staff-inline-form" onsubmit="return confirm('Bạn có chắc chắn muốn xóa nhân viên này?');">
+                                        <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
+                                        <input type="hidden" name="staff_action" value="delete">
+                                        <input type="hidden" name="staff_id" value="<?= (int) $st['id'] ?>">
+                                        <button type="submit" class="btn-danger">Xóa</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                    <?php if (!$staffRows): ?>
+                        <div class="menu-empty-state">Chưa có nhân viên nào. Bấm "Thêm nhân viên" để bắt đầu.</div>
+                    <?php endif; ?>
                 </div>
             </div>
-
-            <!-- ============ PANEL: Thêm nhân viên ============ -->
-            <div class="tab-panel" id="panel-add">
+            <?php else: ?>
+            <div class="tab-panel active" id="panel-add">
                 <div class="menu-page-header">
-                    <h2 id="staffFormTitle">Thêm nhân viên mới</h2>
+                    <h2><?= $editing ? 'Sửa nhân viên' : 'Thêm nhân viên mới' ?></h2>
                     <p>Tạo tài khoản, chọn chức vụ và nhập thông tin liên hệ.</p>
                 </div>
+                <?php if ($editing): ?><div class="edit-mode-indicator active">📝 Đang chỉnh sửa thông tin nhân viên</div><?php endif; ?>
+                <?php if ($staffError): ?><div class="edit-mode-indicator active" role="alert"><?= e($staffError) ?></div><?php endif; ?>
 
-                <!-- Trạng thái đang sửa -->
-                <div id="editModeIndicator" class="edit-mode-indicator">
-                    📝 Đang chỉnh sửa thông tin nhân viên
-                </div>
-
-                <form id="staffForm" class="add-item-form">
+                <form method="post" action="<?= e(admin_url('staff')) ?>" class="add-item-form">
+                    <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
+                    <input type="hidden" name="staff_action" value="save">
+                    <input type="hidden" name="staff_id" value="<?= (int) $staffForm['id'] ?>">
                     <div class="form-row">
                         <div class="form-group">
                             <label for="fullName">Họ tên</label>
-                            <input type="text" id="fullName" placeholder="Nhập họ tên" required>
+                            <input type="text" id="fullName" name="fullName" placeholder="Nhập họ tên" value="<?= e($staffForm['fullName']) ?>" required>
                         </div>
                         <div class="form-group">
                             <label for="role">Chức vụ</label>
-                            <select id="role" required>
+                            <select id="role" name="role" required>
                                 <option value="">-- Chọn chức vụ --</option>
-                                <option value="Quản lý">Quản lý</option>
-                                <option value="Phục vụ">Phục vụ</option>
-                                <option value="Bếp">Bếp</option>
-                                <option value="Thu ngân">Thu ngân</option>
+                                <?php foreach (array_keys(STAFF_ROLES) as $roleName): ?>
+                                    <option value="<?= e($roleName) ?>"<?= $staffForm['role'] === $roleName ? ' selected' : '' ?>><?= e($roleName) ?></option>
+                                <?php endforeach; ?>
                             </select>
                         </div>
                     </div>
-
                     <div class="form-row">
                         <div class="form-group">
                             <label for="username">Tài khoản</label>
-                            <input type="text" id="username" placeholder="Nhập tài khoản" required>
+                            <input type="text" id="username" name="username" placeholder="Nhập tài khoản" value="<?= e($staffForm['username']) ?>" required>
                         </div>
                         <div class="form-group">
                             <label for="password">Mật khẩu</label>
-                            <div class="password-field">
-                                <input type="password" id="password" placeholder="Ít nhất 12 ký tự" minlength="12" maxlength="72" autocomplete="new-password" required>
-                                <button type="button" class="password-toggle" id="togglePassword" aria-controls="password" aria-pressed="false">Hiện</button>
-                            </div>
+                            <input type="password" id="password" name="password" minlength="12" maxlength="72" autocomplete="new-password" placeholder="<?= $editing ? 'Để trống nếu không đổi mật khẩu' : 'Ít nhất 12 ký tự' ?>"<?= $editing ? '' : ' required' ?>>
                             <small>Mật khẩu mới cần ít nhất 12 ký tự. Khi sửa hồ sơ, để trống nếu không đổi mật khẩu.</small>
                         </div>
                     </div>
-
-                    <!-- Thông tin liên hệ — chỉ hiển thị ở trang này (chỉ Quản lý vào được) -->
                     <div class="form-row">
                         <div class="form-group">
                             <label for="phone">Số điện thoại</label>
-                            <input type="tel" id="phone" inputmode="tel" maxlength="11" placeholder="Ví dụ: 0901234567" required>
+                            <input type="tel" id="phone" name="phone" inputmode="tel" maxlength="11" placeholder="Ví dụ: 0901234567" value="<?= e($staffForm['phone']) ?>" required>
                         </div>
                         <div class="form-group">
                             <label for="email">Email (không bắt buộc)</label>
-                            <input type="email" id="email" placeholder="Ví dụ: ten@gmail.com">
+                            <input type="email" id="email" name="email" placeholder="Ví dụ: ten@gmail.com" value="<?= e($staffForm['email']) ?>">
                         </div>
                     </div>
-
                     <div class="form-row">
                         <div class="form-group">
                             <label for="gender">Giới tính</label>
-                            <select id="gender">
+                            <select id="gender" name="gender">
                                 <option value="">-- Chọn giới tính --</option>
-                                <option value="Nam">Nam</option>
-                                <option value="Nữ">Nữ</option>
-                                <option value="Khác">Khác</option>
+                                <?php foreach (array('Nam', 'Nữ', 'Khác') as $g): ?>
+                                    <option value="<?= e($g) ?>"<?= $staffForm['gender'] === $g ? ' selected' : '' ?>><?= e($g) ?></option>
+                                <?php endforeach; ?>
                             </select>
                         </div>
                         <div class="form-group">
                             <label for="birthDate">Ngày sinh</label>
-                            <input type="date" id="birthDate">
+                            <input type="date" id="birthDate" name="birthDate" max="<?= e(date('Y-m-d')) ?>" value="<?= e($staffForm['birthDate']) ?>">
                         </div>
                     </div>
-
-                    <button type="submit" class="btn-submit" id="submitBtn">Tạo tài khoản</button>
-                    <button type="button" class="btn-outline btn-cancel-edit" id="btnCancelEdit" style="display:none;">Hủy sửa</button>
+                    <button type="submit" class="btn-submit"><?= $editing ? 'Lưu thay đổi' : 'Tạo tài khoản' ?></button>
+                    <a class="btn-outline btn-cancel-edit staff-link-btn" href="<?= e(admin_url('staff')) ?>">Hủy</a>
                 </form>
             </div>
+            <?php endif; ?>
         </div>
     </main>

@@ -54,6 +54,28 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && isset($_POST['save_menu_
         redirect(admin_url('menu', array_filter(array('q' => $adminSearch, 'p' => $adminPager['page'] > 1 ? $adminPager['page'] : null))));
     }
 }
+// Ẩn/hiện và xóa món: form POST thường (có CSRF), xử lý bằng PHP rồi redirect.
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && isset($_POST['menu_action'])) {
+    $actionId = (int) ($_POST['id'] ?? 0);
+    if (!post_csrf_ok()) {
+        $menuFormError = 'Phiên bảo mật hết hạn. Hãy tải lại trang rồi thử lại.';
+    } elseif ($_POST['menu_action'] === 'toggle_hide') {
+        $menuFormError = menu_toggle_hidden($actionId);
+        if ($menuFormError === '') $_SESSION['menu_saved'] = 'Đã cập nhật trạng thái hiển thị của món.';
+    } elseif ($_POST['menu_action'] === 'delete') {
+        if (menu_in_open_order($actionId)) {
+            $menuFormError = 'Không thể xóa món đang có trong đơn hàng chưa thanh toán.';
+        } else {
+            menu_delete($actionId);
+            $_SESSION['menu_saved'] = 'Đã xóa món.';
+        }
+    } else {
+        $menuFormError = 'Thao tác không hợp lệ.';
+    }
+    if ($menuFormError === '') {
+        redirect(admin_url('menu', array_filter(array('q' => $adminSearch, 'p' => $adminPager['page'] > 1 ? $adminPager['page'] : null))));
+    }
+}
 $menuSavedMessage = $_SESSION['menu_saved'] ?? '';
 unset($_SESSION['menu_saved']);
 // pages/menu/action.php — khai báo trang "Thực đơn"
