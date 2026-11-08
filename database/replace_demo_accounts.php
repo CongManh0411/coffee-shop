@@ -38,6 +38,8 @@ db()->transaction(function () use ($fullName, $username, $password, $demoHash) {
         array($fullName, $username, password_hash($password, PASSWORD_DEFAULT), 'manager')
     );
     db()->execute('UPDATE staff SET status = 0 WHERE password = ?', array($demoHash));
+    // Tài khoản trong database/demo_data.sql (mật khẩu chung, đã công khai) cũng bị tắt.
+    db()->execute("UPDATE staff SET status = 0 WHERE username IN ('quanly','thungan1','thungan2','phucvu1','phucvu2','phucvu3','bep1','bep2','nghiviec')");
 });
 
 putenv('INITIAL_MANAGER_PASSWORD');

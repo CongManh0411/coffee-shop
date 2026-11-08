@@ -1,5 +1,5 @@
 <?php
-// api/modules/auditlog.php — Nhật ký thao tác (bảng audit_logs). Thay cho 'coffee_logs_v1' trước đây lưu ở trình duyệt.
+// api/modules/auditlog.php — Nhật ký thao tác (bảng audit_logs). Trước đây lưu ở trình duyệt.
 // Người thực hiện và vai trò luôn lấy từ phiên đăng nhập trên máy chủ, không tin dữ liệu do trình duyệt gửi.
 
 function auditlog_types()
