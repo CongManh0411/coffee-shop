@@ -1,13 +1,14 @@
 <!-- pages/warehouse/index.php — giao diện trang "Kho" (header/footer do index.php gốc in) -->
 <main class="main">
     <nav class="topnav">
-        <button class="topnav-item active" data-action="list">Danh sách kho</button>
-        <button class="topnav-item" data-action="add">Nhập / điều chỉnh kho</button>
-        <button class="topnav-item" data-action="history">Lịch sử kho</button>
+        <a class="topnav-item<?= $tab === 'list' ? ' active' : '' ?>" href="<?= e(admin_url('warehouse')) ?>">Danh sách kho</a>
+        <a class="topnav-item<?= $tab === 'add' ? ' active' : '' ?>" href="<?= e(admin_url('warehouse', array('tab' => 'add'))) ?>">Nhập / điều chỉnh kho</a>
+        <a class="topnav-item<?= $tab === 'history' ? ' active' : '' ?>" href="<?= e(admin_url('warehouse', array('tab' => 'history'))) ?>">Lịch sử kho</a>
     </nav>
     <div class="main-content">
+        <?php if ($warehouseSaved): ?><div class="menu-empty-state" role="status"><?= e($warehouseSaved) ?></div><?php endif; ?>
         <!-- ============ TAB 1: DANH SÁCH TỒN KHO ============ -->
-        <div class="tab-panel active" id="panel-list">
+        <div class="tab-panel<?= $tab === 'list' ? ' active' : '' ?>" id="panel-list">
             <div class="menu-page-header">
                 <h2>Kho theo số ly / số phần</h2>
                 <p>Số lượng món có thể bán, không phải số ly đã pha sẵn. Dữ liệu lưu trữ đồng bộ MySQL trên máy chủ; tự động trừ tồn kho khi thu ngân chốt thanh toán.</p>
@@ -74,7 +75,7 @@
                                     </td>
                                     <td>
                                         <div class="table-actions">
-                                            <button type="button" class="btn-outline" data-edit="<?= e($item['id']) ?>">Nhập / điều chỉnh</button>
+                                            <a class="btn-outline wh-link-btn" href="<?= e(admin_url('warehouse', array('tab' => 'add', 'item' => $item['id']))) ?>">Nhập / điều chỉnh</a>
                                         </div>
                                     </td>
                                 </tr>
@@ -86,101 +87,111 @@
         </div>
 
         <!-- ============ TAB 2: NHẬP / ĐIỀU CHỈNH KHO ============ -->
-        <div class="tab-panel" id="panel-add">
+        <div class="tab-panel<?= $tab === 'add' ? ' active' : '' ?>" id="panel-add">
             <div class="menu-page-header">
                 <h2>Nhập / điều chỉnh tồn kho</h2>
                 <p>Chọn món đã có trong Menu. Nhập thêm hàng mới hoặc trừ do hao hụt, kiểm kê; bán hàng sẽ tự trừ kho khi thanh toán.</p>
             </div>
-            <form id="inventoryForm" class="add-item-form">
+            <?php if ($warehouseError): ?><div class="menu-empty-state" role="alert"><?= e($warehouseError) ?></div><?php endif; ?>
+            <?php if (!$formItem): ?>
+                <div class="menu-empty-state">Chưa có món trong Thực đơn. Hãy thêm món ở trang Thực đơn.</div>
+            <?php else: ?>
+            <!-- Đổi món: form GET nạp lại số liệu tồn kho của món đó -->
+            <form method="get" action="index.php" class="add-item-form" style="margin-bottom:10px">
+                <input type="hidden" name="page" value="warehouse">
+                <input type="hidden" name="tab" value="add">
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="stockItem">Món trong Menu</label>
-                        <select id="stockItem" required>
-                            <?php foreach (($warehouseData['items'] ?? array()) as $item): ?>
-                                <option value="<?= e($item['id']) ?>"><?= e($item['name']) ?> (<?= e($item['unit']) ?>)</option>
+                        <label for="stockItemPick">Món trong Menu</label>
+                        <select id="stockItemPick" name="item" onchange="this.form.submit()">
+                            <?php foreach ($warehouseItems as $it): ?>
+                                <option value="<?= e($it['id']) ?>"<?= (int) $it['id'] === (int) $formItem['id'] ? ' selected' : '' ?>><?= e($it['name']) ?> (<?= e($it['unit']) ?>)</option>
                             <?php endforeach; ?>
                         </select>
+                        <noscript><button type="submit" class="btn-outline">Chọn</button></noscript>
                     </div>
                     <div class="form-group">
                         <label>Số lượng hiện tại</label>
-                        <div id="stockCurrent" class="stock-current">
-                            <?php
-                            $first = !empty($warehouseData['items']) ? $warehouseData['items'][0] : null;
-                            echo $first ? number_format($first['stock'], 0, ',', '.') . ' ' . e($first['unit']) : '0 ly';
-                            ?>
-                        </div>
+                        <div class="stock-current"><?= number_format((int) $formItem['stock'], 0, ',', '.') ?> <?= e($formItem['unit']) ?></div>
                     </div>
                 </div>
+            </form>
+            <form method="post" action="<?= e(admin_url('warehouse', array('tab' => 'add', 'item' => $formItem['id']))) ?>" class="add-item-form">
+                <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
+                <input type="hidden" name="warehouse_action" value="adjust">
+                <input type="hidden" name="item_id" value="<?= (int) $formItem['id'] ?>">
                 <div class="form-row">
                     <div class="form-group">
                         <label for="stockMode">Thao tác</label>
-                        <select id="stockMode">
-                            <option value="import">Nhập thêm (+)</option>
-                            <option value="adjust">Điều chỉnh giảm (-)</option>
+                        <select id="stockMode" name="mode">
+                            <option value="import"<?= $formMode === 'import' ? ' selected' : '' ?>>Nhập thêm (+)</option>
+                            <option value="adjust"<?= $formMode === 'adjust' ? ' selected' : '' ?>>Điều chỉnh giảm (-)</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="stockAmount">Số lượng (<span id="stockUnit"><?= $first ? e($first['unit']) : 'ly' ?></span>)</label>
-                        <input type="number" id="stockAmount" min="1" step="1" value="1" required>
+                        <label for="stockAmount">Số lượng (<?= e($formItem['unit']) ?>)</label>
+                        <input type="number" id="stockAmount" name="amount" min="1" step="1" value="<?= e($formAmount) ?>" required>
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
                         <label for="minLevel">Cảnh báo khi tồn ≤</label>
-                        <input type="number" id="minLevel" min="0" step="1" value="<?= $first ? (int) $first['minLevel'] : 10 ?>" required>
+                        <input type="number" id="minLevel" name="min_level" min="0" step="1" value="<?= e($formMin) ?>" required>
                     </div>
                     <div class="form-group">
                         <label for="stockReason">Ghi chú / lý do</label>
-                        <input type="text" id="stockReason" maxlength="180" placeholder="Ví dụ: Nhập hàng sáng nay, hao hụt nguyên liệu...">
+                        <input type="text" id="stockReason" name="reason" maxlength="180" value="<?= e($formReason) ?>" placeholder="Ví dụ: Nhập hàng sáng nay, hao hụt nguyên liệu...">
                     </div>
                 </div>
-                <button type="submit" class="btn-submit" id="btnSubmitStock">Lưu và cập nhật kho</button>
-                <button type="button" class="btn-outline btn-cancel-edit" id="btnCancelEdit">Quay về danh sách</button>
+                <button type="submit" class="btn-submit">Lưu và cập nhật kho</button>
+                <a class="btn-outline btn-cancel-edit wh-link-btn" href="<?= e(admin_url('warehouse')) ?>">Quay về danh sách</a>
                 <p class="form-subtext">Mỗi lần nhập hoặc điều chỉnh kho đều được máy chủ ghi nhận danh tính người thực hiện, thời gian và số lượng biến động vào lịch sử cơ sở dữ liệu.</p>
             </form>
+            <?php endif; ?>
         </div>
 
         <!-- ============ TAB 3: LỊCH SỬ BIẾN ĐỘNG KHO ============ -->
-        <div class="tab-panel" id="panel-history">
+        <div class="tab-panel<?= $tab === 'history' ? ' active' : '' ?>" id="panel-history">
             <div class="menu-page-header">
                 <h2>Lịch sử biến động kho</h2>
                 <p>Theo dõi chi tiết nhập hàng, điều chỉnh kiểm kê và tự động trừ kho từ hóa đơn thanh toán.</p>
             </div>
 
             <!-- Thanh bộ lọc lịch sử -->
-            <div class="warehouse-history-toolbar">
+            <form method="get" action="index.php" class="warehouse-history-toolbar">
+                <input type="hidden" name="page" value="warehouse">
+                <input type="hidden" name="tab" value="history">
                 <div class="filter-group">
                     <label for="historyFilterItem">Món</label>
-                    <select id="historyFilterItem">
+                    <select id="historyFilterItem" name="f_item">
                         <option value="">-- Tất cả món --</option>
-                        <?php foreach (($warehouseData['items'] ?? array()) as $item): ?>
-                            <option value="<?= e($item['id']) ?>"><?= e($item['name']) ?></option>
+                        <?php foreach ($warehouseItems as $item): ?>
+                            <option value="<?= e($item['id']) ?>"<?= $historyFilters['itemId'] === (string) $item['id'] ? ' selected' : '' ?>><?= e($item['name']) ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
                 <div class="filter-group">
                     <label for="historyFilterType">Thao tác</label>
-                    <select id="historyFilterType">
+                    <select id="historyFilterType" name="f_type">
                         <option value="">-- Tất cả thao tác --</option>
-                        <option value="import">Nhập kho (+)</option>
-                        <option value="adjustment">Điều chỉnh giảm (-)</option>
-                        <option value="sale">Bán hàng (-)</option>
-                        <option value="sale_rollback">Hoàn tác</option>
+                        <?php foreach (array('import' => 'Nhập kho (+)', 'adjustment' => 'Điều chỉnh giảm (-)', 'sale' => 'Bán hàng (-)', 'sale_rollback' => 'Hoàn tác') as $k => $v): ?>
+                            <option value="<?= e($k) ?>"<?= $historyFilters['type'] === $k ? ' selected' : '' ?>><?= e($v) ?></option>
+                        <?php endforeach; ?>
                     </select>
                 </div>
                 <div class="filter-group">
                     <label for="historyFilterDateFrom">Từ ngày</label>
-                    <input type="date" id="historyFilterDateFrom">
+                    <input type="date" id="historyFilterDateFrom" name="f_from" value="<?= e($historyFilters['dateFrom']) ?>">
                 </div>
                 <div class="filter-group">
                     <label for="historyFilterDateTo">Đến ngày</label>
-                    <input type="date" id="historyFilterDateTo">
+                    <input type="date" id="historyFilterDateTo" name="f_to" value="<?= e($historyFilters['dateTo']) ?>">
                 </div>
                 <div class="filter-actions">
-                    <button type="button" class="btn-submit" id="btnApplyHistoryFilter">Lọc</button>
-                    <button type="button" class="btn-outline" id="btnResetHistoryFilter">Đặt lại</button>
+                    <button type="submit" class="btn-submit">Lọc</button>
+                    <a class="btn-outline wh-link-btn" href="<?= e(admin_url('warehouse', array('tab' => 'history'))) ?>">Đặt lại</a>
                 </div>
-            </div>
+            </form>
 
             <div class="data-table-wrapper">
                 <table class="data-table" id="stockLogTable">
@@ -196,7 +207,7 @@
                     </thead>
                     <tbody id="stockLogBody">
                         <?php if (empty($stockMovements)): ?>
-                            <tr><td colspan="6" class="empty-table-state">Chưa có biến động kho nào.</td></tr>
+                            <tr><td colspan="6" class="empty-table-state">Không có lịch sử biến động phù hợp với bộ lọc.</td></tr>
                         <?php else: ?>
                             <?php foreach ($stockMovements as $l): ?>
                                 <?php
@@ -220,8 +231,3 @@
         </div>
     </div>
 </main>
-
-<script>
-window.INITIAL_WAREHOUSE_DATA = <?= json_encode($warehouseData, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
-window.INITIAL_STOCK_LOG = <?= json_encode($stockMovements, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
-</script>
