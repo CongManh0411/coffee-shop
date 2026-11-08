@@ -6,7 +6,7 @@ require_once __DIR__ . '/../../helpers/shift_report.php';
 
 $title = 'Ca & Quỹ';
 $css = array('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css', 'history.css', 'notifications.css', 'cashier.css');
-$scripts = array('notifications.js');
+$scripts = array();
 
 $me = current_user();
 $csError = '';

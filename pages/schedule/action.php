@@ -7,11 +7,6 @@ $title = 'Lịch ca';
 $css = array('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css', 'notifications.css', 'schedule.css', 'cashier.css');
 $roleKey = $user['roleKey'] ?? '';
 $scripts = array();
-if ($roleKey === 'cashier' || $roleKey === 'waiter') {
-    $scripts = array('menu-data.js', 'inventory.js', 'cashier-core.js', 'notifications.js');
-} elseif ($roleKey === 'kitchen') {
-    $scripts = array('notifications.js');
-}
 // Bảng lịch tuần do PHP in ra từ MySQL. Thu ngân tự đăng ký ca bằng form POST (shifts_register()), không dùng JavaScript.
 
 // Tuần đang xem: ?week=YYYY-MM-DD (sai định dạng thì lấy tuần hiện tại).

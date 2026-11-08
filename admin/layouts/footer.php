@@ -6,9 +6,6 @@ $scripts = isset($scripts) ? $scripts : array();
 <?php if ($page !== 'login' && !empty($user)): ?>
     
 <?php endif; ?>
-    <script src="<?= e($assetPrefix) ?>js/api.js"></script>
-    <script src="<?= e($assetPrefix) ?>js/tables-store.js"></script>
-    <script src="<?= e($assetPrefix) ?>js/auth.js"></script>
     <script src="<?= e($assetPrefix) ?>js/common.js"></script>
 <?php
 $pageScripts = __DIR__ . '/../../pages/' . $page . '/scripts.php';

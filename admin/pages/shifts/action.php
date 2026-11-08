@@ -5,7 +5,7 @@ require_once __DIR__ . '/../../../functions.php';
 
 $title = 'Lịch ca';
 $css = array('schedule.css', 'shifts.css');
-$scripts = array('shifts-upcoming.js');
+$scripts = array();
 
 // ---- Tuần đang xem: ?week=YYYY-MM-DD (về thứ 2 của tuần đó) ----
 $weekParam = (string) ($_POST['week'] ?? $_GET['week'] ?? '');

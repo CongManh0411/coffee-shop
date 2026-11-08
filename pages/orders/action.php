@@ -1,7 +1,30 @@
 <?php
-// pages/orders/action.php — khai báo trang "Đơn hàng"
-// Chạy TRƯỚC khi Router in header, nên có thể redirect() được.
-// Trang này xử lý dữ liệu bằng JS gọi api/index.php nên chỉ cần khai báo thông tin trang.
+// pages/orders/action.php — trang "Đơn hàng" (Thu ngân). Hoàn tiền là form POST (có CSRF); chuyển tab bằng link ?tab=.
+require_once __DIR__ . '/../../functions.php';
+require_once __DIR__ . '/../../helpers/pos.php';
+
 $title = 'Đơn hàng';
 $css = array('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css', 'history.css', 'notifications.css', 'cashier.css');
-$scripts = array('cashier-core.js', 'menu-data.js', 'inventory.js', 'waiter-pay.js', 'notifications.js', 'orders.js');
+$scripts = array();
+
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && isset($_POST['pos'])) {
+    $_POST['back'] = 'orders';
+    pos_run_post($user);
+}
+$flash = pos_take_flash();
+$ordTab = in_array((string) ($_GET['tab'] ?? ''), array('done', 'cancelled'), true) ? (string) $_GET['tab'] : 'processing';
+if ($ordTab === 'processing') $metaRefresh = 15;
+
+$ordProcessing = array();
+$ordInvoices = array();
+$today = date('Y-m-d');
+if ($ordTab === 'processing') {
+    $ordProcessing = array_values(array_filter(pos_open_orders(), function ($o) { return $o['count'] > 0; }));
+} else {
+    foreach (orders_invoice_list('all') as $inv) {
+        $day = substr((string) ($ordTab === 'cancelled' ? ($inv['cancelledAt'] ?: $inv['createdAt']) : $inv['createdAt']), 0, 10);
+        if ($day !== $today) continue;
+        if ($ordTab === 'done' && $inv['status'] === 'active') $ordInvoices[] = $inv;
+        if ($ordTab === 'cancelled' && $inv['status'] === 'cancelled') $ordInvoices[] = $inv;
+    }
+}

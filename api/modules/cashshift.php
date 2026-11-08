@@ -90,7 +90,7 @@ function cashshift_moves($shiftId)
     }, $rows);
 }
 
-// Chuyển 1 dòng cash_shifts sang đúng cấu trúc mà cashier-core.js / shift.js đang dùng.
+// Chuyển 1 dòng cash_shifts sang đúng cấu trúc mà trang Ca & Quỹ và Nhật ký (PHP) đang dùng.
 function cashshift_shape($row, $viewerId = null)
 {
     $moves = cashshift_moves($row['cash_shift_id']);

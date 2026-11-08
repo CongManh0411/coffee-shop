@@ -19,13 +19,13 @@ $routes = array(
 
 $rolePages = array(
     'manager' => array('tablemanage', 'menu', 'revenue', 'history', 'staff', 'shifts', 'warehouse', 'ops', 'logs', 'settings'),
-    'waiter' => array('tables', 'schedule'),
-    'cashier' => array('tables', 'ops', 'orders', 'cashshift', 'schedule'),
-    'kitchen' => array('kitchen', 'schedule'),
+    'waiter' => array('tables', 'notify', 'schedule', 'handover'),
+    'cashier' => array('tables', 'notify', 'ops', 'orders', 'cashshift', 'schedule', 'handover'),
+    'kitchen' => array('kitchen', 'schedule', 'handover'),
 );
 
 $page = $_GET['page'] ?? 'login';
-if (is_string($page) && in_array($page, array('tables', 'schedule', 'orders', 'cashshift', 'kitchen'), true)) {
+if (is_string($page) && in_array($page, array('tables', 'notify', 'handover', 'schedule', 'orders', 'cashshift', 'kitchen'), true)) {
     redirect('../index.php?page=' . rawurlencode($page));
 }
 if (!is_string($page) || !isset($routes[$page])) {
@@ -66,7 +66,7 @@ if ($page !== '404' && $page !== 'login') {
         }
         redirect(admin_url($allowed[0]));
     }
-} elseif ($page === 'login' && $user && !empty($rolePages[$user['roleKey']])) {
+} elseif ($page === 'login' && $user && !empty($rolePages[$user['roleKey']]) && !(($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && ($_POST['auth_action'] ?? '') === 'logout')) {
     $home = $rolePages[$user['roleKey']][0];
     redirect($user['roleKey'] === 'manager' ? admin_url($home) : '../index.php?page=' . rawurlencode($home));
 }

@@ -6,7 +6,7 @@ require_once __DIR__ . '/../../functions.php';
 
 $title = 'Vận hành';
 $css = array('menu.css', 'ops.css', 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css', 'notifications.css', 'cashier.css');
-$scripts = array('notifications.js');
+$scripts = array();
 
 $opsTabs = array('res' => 'Đặt bàn & hàng chờ', 'crm' => 'Khách thân thiết', 'promo' => 'Khuyến mãi', 'stock' => 'Kho nâng cao', 'deliv' => 'Giao hàng');
 $opsTab = (string) ($_GET['tab'] ?? $_POST['tab'] ?? 'res');
