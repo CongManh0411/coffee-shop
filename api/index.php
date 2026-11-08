@@ -235,6 +235,21 @@ try {
             }
             json_error('Sai phương thức.', 405);
             break;
+        case 'shifts/upcoming':
+            require_role(array('manager'));
+            if ($method !== 'GET') json_error('Sai phương thức.', 405);
+            $week = is_valid_ymd($_GET['week'] ?? '') ? $_GET['week'] : '';
+            $from = date('Y-m-d');
+            $pager = paginate(admin_shifts_upcoming_count($from), request_page('p'), 10);
+            $rows = admin_shifts_upcoming($from, $pager['perPage'], $pager['offset']);
+            json_ok(array(
+                'rowsHtml' => shifts_upcoming_rows_html($rows),
+                'paginationHtml' => render_pagination($pager['page'], $pager['pages'], array_filter(array('page' => 'shifts', 'week' => $week))),
+                'page' => $pager['page'],
+                'pages' => $pager['pages'],
+                'total' => $pager['total'],
+            ));
+            break;
         case 'shifts/copy':
             require_role(array('manager'));
             if ($method !== 'POST') json_error('Sai phương thức.', 405);

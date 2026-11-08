@@ -165,3 +165,13 @@ a.shf-shift { text-align: left; }
 .shf-panel { max-width: 420px; margin: 0 0 16px; padding: 18px 20px; background: #fffaf3; border: 1px solid #e3d2b4; border-radius: 12px; }
 .shf-panel h3 { margin: 0 0 4px; font-family: "Playfair Display", serif; color: #3b2313; }
 .shf-panel-actions { display: flex; gap: 10px; align-items: center; }
+
+
+/* Phân trang danh sách ca sắp tới */
+.pagination { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px; margin: 18px 0 8px; }
+.pg-btn { min-width: 36px; padding: 7px 12px; border: 1px solid #e0d3bd; border-radius: 8px; background: #fff; color: #3b2313; font-size: 14px; text-align: center; text-decoration: none; }
+a.pg-btn:hover { background: #f6efe3; }
+.pg-btn.is-current { background: #7a4a28; border-color: #7a4a28; color: #fff; }
+.pg-btn.is-disabled { opacity: .45; }
+.pg-gap { color: #a28d79; }
+.shf-upcoming.is-loading .data-table-wrapper { opacity: .5; transition: opacity .15s; } 

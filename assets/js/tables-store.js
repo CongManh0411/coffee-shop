@@ -2,7 +2,7 @@
 // tables-store.js — TRẠNG THÁI BÀN / ĐƠN ĐANG MỞ (window.TablesStore)
 // ------------------------------------------------------------
 // Nguồn dữ liệu duy nhất là máy chủ: danh sách bàn (API 'tables') + đơn đang mở (API 'orders').
-// Trang chỉ giữ bản sao trong BỘ NHỚ của trang; không còn ghi vào localStorage như 'coffee_tables_v1' trước đây.
+// Trang chỉ giữ bản sao trong BỘ NHỚ của trang; không còn ghi vào localStorage.
 // Mỗi phần tử là 1 "bàn" (hoặc 1 đơn mang đi / giao hàng, có trường `type`):
 //   { id, orderId?, orderCode?, name, type?, customer, address, status: 'empty'|'occupied', time, total,
 //     items: [{ lineId, id (menuId), name, price, quantity, note, confirmed, confirmedAt, kStatus?, startedAt?, doneAt? }] }

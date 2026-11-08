@@ -32,12 +32,16 @@ if (db()->fetchOne('SELECT staff_id FROM staff WHERE username = ? LIMIT 1', arra
 
 // This is the bcrypt hash used by the old SQL seed for all demo users.
 $demoHash = '$2y$10$.7SswrVHgpBiQXRA6SjzMeuVUJb1Vmt2N12F6G.yoIygBsFstW3jS';
-db()->transaction(function () use ($fullName, $username, $password, $demoHash) {
+// Hash chung của 9 tài khoản trong database/demo_data.sql (mật khẩu demo).
+$demoDataHash = '$2y$10$8z26r6af.o0KrulaIliU/uD64tsM3Q7WmeowOcLD2BzAXel/yqCNK';
+db()->transaction(function () use ($fullName, $username, $password, $demoHash, $demoDataHash) {
     db()->execute(
         'INSERT INTO staff (full_name, username, password, role, status) VALUES (?, ?, ?, ?, 1)',
         array($fullName, $username, password_hash($password, PASSWORD_DEFAULT), 'manager')
     );
-    db()->execute('UPDATE staff SET status = 0 WHERE password = ?', array($demoHash));
+    db()->execute('UPDATE staff SET status = 0 WHERE password IN (?, ?)', array($demoHash, $demoDataHash));
+    // Tài khoản trong database/demo_data.sql (mật khẩu chung, đã công khai) cũng bị tắt.
+    db()->execute("UPDATE staff SET status = 0 WHERE username IN ('quanly','thungan1','thungan2','phucvu1','phucvu2','phucvu3','bep1','bep2','nghiviec')");
 });
 
 putenv('INITIAL_MANAGER_PASSWORD');

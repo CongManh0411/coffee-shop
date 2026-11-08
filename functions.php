@@ -419,7 +419,8 @@ function public_next_shift($staffId, $date, $time)
 }
 
 // Admin: các ca từ ngày $fromDate trở đi (JOIN shifts với staff).
-function admin_shifts_upcoming($fromDate, $limit = 50)
+// Admin: các ca từ ngày $fromDate trở đi (JOIN shifts với staff), có phân trang.
+function admin_shifts_upcoming($fromDate, $limit = 10, $offset = 0)
 {
     return db()->fetchAll(
         "SELECT s.shift_id, s.shift_date, s.start_time, s.end_time, s.registered,
@@ -428,9 +429,19 @@ function admin_shifts_upcoming($fromDate, $limit = 50)
          JOIN staff st ON st.staff_id = s.staff_id
          WHERE s.shift_date >= ?
          ORDER BY s.shift_date, s.start_time, st.full_name
-         LIMIT ?",
-        array($fromDate, max(1, min(200, (int) $limit)))
+         LIMIT ? OFFSET ?",
+        array($fromDate, max(1, min(200, (int) $limit)), max(0, (int) $offset))
     );
+}
+
+// Đếm tổng số ca sắp tới (để tính số trang).
+function admin_shifts_upcoming_count($fromDate)
+{
+    $row = db()->fetchOne(
+        "SELECT COUNT(*) AS n FROM shifts WHERE shift_date >= ?",
+        array($fromDate)
+    );
+    return (int) ($row['n'] ?? 0);
 }
 
 // =====================================================================
@@ -785,4 +796,24 @@ function kitchen_set_status($ids, $status)
         if ($error !== '') return $error;
     }
     return '';
+}
+
+// HTML các dòng <tr> của bảng "Danh sách ca sắp tới" (dùng cho cả trang lẫn API AJAX).
+function shifts_upcoming_rows_html($rows)
+{
+    if (!$rows) {
+        return '<tr><td colspan="6"><div class="empty-table-state">Chưa có ca nào từ hôm nay trở đi.</div></td></tr>';
+    }
+    $html = '';
+    foreach ($rows as $s) {
+        $html .= '<tr>'
+            . '<td>' . e(date('d/m/Y', strtotime($s['shift_date']))) . '</td>'
+            . '<td><b>' . e($s['full_name']) . '</b></td>'
+            . '<td>' . e(role_label($s['role'])) . '</td>'
+            . '<td>' . e(schedule_clock($s['start_time'])) . ' – ' . e(schedule_clock($s['end_time'])) . '</td>'
+            . '<td>' . e(schedule_duration(schedule_minutes($s['start_time'], $s['end_time']))) . '</td>'
+            . '<td>' . ((int) $s['registered'] ? 'Đã vào ca' : 'Chưa vào ca') . '</td>'
+            . '</tr>';
+    }
+    return $html;
 }
