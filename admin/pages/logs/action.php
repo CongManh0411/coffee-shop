@@ -2,6 +2,7 @@
 // admin/pages/logs/action.php — trang "Nhật ký" (Admin, chỉ đọc)
 // PHP đọc MySQL (audit_logs, cash_shifts, menu_stock_movements) rồi in bảng bằng foreach. Bộ lọc là form GET, không dùng JavaScript.
 require_once __DIR__ . '/../../../functions.php';
+require_once __DIR__ . '/../../../helpers/shift_report.php';
 
 $title = 'Nhật ký';
 $css = array('history.css', 'cashier.css');

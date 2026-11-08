@@ -1,6 +1,6 @@
 // ============================================================
 // menu.js — LOGIC RIÊNG CỦA TRANG THỰC ĐƠN (chỉ nạp trong Menu.html)
-// Cần nạp SAU auth.js, common.js, menu-data.js, inventory.js.
+// Chỉ lo phần giao diện của form Thêm / Sửa món (ẩn / xóa món là form POST xử lý bằng PHP).
 // Đã bỏ "Định mức nguyên liệu": kho giờ chỉ quản lý số ly / phần ở trang Kho.
 // ============================================================
 

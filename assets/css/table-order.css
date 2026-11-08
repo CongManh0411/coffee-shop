@@ -353,3 +353,33 @@
 .tables-summary b { font-size: 16px; }
 .tables-summary-link { margin-left: auto; color: #8a5a2b; font-weight: 600; text-decoration: none; }
 .tables-summary-link:hover { text-decoration: underline; }
+
+/* ---- Bán hàng bằng form PHP (không dùng JavaScript) ---- */
+.pos-ok { margin: 10px 16px; padding: 8px 12px; border-radius: 8px; background: #e8f3e3; color: #2f5a1f; font-size: 13px; }
+.pos-inline { display: inline-block; margin: 0; }
+.pos-add { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 0; }
+.pos-qty { width: 56px; padding: 6px; border: 1px solid #d9c7a8; border-radius: 8px; font: inherit; }
+.pos-note { flex: 1; min-width: 120px; padding: 6px 8px; border: 1px solid #d9c7a8; border-radius: 8px; font: inherit; }
+.pos-line { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin: 6px 0 0; }
+.pos-opts, .pos-ops { width: 100%; margin-top: 6px; font-size: 13px; }
+.pos-opts summary, .pos-ops summary { cursor: pointer; color: #7a5a3a; }
+.opt-chip input { margin-right: 4px; }
+.pos-togo { display: flex; gap: 10px; flex-wrap: wrap; margin: 0 0 14px; }
+.pos-delivery { display: inline-flex; gap: 6px; flex-wrap: wrap; }
+.pos-delivery input { padding: 6px 8px; border: 1px solid #d9c7a8; border-radius: 8px; font: inherit; }
+.pos-hint { color: #8a7a6a; font-size: 12.5px; margin-top: 12px; }
+.pos-pay, .pos-receipt { max-width: 640px; margin: 0 auto; background: #fffaf3; border: 1px solid #e3d2b4; border-radius: 12px; padding: 18px 22px; }
+.pos-table { width: 100%; border-collapse: collapse; font-size: 14px; margin: 10px 0; }
+.pos-table td { padding: 5px 0; border-bottom: 1px dashed #e3d2b4; }
+.pos-table td.r { text-align: right; white-space: nowrap; }
+.pos-table tr.tot td { font-weight: 700; font-size: 16px; border-bottom: 0; }
+.pos-box { margin: 14px 0; padding: 12px; border: 1px solid #e3d2b4; border-radius: 10px; background: #fff; }
+.pos-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 8px 0; }
+.pos-row input, .pos-row select { padding: 6px 8px; border: 1px solid #d9c7a8; border-radius: 8px; font: inherit; }
+.pos-check { display: block; margin: 6px 0; font-size: 13px; }
+.pos-err { color: #c0392b; font-size: 13px; margin: 6px 0 0; }
+.pos-muted { color: #8a7a6a; font-size: 13px; }
+.pos-actions { display: flex; gap: 10px; margin-top: 14px; }
+a.pos-btn, a.topnav-back, a.topnav-item { display: inline-block; text-decoration: none; text-align: center; }
+a.table-card:hover { filter: brightness(0.97); }
+@media print { .sidebar, .topnav, .pos-actions, .mobile-topbar { display: none !important; } .pos-receipt { border: 0; } }

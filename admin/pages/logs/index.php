@@ -50,37 +50,7 @@
 
             <?php if ($reportShift): ?>
             <div class="cs-report" style="margin-bottom:16px">
-                <?php $s = $reportShift['summary']; $diff = (int) ($reportShift['diff'] ?? 0); ?>
-                <h2 style="text-align:center;margin:0">BÁO CÁO KẾT CA</h2>
-                <p style="text-align:center;font-size:12px;margin:4px 0 10px"><?= e($reportShift['cashierName']) ?> • <?= e(logs_dt($reportShift['openedAt'])) ?><?= !empty($reportShift['closedAt']) ? ' → ' . e(date('H:i', strtotime($reportShift['closedAt']))) : '' ?></p>
-                <table style="width:100%;font-size:13px;border-collapse:collapse">
-                    <tr><td>Số đơn</td><td style="text-align:right"><?= (int) $s['orders'] ?></td></tr>
-                    <tr><td>Doanh thu</td><td style="text-align:right"><b><?= e(money($s['revenue'])) ?></b></td></tr>
-                    <tr><td>&nbsp;&nbsp;Tiền mặt</td><td style="text-align:right"><?= e(money($s['by']['cash'])) ?></td></tr>
-                    <tr><td>&nbsp;&nbsp;Chuyển khoản / QR</td><td style="text-align:right"><?= e(money($s['by']['qr'])) ?></td></tr>
-                    <tr><td>&nbsp;&nbsp;Thẻ</td><td style="text-align:right"><?= e(money($s['by']['card'])) ?></td></tr>
-                    <tr><td>&nbsp;&nbsp;Ví điện tử</td><td style="text-align:right"><?= e(money($s['by']['ewallet'])) ?></td></tr>
-                    <tr><td>Tổng giảm giá</td><td style="text-align:right"><?= e(money($s['discount'])) ?></td></tr>
-                    <tr><td>Hóa đơn hủy / hoàn</td><td style="text-align:right"><?= (int) $s['cancelledCount'] ?> (<?= e(money($s['cancelledTotal'])) ?>)</td></tr>
-                </table><hr>
-                <table style="width:100%;font-size:13px;border-collapse:collapse">
-                    <tr><td>Tiền đầu ca</td><td style="text-align:right"><?= e(money($reportShift['openingCash'])) ?></td></tr>
-                    <tr><td>+ Bán tiền mặt</td><td style="text-align:right"><?= e(money($s['cashSales'])) ?></td></tr>
-                    <tr><td>+ Thu quỹ</td><td style="text-align:right"><?= e(money($s['cashIn'])) ?></td></tr>
-                    <tr><td>− Chi quỹ</td><td style="text-align:right"><?= e(money($s['cashOut'])) ?></td></tr>
-                    <tr><td><b>Tiền mặt theo hệ thống</b></td><td style="text-align:right"><b><?= e(money($reportShift['expectedCash'])) ?></b></td></tr>
-                    <tr><td>Tiền đếm thực tế</td><td style="text-align:right"><?= e(money($reportShift['countedCash'])) ?></td></tr>
-                    <tr><td><b>Chênh lệch</b></td><td style="text-align:right"><b style="color:<?= $diff === 0 ? '#2c7046' : '#c0392b' ?>"><?= $diff > 0 ? '+' : '' ?><?= e(money($diff)) ?></b></td></tr>
-                </table>
-                <?php if (!empty($reportShift['reason'])): ?><p style="font-size:13px"><b>Lý do chênh lệch:</b> <?= e($reportShift['reason']) ?></p><?php endif; ?>
-                <?php if (!empty($reportShift['movements'])): ?>
-                    <hr><p style="font-size:13px;margin:4px 0"><b>Thu / chi trong ca</b></p>
-                    <table style="width:100%;font-size:12px;border-collapse:collapse">
-                        <?php foreach ($reportShift['movements'] as $m): ?>
-                            <tr><td><?= e(date('H:i', strtotime($m['time']))) ?></td><td><?= $m['kind'] === 'in' ? 'Thu' : 'Chi' ?> — <?= e($m['category']) ?><?= !empty($m['note']) ? ': ' . e($m['note']) : '' ?></td><td style="text-align:right"><?= $m['kind'] === 'in' ? '+' : '-' ?><?= e(money($m['amount'])) ?></td></tr>
-                        <?php endforeach; ?>
-                    </table>
-                <?php endif; ?>
+                <?= shift_report_html($reportShift) ?>
                 <p style="margin-top:12px"><a class="btn-outline" href="<?= e(logs_url('shifts')) ?>">Đóng</a> <a class="btn-outline" href="#" onclick="window.print();return false;">In</a></p>
             </div>
             <?php endif; ?>

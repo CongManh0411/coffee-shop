@@ -12,11 +12,13 @@ $routes = array(
     'orders' => 'orders/index.php',
     'cashshift' => 'cashshift/index.php',
     'kitchen' => 'kitchen/index.php',
+    'notify' => 'notify/index.php',
+    'handover' => 'handover/index.php',
 );
 $rolePages = array(
-    'waiter' => array('tables', 'schedule'),
-    'cashier' => array('tables', 'ops', 'orders', 'cashshift', 'schedule'),
-    'kitchen' => array('kitchen', 'schedule'),
+    'waiter' => array('tables', 'notify', 'schedule', 'handover'),
+    'cashier' => array('tables', 'notify', 'ops', 'orders', 'cashshift', 'schedule', 'handover'),
+    'kitchen' => array('kitchen', 'schedule', 'handover'),
 );
 $user = current_user();
 if ($user) header('Cache-Control: no-store, private');
@@ -75,6 +77,10 @@ if (!in_array($page, array('404', 'home', 'public-menu', 'menu', 'menu-detail'),
     }
 }
 
+// Vào trang nhân viên là tự ghi GIỜ VÀO ca hôm nay (timesheet_clock_in giữ nguyên nếu đã có bản ghi)
+if ($user && in_array($user['roleKey'], array('waiter', 'cashier', 'kitchen'), true)) {
+    try { timesheet_clock_in((int) $user['staffId']); } catch (Throwable $e) { error_log($e); }
+}
 $isAdmin = false;
 $action = dirname($file) . '/action.php';
 if (is_file($action)) {

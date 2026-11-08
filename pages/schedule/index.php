@@ -28,6 +28,29 @@ $rangeTo = DateTime::createFromFormat('!Y-m-d', $weekEnd);
             </section>
             <?php endif; ?>
 
+            <?php if ($roleKey === 'cashier' && $myStaffId): $regDow = array('CN', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'); ?>
+            <section class="cs-panel reg-panel" id="regPanel">
+                <h3>Đăng ký ca</h3>
+                <p class="cs-note" style="margin:0 0 12px">Tick những khung giờ bạn rảnh rồi bấm <b>Gửi đăng ký</b> — hệ thống tự xếp vào lịch chung (tối đa 1 ca/ngày, mỗi khung giờ <?= (int) SHIFT_MAX_CASHIER_PER_SLOT ?> thu ngân). Bỏ tick ca đã đăng ký để hủy.</p>
+                <?php if ($regError): ?><p class="cs-msg" role="alert"><?= e($regError) ?></p><?php endif; ?>
+                <form method="post" action="<?= e(url('schedule', array('week' => $weekStart))) ?>">
+                    <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
+                    <input type="hidden" name="reg_submit" value="1">
+                    <div class="reg-days">
+                        <?php for ($i = 0; $i < $regDaysAhead; $i++): $key = schedule_add_days($today, $i); $ts = strtotime($key); ?>
+                            <div class="reg-day <?= $i === 0 ? 'today' : '' ?>"><div class="reg-day-h"><?= e($regDow[(int) date('w', $ts)]) ?> <?= e(date('d/m', $ts)) ?><?= $i === 0 ? ' (hôm nay)' : '' ?></div>
+                                <?php foreach ($regSlots as $sk => $sl): $c = $regGrid[$key][$sk]; ?>
+                                    <label class="reg-slot <?= $c['disabled'] ? 'locked' : '' ?>"><input type="checkbox" name="reg[]" value="<?= e($key . '|' . $sk) ?>" <?= $c['checked'] ? 'checked' : '' ?> <?= $c['disabled'] ? 'disabled' : '' ?>>
+                                        <span><?= e($sl['label']) ?> <small><?= e($sl['start']) ?>–<?= e($sl['end']) ?><?= $c['note'] ? ' • ' . e($c['note']) : '' ?></small></span></label>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php endfor; ?>
+                    </div>
+                    <div style="margin-top:12px"><button type="submit" class="cs-btn">Gửi đăng ký</button><?php if ($regMessage): ?> <span class="cs-msg ok" role="status"><?= e($regMessage) ?></span><?php endif; ?></div>
+                </form>
+            </section>
+            <?php endif; ?>
+
             <!-- Đầu trang: ai đang trong ca / ai chưa tới ca (hôm nay) -->
             <div class="sch-now">
                 <section class="sch-box in-shift">

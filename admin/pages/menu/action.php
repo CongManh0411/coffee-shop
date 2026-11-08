@@ -83,4 +83,4 @@ unset($_SESSION['menu_saved']);
 // Bảng danh sách render bằng PHP; JavaScript bổ sung tìm kiếm và thao tác qua API.
 $title = 'Thực đơn';
 $css = array('menu.css');
-$scripts = array('menu-data.js', 'inventory.js', 'menu.js');
+$scripts = array('menu.js');

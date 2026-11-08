@@ -6,7 +6,7 @@ require_once __DIR__ . '/../../functions.php';
 
 $title = 'Bếp';
 $css = array('kitchen.css', 'notifications.css');
-$scripts = array('notifications.js'); // chỉ giữ chuông thông báo; kitchen.js (gọi API) đã bỏ
+$scripts = array();
 $metaRefresh = 10; // tự tải lại trang mỗi 10 giây để thấy phiếu mới
 
 // ---- Form POST: Nhận làm / Xong / Trả về chờ / Hoàn tác ----
