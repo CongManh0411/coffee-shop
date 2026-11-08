@@ -36,8 +36,12 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && isset($_POST['save_menu_
         'desc' => trim((string) ($_POST['desc'] ?? '')),
         'price' => $_POST['price'] ?? '',
     );
+    if (!post_csrf_ok()) {
+        $menuFormError = 'Phiên bảo mật hết hạn. Hãy tải lại trang rồi thử lại.';
+    }
     // Ảnh món: chọn file từ máy -> lưu vào assets/images/menu/, database chỉ giữ đường dẫn
-    list($uploadedImage, $menuFormError) = menu_store_uploaded_image($_FILES['image_file'] ?? null);
+    $uploadedImage = null;
+    if ($menuFormError === '') list($uploadedImage, $menuFormError) = menu_store_uploaded_image($_FILES['image_file'] ?? null);
     if ($uploadedImage !== null) $menuData['img'] = $uploadedImage;
 
     if ($menuFormError === '') {

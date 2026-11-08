@@ -15,7 +15,11 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     $postAction = (string) ($_POST['action'] ?? '');
     $postId = (int) ($_POST['table_id'] ?? 0);
 
-    if ($postAction === 'save') {
+    if (!post_csrf_ok()) {
+        $tableFormError = 'Phiên bảo mật hết hạn. Hãy tải lại trang rồi thử lại.';
+        $formTableId = $postId;
+        $formTableName = trim((string) ($_POST['name'] ?? ''));
+    } elseif ($postAction === 'save') {
         $formTableId = $postId;
         $formTableName = trim((string) ($_POST['name'] ?? ''));
         $data = array('name' => $formTableName);

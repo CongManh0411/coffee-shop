@@ -13,11 +13,12 @@
             <!-- FORM THÊM / SỬA BÀN (POST) -->
             <form class="tm-form" method="post" action="<?= e(admin_url('tablemanage')) ?>" novalidate>
                 <h3 class="tm-form-title"><?= $formTableId > 0 ? 'Sửa tên bàn' : 'Thêm bàn mới' ?></h3>
+                <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
                 <input type="hidden" name="action" value="save">
                 <input type="hidden" name="table_id" value="<?= (int) $formTableId ?>">
                 <div class="form-group">
                     <label for="tableNameInput">Tên bàn</label>
-                    <input type="text" id="tableNameInput" name="name" maxlength="60" autocomplete="off"
+                    <input type="text" id="tableNameInput" name="name" maxlength="30" autocomplete="off"
                            placeholder="Ví dụ: Bàn 09" value="<?= e($formTableName) ?>">
                 </div>
                 <?php if ($tableFormError !== ''): ?>
@@ -63,6 +64,7 @@
                                         <?php if ($table['status'] === 'empty'): ?>
                                             <form method="post" action="<?= e(admin_url('tablemanage')) ?>" class="tm-inline-form"
                                                   onsubmit="return confirm('Xóa <?= e(addslashes($table['table_name'])) ?>?');">
+                                                <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
                                                 <input type="hidden" name="action" value="delete">
                                                 <input type="hidden" name="table_id" value="<?= (int) $table['table_id'] ?>">
                                                 <button type="submit" class="tm-danger-solid">Xóa</button>
