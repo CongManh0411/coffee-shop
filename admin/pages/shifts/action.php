@@ -5,7 +5,7 @@ require_once __DIR__ . '/../../../functions.php';
 
 $title = 'Lịch ca';
 $css = array('schedule.css', 'shifts.css');
-$scripts = array();
+$scripts = array('shifts-upcoming.js');
 
 // ---- Tuần đang xem: ?week=YYYY-MM-DD (về thứ 2 của tuần đó) ----
 $weekParam = (string) ($_POST['week'] ?? $_GET['week'] ?? '');
@@ -90,4 +90,7 @@ if ($shiftPanel) {
 }
 
 // Bảng "Danh sách ca sắp tới": đọc trực tiếp từ MySQL (JOIN shifts với staff), PHP in bằng foreach.
-$upcomingShifts = admin_shifts_upcoming(date('Y-m-d'), 50);
+// Danh sách ca sắp tới: phân trang 10 ca/trang, trang nằm trên URL (?page=shifts&p=2)
+$upcomingFrom = date('Y-m-d');
+$upcomingPager = paginate(admin_shifts_upcoming_count($upcomingFrom), request_page('p'), 10);
+$upcomingShifts = admin_shifts_upcoming($upcomingFrom, $upcomingPager['perPage'], $upcomingPager['offset']);

@@ -103,40 +103,22 @@
             <p class="sch-note">Lịch lưu ngay khi bấm Lưu. Nhân viên (Phục vụ) xem ở mục "Lịch ca làm". Lương chỉ tính cho giờ làm nằm trong ca đã xếp.</p>
 
             <!-- DANH SÁCH CA SẮP TỚI (PHP + MySQL) -->
-            <section class="shf-upcoming">
+            <section class="shf-upcoming" id="upcomingBox">
                 <h3>Danh sách ca sắp tới</h3>
-                <p class="sch-note">Từ hôm nay trở đi, tối đa 50 ca đọc trực tiếp từ cơ sở dữ liệu. Danh sách tự cập nhật sau mỗi lần lưu ca.</p>
+                <p class="sch-note">Từ hôm nay trở đi có <span id="upcomingTotal"><?= (int) $upcomingPager['total'] ?></span> ca, hiển thị 10 ca mỗi trang, đọc trực tiếp từ cơ sở dữ liệu. Danh sách tự cập nhật sau mỗi lần lưu ca.</p>
                 <div class="data-table-wrapper">
                     <table class="data-table">
                         <thead>
                             <tr>
-                                <th>Ngày</th>
-                                <th>Nhân viên</th>
-                                <th>Vai trò</th>
-                                <th>Giờ làm</th>
-                                <th>Thời lượng</th>
-                                <th>Chấm công</th>
+                                <th>Ngày</th><th>Nhân viên</th><th>Vai trò</th>
+                                <th>Giờ làm</th><th>Thời lượng</th><th>Chấm công</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            <?php foreach ($upcomingShifts as $shift): ?>
-                                <tr>
-                                    <td><?= e(date('d/m/Y', strtotime($shift['shift_date']))) ?></td>
-                                    <td><b><?= e($shift['full_name']) ?></b></td>
-                                    <td><?= e(role_label($shift['role'])) ?></td>
-                                    <td><?= e(schedule_clock($shift['start_time'])) ?> – <?= e(schedule_clock($shift['end_time'])) ?></td>
-                                    <td><?= e(schedule_duration(schedule_minutes($shift['start_time'], $shift['end_time']))) ?></td>
-                                    <td><?= (int) $shift['registered'] ? 'Đã vào ca' : 'Chưa vào ca' ?></td>
-                                </tr>
-                            <?php endforeach; ?>
-                            <?php if (!$upcomingShifts): ?>
-                                <tr><td colspan="6"><div class="empty-table-state">Chưa có ca nào từ hôm nay trở đi.</div></td></tr>
-                            <?php endif; ?>
-                        </tbody>
+                        <tbody id="upcomingBody"><?= shifts_upcoming_rows_html($upcomingShifts) ?></tbody>
                     </table>
                 </div>
+                <div id="upcomingPager"><?= render_pagination($upcomingPager['page'], $upcomingPager['pages'], array_filter(array('page' => 'shifts', 'week' => $weekStart))) ?></div>
                 <p class="sch-note"><a href="<?= e(admin_url('tablemanage')) ?>">Quản lý bàn &rarr;</a></p>
             </section>
-
         </div>
     </main>
