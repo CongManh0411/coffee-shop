@@ -1,5 +1,6 @@
 <?php
 // admin/pages/login/action.php — trang "Đăng nhập" (Admin)
+require_once __DIR__ . '/../../../functions.php';
 // Đăng nhập và đăng xuất là form POST (có CSRF) do PHP xử lý rồi redirect, không còn JavaScript gọi API.
 $title = 'Đăng nhập';
 $bodyClass = 'login-page';

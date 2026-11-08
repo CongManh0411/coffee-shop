@@ -81,6 +81,7 @@
                 </div>
  
                 <form class="add-item-form" method="POST" enctype="multipart/form-data" action="<?= e(admin_url('menu')) ?>">
+                    <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
                     <input type="hidden" name="save_menu_item" value="1">
                     <input type="hidden" id="editItemId" name="id" value="">
                     <div class="form-row">
