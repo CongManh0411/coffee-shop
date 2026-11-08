@@ -1,5 +1,6 @@
 <?php
 // admin/pages/settings/action.php — Khai báo và xử lý trang Cài đặt Website & Quản lý Logo
+require_once __DIR__ . '/../../../functions.php';
 require_once __DIR__ . '/../../../helpers/upload.php';
 $title = 'Cài đặt Website';
 $bodyClass = 'admin-settings';
