@@ -2,7 +2,9 @@
 -- demo_data.sql - DU LIEU DEMO CHO TOAN BO CHUC NANG CUA WEB
 -- ---------------------------------------------------------------------
 -- CACH DUNG: nhap database/coffee.sql truoc, roi nhap file nay (phpMyAdmin > tab SQL / Import).
--- CHI CHAY TREN DATABASE MOI (chua co nhan vien / don hang): file dung ID co dinh.
+-- CHI CHAY TREN DATABASE CHUA CO DON HANG: file dung ID co dinh (nhan vien 1-9, don hang, ca...), chay lan 2 se bao trung khoa.
+-- Neu da co tai khoan quan ly tao bang create_manager.php (staff_id 1) thi tai khoan 'quanly' bi bo qua
+-- (INSERT IGNORE): dang nhap bang tai khoan quan ly cua ban; cac tai khoan demo con lai van duoc tao.
 -- Moc thoi gian tinh theo ngay gio luc nhap (14 ngay lich su + hom nay + 2 tuan toi),
 -- nen du lieu luon "moi" so voi luc ban chay.
 --
@@ -14,16 +16,16 @@
 SET NAMES utf8mb4;
 
 -- 1. Nhan vien
-INSERT INTO staff (staff_id, full_name, username, password, role, phone, email, gender, birth_date, status) VALUES
-(1, 'Nguyễn Minh Quân', 'quanly', '$2y$10$8z26r6af.o0KrulaIliU/uD64tsM3Q7WmeowOcLD2BzAXel/yqCNK', 'manager', '0901000001', 'quan.nguyen@gocnho.vn', 'Nam', '1990-04-12', 1),
-(2, 'Trần Thu Hà', 'thungan1', '$2y$10$8z26r6af.o0KrulaIliU/uD64tsM3Q7WmeowOcLD2BzAXel/yqCNK', 'cashier', '0901000002', 'ha.tran@gocnho.vn', 'Nữ', '1998-09-03', 1),
-(3, 'Lê Bảo Ngọc', 'thungan2', '$2y$10$8z26r6af.o0KrulaIliU/uD64tsM3Q7WmeowOcLD2BzAXel/yqCNK', 'cashier', '0901000003', 'ngoc.le@gocnho.vn', 'Nữ', '2000-01-21', 1),
-(4, 'Phạm Gia Huy', 'phucvu1', '$2y$10$8z26r6af.o0KrulaIliU/uD64tsM3Q7WmeowOcLD2BzAXel/yqCNK', 'waiter', '0901000004', 'huy.pham@gocnho.vn', 'Nam', '2001-06-30', 1),
-(5, 'Võ Mai Anh', 'phucvu2', '$2y$10$8z26r6af.o0KrulaIliU/uD64tsM3Q7WmeowOcLD2BzAXel/yqCNK', 'waiter', '0901000005', 'anh.vo@gocnho.vn', 'Nữ', '2002-11-15', 1),
-(6, 'Hoàng Đức Thịnh', 'phucvu3', '$2y$10$8z26r6af.o0KrulaIliU/uD64tsM3Q7WmeowOcLD2BzAXel/yqCNK', 'waiter', '0901000006', 'thinh.hoang@gocnho.vn', 'Nam', '1999-02-08', 1),
-(7, 'Đỗ Văn Khánh', 'bep1', '$2y$10$8z26r6af.o0KrulaIliU/uD64tsM3Q7WmeowOcLD2BzAXel/yqCNK', 'kitchen', '0901000007', 'khanh.do@gocnho.vn', 'Nam', '1995-07-19', 1),
-(8, 'Bùi Thị Lan', 'bep2', '$2y$10$8z26r6af.o0KrulaIliU/uD64tsM3Q7WmeowOcLD2BzAXel/yqCNK', 'kitchen', '0901000008', 'lan.bui@gocnho.vn', 'Nữ', '1997-12-25', 1),
-(9, 'Ngô Quốc Bảo', 'nghiviec', '$2y$10$8z26r6af.o0KrulaIliU/uD64tsM3Q7WmeowOcLD2BzAXel/yqCNK', 'waiter', '0901000009', NULL, 'Nam', '2000-05-05', 0);
+INSERT IGNORE INTO staff (staff_id, full_name, username, password, role, phone, email, gender, birth_date, status) VALUES
+(1, 'Nguyễn Minh Quân', 'quanly', '$2y$10$xYlnWN1.sWZf0WmBE7MXMOxomJbQpVnfLjf5OWRVH6WTRuc5N8oWi', 'manager', '0901000001', 'quan.nguyen@gocnho.vn', 'Nam', '1990-04-12', 1),
+(2, 'Trần Thu Hà', 'thungan1', '$2y$10$xYlnWN1.sWZf0WmBE7MXMOxomJbQpVnfLjf5OWRVH6WTRuc5N8oWi', 'cashier', '0901000002', 'ha.tran@gocnho.vn', 'Nữ', '1998-09-03', 1),
+(3, 'Lê Bảo Ngọc', 'thungan2', '$2y$10$xYlnWN1.sWZf0WmBE7MXMOxomJbQpVnfLjf5OWRVH6WTRuc5N8oWi', 'cashier', '0901000003', 'ngoc.le@gocnho.vn', 'Nữ', '2000-01-21', 1),
+(4, 'Phạm Gia Huy', 'phucvu1', '$2y$10$xYlnWN1.sWZf0WmBE7MXMOxomJbQpVnfLjf5OWRVH6WTRuc5N8oWi', 'waiter', '0901000004', 'huy.pham@gocnho.vn', 'Nam', '2001-06-30', 1),
+(5, 'Võ Mai Anh', 'phucvu2', '$2y$10$xYlnWN1.sWZf0WmBE7MXMOxomJbQpVnfLjf5OWRVH6WTRuc5N8oWi', 'waiter', '0901000005', 'anh.vo@gocnho.vn', 'Nữ', '2002-11-15', 1),
+(6, 'Hoàng Đức Thịnh', 'phucvu3', '$2y$10$xYlnWN1.sWZf0WmBE7MXMOxomJbQpVnfLjf5OWRVH6WTRuc5N8oWi', 'waiter', '0901000006', 'thinh.hoang@gocnho.vn', 'Nam', '1999-02-08', 1),
+(7, 'Đỗ Văn Khánh', 'bep1', '$2y$10$xYlnWN1.sWZf0WmBE7MXMOxomJbQpVnfLjf5OWRVH6WTRuc5N8oWi', 'kitchen', '0901000007', 'khanh.do@gocnho.vn', 'Nam', '1995-07-19', 1),
+(8, 'Bùi Thị Lan', 'bep2', '$2y$10$xYlnWN1.sWZf0WmBE7MXMOxomJbQpVnfLjf5OWRVH6WTRuc5N8oWi', 'kitchen', '0901000008', 'lan.bui@gocnho.vn', 'Nữ', '1997-12-25', 1),
+(9, 'Ngô Quốc Bảo', 'nghiviec', '$2y$10$xYlnWN1.sWZf0WmBE7MXMOxomJbQpVnfLjf5OWRVH6WTRuc5N8oWi', 'waiter', '0901000009', NULL, 'Nam', '2000-05-05', 0);
 
 -- 2. Thuc don bo sung (mon 1-11 da co trong coffee.sql)
 INSERT INTO menu_items (item_id, category_id, item_name, description, price, is_hidden, is_sold_out) VALUES
