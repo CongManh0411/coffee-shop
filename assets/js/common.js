@@ -54,3 +54,15 @@ function initMobileNav() {
 }
  
 initMobileNav();
+
+// Nút Hiện/Ẩn mật khẩu (chỉ đổi kiểu ô nhập trên trình duyệt, không gọi API)
+document.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-toggle-password]');
+    if (!btn) return;
+    const input = document.getElementById(btn.getAttribute('data-toggle-password'));
+    if (!input) return;
+    const show = input.type === 'password';
+    input.type = show ? 'text' : 'password';
+    btn.textContent = show ? 'Ẩn' : 'Hiện';
+    btn.setAttribute('aria-pressed', show ? 'true' : 'false');
+});
