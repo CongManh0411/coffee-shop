@@ -1,7 +1,19 @@
 <?php
 // Ca làm: trả về đúng dạng giao diện đang dùng {id, staffId, date:'YYYY-MM-DD', start:'HH:MM', end:'HH:MM'}
-define('SHIFT_OPEN', 6 * 60 + 30);
-define('SHIFT_CLOSE', 22 * 60);
+define('SHIFT_OPEN', 6 * 60 + 30);   // mốc tối thiểu: ca sáng 06:30 (chuẩn bị trước giờ mở cửa)
+define('SHIFT_CLOSE', 22 * 60);      // mốc tối thiểu: ca tối đến 22:00
+
+// Khung giờ cho phép xếp ca = từ sớm nhất đến muộn nhất giữa giờ mở cửa (ngày thường, cuối tuần trong Cài đặt)
+// và hai mốc mặc định ở trên, nên ca đăng ký sẵn 06:30-14:00 và 17:00-22:00 luôn hợp lệ.
+function shifts_window()
+{
+    $weekday = shop_hours_for_date('2026-01-05'); // một ngày thứ 2 bất kỳ
+    $weekend = shop_hours_for_date('2026-01-10'); // một ngày thứ 7 bất kỳ
+    return array(
+        min(SHIFT_OPEN, $weekday[0], $weekend[0]),
+        max(SHIFT_CLOSE, $weekday[1], $weekend[1]),
+    );
+}
 
 function shifts_to_min($t)
 {
@@ -38,7 +50,8 @@ function shifts_validate($staffId, $date, $start, $end, $exceptId = 0)
     $s = shifts_to_min($start);
     $e = shifts_to_min($end);
     if ($e <= $s) return 'Giờ kết thúc phải sau giờ bắt đầu.';
-    if ($s < SHIFT_OPEN || $e > SHIFT_CLOSE) return 'Ca phải nằm trong giờ mở cửa 6h30 – 22h.';
+    list($winOpen, $winClose) = shifts_window();
+    if ($s < $winOpen || $e > $winClose) return 'Ca phải nằm trong giờ mở cửa ' . minutes_label($winOpen) . ' – ' . minutes_label($winClose) . '.';
     $rows = db()->fetchAll(
         "SELECT shift_id, start_time, end_time FROM shifts WHERE staff_id = ? AND shift_date = ? AND shift_id <> ?",
         array($staffId, $date, (int) $exceptId)

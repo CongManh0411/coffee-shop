@@ -93,6 +93,46 @@ function brand_text($text)
     return str_replace(array('{brand}', '{BRAND}'), array(brand_name(), mb_strtoupper(brand_name(), 'UTF-8')), (string) $text);
 }
 
+// Thuộc tính chống sửa file từ CDN (SRI) cho stylesheet ngoài; URL không có trong danh sách thì không thêm gì.
+function css_external_attrs($url)
+{
+    $sri = array(
+        'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css'
+            => 'sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==',
+    );
+    if (!isset($sri[$url])) return '';
+    return ' integrity="' . e($sri[$url]) . '" crossorigin="anonymous" referrerpolicy="no-referrer"';
+}
+
+// Đọc chuỗi giờ như "07:00 – 22:30" (hoặc 7h00-22h30) thành array(phút mở, phút đóng); sai định dạng thì trả về $fallback.
+function shop_hours_parse($text, $fallback)
+{
+    if (preg_match('/(\d{1,2})\s*[:h]\s*(\d{2})\s*[–—-]\s*(\d{1,2})\s*[:h]\s*(\d{2})/u', (string) $text, $m)) {
+        $open = (int) $m[1] * 60 + (int) $m[2];
+        $close = (int) $m[3] * 60 + (int) $m[4];
+        if ((int) $m[1] <= 23 && (int) $m[3] <= 24 && $open < $close) return array($open, $close);
+    }
+    return $fallback;
+}
+
+// Giờ mở cửa của một ngày (YYYY-MM-DD): thứ 7, CN dùng giờ cuối tuần, còn lại dùng giờ ngày thường (Cài đặt).
+function shop_hours_for_date($ymd)
+{
+    $ts = strtotime((string) $ymd);
+    $weekend = $ts !== false && (int) date('N', $ts) >= 6;
+    return $weekend
+        ? shop_hours_parse(setting('shop_hours_weekend', '06:30 – 23:00'), array(6 * 60 + 30, 23 * 60))
+        : shop_hours_parse(setting('shop_hours', '07:00 – 22:30'), array(7 * 60, 22 * 60 + 30));
+}
+
+// 390 => "6h30", 1380 => "23h"
+function minutes_label($min)
+{
+    $h = intdiv((int) $min, 60);
+    $m = (int) $min % 60;
+    return $h . 'h' . ($m > 0 ? sprintf('%02d', $m) : '');
+}
+
 // Tên đầy đủ: "Góc Nhỏ Coffee & Tea"
 function brand_full()
 {

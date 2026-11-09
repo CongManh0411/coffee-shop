@@ -23,7 +23,7 @@ $rootPrefix = !empty($isAdmin) ? '../' : './';
     <script>window.SERVER_USER = <?= json_encode(isset($user) ? $user : null, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;</script>
     <link rel="stylesheet" href="<?= e($assetPrefix) ?>css/style.css">
 <?php foreach ($css as $cssFile): ?>
-    <link rel="stylesheet" href="<?= e(strpos($cssFile, 'http') === 0 ? $cssFile : $assetPrefix . 'css/' . $cssFile) ?>">
+    <link rel="stylesheet" href="<?= e(strpos($cssFile, 'http') === 0 ? $cssFile : $assetPrefix . 'css/' . $cssFile) ?>"<?= strpos($cssFile, 'http') === 0 ? css_external_attrs($cssFile) : '' ?>>
 <?php endforeach; ?>
 </head>
 <body<?= $bodyClass !== '' ? ' class="' . e($bodyClass) . '"' : '' ?> data-page="<?= e($page) ?>">

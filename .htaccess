@@ -1,5 +1,4 @@
 RewriteEngine On
-RewriteBase /coffee-shop/
 Options -Indexes
 
 # Keep source control, database dumps, configuration, and source-only files private.
