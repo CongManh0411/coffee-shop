@@ -43,7 +43,8 @@
         <div data-ajax-region="public-menu">
         <div id="publicMenuGrid" class="public-menu-grid">
             <?php foreach ($pmItems as $item): ?>
-                <article class="public-menu-card"><div class="public-menu-photo"><img src="<?= e(menu_item_image($item)) ?>" alt="<?= e($item['item_name']) ?>" loading="lazy"><span><?= e($item['category_name']) ?></span></div><div class="public-menu-card-body"><div><h3><?= e($item['item_name']) ?></h3><p><?= e($item['description'] ?? '') ?></p></div><strong><?= e(money($item['price'])) ?></strong></div></article>
+                <?php $pmDetailUrl = 'index.php?page=menu-detail&id=' . (int) $item['item_id']; ?>
+                <article class="public-menu-card"><a class="public-menu-photo-link" href="<?= e($pmDetailUrl) ?>" aria-label="Xem chi tiết <?= e($item['item_name']) ?>"><div class="public-menu-photo"><img src="<?= e(menu_item_image($item)) ?>" alt="<?= e($item['item_name']) ?>" loading="lazy"><span><?= e($item['category_name']) ?></span></div></a><div class="public-menu-card-body"><div><h3><a href="<?= e($pmDetailUrl) ?>"><?= e($item['item_name']) ?></a></h3><p><?= e($item['description'] ?? '') ?></p></div><strong><?= e(money($item['price'])) ?></strong></div></article>
             <?php endforeach; ?>
         </div>
         <div id="menuPagination"><?= render_pagination($pmPager['page'], $pmPager['pages'], array('page' => 'public-menu') + ($pmCategoryName !== '' ? array('category' => $pmCategoryName) : array()) + ($pmSearch !== '' ? array('q' => $pmSearch) : array())) ?></div>
