@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/admin/includes/bootstrap.php';
+require_once __DIR__ . '/functions.php';
 
 $routes = array(
     'home' => 'home/index.php',
