@@ -6,6 +6,21 @@ const STAFF_ROLES = array(
     'Thu ngân' => 'cashier',
 );
 
+// Đổi dòng DB -> dạng frontend đang dùng (fullName, role tiếng Việt...)
+function staff_format($r)
+{
+    return array(
+        'id'        => (int) $r['staff_id'],
+        'fullName'  => $r['full_name'],
+        'username'  => $r['username'],
+        'role'      => array_search($r['role'], STAFF_ROLES, true),
+        'phone'     => $r['phone'] ?? '',
+        'email'     => $r['email'] ?? '',
+        'gender'    => $r['gender'] ?? '',
+        'birthDate' => $r['birth_date'] ?? '',
+    );
+}
+
 function staff_list()
 {
     $rows = db()->fetchAll("SELECT * FROM staff WHERE status = 1 ORDER BY staff_id");
