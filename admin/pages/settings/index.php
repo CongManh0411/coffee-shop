@@ -87,8 +87,8 @@
                     </div>
 
                     <div class="settings-form-group">
-                        <label for="shop_email">Email liên hệ</label>
-                        <input type="email" id="shop_email" name="shop_email" value="<?= e(setting('shop_email', 'contact@gocnhocoffee.vn')) ?>">
+                        <label for="shop_email">Email liên hệ <span class="settings-field-hint" style="display:inline">(để trống thì ẩn)</span></label>
+                        <input type="email" id="shop_email" name="shop_email" value="<?= e(setting('shop_email', '')) ?>">
                     </div>
 
                     <div class="settings-form-group">
@@ -117,8 +117,8 @@
                 <p class="settings-card-subtitle">Phần đầu tiên khách nhìn thấy khi mở trang chủ.</p>
 
                 <div class="settings-form-group">
-                    <label for="hero_badge">Huy hiệu nhỏ mở đầu (Badge)</label>
-                    <input type="text" id="hero_badge" name="hero_badge" value="<?= e(setting('hero_badge', 'CHÀO MỪNG BẠN ĐẾN VỚI GÓC NHỎ')) ?>">
+                    <label for="hero_badge">Huy hiệu nhỏ mở đầu (Badge)<span class="settings-field-hint" style="display:inline"> (dùng {BRAND} để tự thay bằng tên quán viết hoa)</span></label>
+                    <input type="text" id="hero_badge" name="hero_badge" value="<?= e(setting('hero_badge', 'CHÀO MỪNG BẠN ĐẾN VỚI {BRAND}')) ?>">
                 </div>
 
                 <div class="settings-grid-2">
@@ -134,8 +134,8 @@
                 </div>
 
                 <div class="settings-form-group">
-                    <label for="hero_lede">Đoạn văn giới thiệu ngắn</label>
-                    <textarea id="hero_lede" name="hero_lede" rows="3"><?= e(setting('hero_lede', 'Một chiếc bàn thân quen ngập tràn ánh nắng, tách cà phê rang mộc chuẩn gu và những khoảng thời gian thư thái dành riêng cho bạn. Ghé Góc Nhỏ để tìm lại nhịp thở chậm giữa phố thị tất bật.')) ?></textarea>
+                    <label for="hero_lede">Đoạn văn giới thiệu ngắn<span class="settings-field-hint" style="display:inline"> (dùng {brand} để tự thay bằng tên quán)</span></label>
+                    <textarea id="hero_lede" name="hero_lede" rows="3"><?= e(setting('hero_lede', 'Một chiếc bàn thân quen ngập tràn ánh nắng, tách cà phê rang mộc chuẩn gu và những khoảng thời gian thư thái dành riêng cho bạn. Ghé {brand} để tìm lại nhịp thở chậm giữa phố thị tất bật.')) ?></textarea>
                 </div>
 
                 <div class="settings-grid-2">
@@ -193,8 +193,8 @@
                 </div>
 
                 <div class="settings-form-group">
-                    <label for="story_desc">Đoạn văn câu chuyện quán</label>
-                    <textarea id="story_desc" name="story_desc" rows="4"><?= e(setting('story_desc', 'Góc Nhỏ được xây dựng từ niềm đam mê với những hạt cà phê Việt Nam và khát khao tạo ra một không gian dừng chân ấm áp. Từng góc bàn, chậu cây cho đến từng giai điệu lofi êm dịu đều được chăm chút kỹ lưỡng để mang lại cảm giác thân quen như trở về nhà.')) ?></textarea>
+                    <label for="story_desc">Đoạn văn câu chuyện quán<span class="settings-field-hint" style="display:inline"> (dùng {brand} để tự thay bằng tên quán)</span></label>
+                    <textarea id="story_desc" name="story_desc" rows="4"><?= e(setting('story_desc', '{brand} được xây dựng từ niềm đam mê với những hạt cà phê Việt Nam và khát khao tạo ra một không gian dừng chân ấm áp. Từng góc bàn, chậu cây cho đến từng giai điệu lofi êm dịu đều được chăm chút kỹ lưỡng để mang lại cảm giác thân quen như trở về nhà.')) ?></textarea>
                 </div>
             </div>
 
@@ -309,12 +309,12 @@
                         <input type="text" id="shop_holiday_note" name="shop_holiday_note" maxlength="120" value="<?= e(setting('shop_holiday_note', 'Phục vụ xuyên Lễ & Tết')) ?>">
                     </div>
                     <div class="settings-form-group">
-                        <label for="shop_social_handle">Tên tài khoản mạng xã hội</label>
-                        <input type="text" id="shop_social_handle" name="shop_social_handle" maxlength="60" value="<?= e(setting('shop_social_handle', '@gocnhocoffee')) ?>">
+                        <label for="shop_social_handle">Tên tài khoản mạng xã hội <span class="settings-field-hint" style="display:inline">(để trống thì ẩn)</span></label>
+                        <input type="text" id="shop_social_handle" name="shop_social_handle" maxlength="60" value="<?= e(setting('shop_social_handle', '')) ?>">
                     </div>
                 </div>
                 <div class="settings-form-group" style="margin-top:14px;">
-                    <label for="footer_desc">Đoạn giới thiệu ở chân trang</label>
+                    <label for="footer_desc">Đoạn giới thiệu ở chân trang<span class="settings-field-hint" style="display:inline"> (dùng {brand} để tự thay bằng tên quán)</span></label>
                     <textarea id="footer_desc" name="footer_desc" rows="2" maxlength="300"><?= e(setting('footer_desc', 'Một góc nhỏ an yên giữa phố thị tất bật. Nơi bạn tìm thấy ly cà phê chuẩn vị, bản nhạc êm dịu và những cuộc hẹn đáng nhớ.')) ?></textarea>
                 </div>
                 <div class="settings-grid-2" style="margin-top:14px;">

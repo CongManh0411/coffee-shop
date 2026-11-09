@@ -36,7 +36,7 @@ try {
 } catch (Throwable $e) {
     $dbMenuItems = array();
 }
-$title = 'Góc Nhỏ Coffee & Tea | Cà phê rang mộc & Không gian thư giãn';
+$title = brand_full() . ' | Cà phê rang mộc & Không gian thư giãn';
 $bodyClass = 'public-home';
 $css = array('home.css');
 $scripts = array('home.js');

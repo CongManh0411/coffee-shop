@@ -87,6 +87,12 @@ function brand_subtitle()
     return setting('brand_subtitle', 'Coffee & Tea');
 }
 
+// Thay {brand} / {BRAND} trong nội dung cài đặt bằng tên quán hiện tại (đổi tên quán thì chữ tự đổi theo)
+function brand_text($text)
+{
+    return str_replace(array('{brand}', '{BRAND}'), array(brand_name(), mb_strtoupper(brand_name(), 'UTF-8')), (string) $text);
+}
+
 // Tên đầy đủ: "Góc Nhỏ Coffee & Tea"
 function brand_full()
 {
