@@ -160,7 +160,7 @@ $rangeTo = DateTime::createFromFormat('!Y-m-d', $weekEnd);
                 <?php endforeach; ?>
             </div>
 
-            <p class="sch-note">Giờ làm việc của quán: 6h30 – 22h. Lịch do quản lý sắp xếp, nhân viên chỉ xem. Ô để trống là không có ca. Trạng thái ca lấy từ chấm công của Phục vụ.</p>
+            <p class="sch-note">Giờ làm việc của quán: <?= e(minutes_label(shifts_window()[0])) ?> – <?= e(minutes_label(shifts_window()[1])) ?>. Lịch do quản lý sắp xếp, nhân viên chỉ xem. Ô để trống là không có ca. Trạng thái ca lấy từ chấm công của Phục vụ.</p>
             <p class="sch-note"><a href="<?= e(url('tables')) ?>">&larr; Quay lại sơ đồ bàn</a></p>
         </div>
     </main>

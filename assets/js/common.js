@@ -11,8 +11,10 @@ function initMobileNav() {
         <button type="button" class="sidebar-toggle-btn" id="sidebarToggleBtn" aria-label="Mở menu">
             <i class="ri-menu-line"></i>
         </button>
-        <span class="mobile-topbar-title">${document.title}</span>
+        <span class="mobile-topbar-title"></span>
     `;
+    // Tiêu đề trang đưa vào bằng textContent để ký tự HTML trong tên quán / tên món không bị thực thi
+    topbar.querySelector('.mobile-topbar-title').textContent = document.title;
     main.prepend(topbar);
  
     // Lớp phủ tối, bấm vào để đóng sidebar
