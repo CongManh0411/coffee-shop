@@ -7,6 +7,23 @@ $shopEmail = setting('shop_email', 'contact@gocnhocoffee.vn');
 $shopAddress = setting('shop_address', '123 Đường Cà Phê, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh');
 $shopHours = setting('shop_hours', '07:00 – 22:30');
 $shopHoursWeekend = setting('shop_hours_weekend', '06:30 – 23:00');
+$shopLogo = shop_logo();
+$socialLinks = array(
+    array('Facebook', 'f', setting('social_facebook', '')),
+    array('Instagram', 'ig', setting('social_instagram', '')),
+    array('TikTok', 'tk', setting('social_tiktok', '')),
+);
+// Chỉ nhận liên kết http(s) để tránh javascript: do nhập sai
+function home_safe_url($url) {
+    return preg_match('#^https?://#i', (string) $url) ? $url : '';
+}
+// Bốn ô nổi bật ở phần câu chuyện: icon cố định, tiêu đề và mô tả sửa được trong Cài đặt
+$storyHighlights = array(
+    array('✨', setting('story_hl1_title', '12+ Món nước & Bánh'), setting('story_hl1_desc', 'Pha chế chuẩn vị mỗi ngày')),
+    array('⚡', setting('story_hl2_title', 'Wifi & Ổ cắm đầy đủ'), setting('story_hl2_desc', 'Tiện lợi cho việc học & làm việc')),
+    array('🪴', setting('story_hl3_title', '3 Không gian trải nghiệm'), setting('story_hl3_desc', 'Sân vườn, máy lạnh, góc sofa')),
+    array('💛', setting('story_hl4_title', 'Phục vụ tận tâm'), setting('story_hl4_desc', 'Luôn đón tiếp bằng nụ cười')),
+);
 
 // Danh sách món được tải từ MySQL trong action.php
 function get_cat_filter($catName) {
@@ -31,7 +48,7 @@ function get_item_badge($index, $catFilter, $price) {
 <header class="site-header">
     <a class="site-brand" href="index.php?page=home" aria-label="<?= e($brandName) ?>, trang chủ">
         <div class="brand-avatar-wrap">
-            <img src="assets/images/images.jpg" alt="Logo <?= e($brandName) ?>">
+            <img src="<?= e($shopLogo) ?>" alt="Logo <?= e($brandName) ?>">
         </div>
         <div class="brand-text">
             <span class="brand-title"><?= e($brandName) ?></span>
@@ -69,7 +86,7 @@ function get_item_badge($index, $catFilter, $price) {
     <div class="mobile-drawer-header">
         <a class="site-brand" href="index.php?page=home">
             <div class="brand-avatar-wrap">
-                <img src="assets/images/images.jpg" alt="Logo <?= e($brandName) ?>">
+                <img src="<?= e($shopLogo) ?>" alt="Logo <?= e($brandName) ?>">
             </div>
             <div class="brand-text">
                 <span class="brand-title"><?= e($brandName) ?></span>
@@ -103,7 +120,7 @@ function get_item_badge($index, $catFilter, $price) {
                 <span class="sparkle">✨</span>
                 <span><?= e(setting('hero_badge', 'CHÀO MỪNG BẠN ĐẾN VỚI GÓC NHỎ')) ?></span>
             </div>
-            <p class="eyebrow">COFFEE · TEA · A LITTLE PAUSE</p>
+            <p class="eyebrow"><?= e(setting('hero_eyebrow', 'COFFEE · TEA · A LITTLE PAUSE')) ?></p>
             <h1><?= e(setting('hero_title', 'Cà phê thơm đượm vị.')) ?><br><em><?= e(setting('hero_subtitle', 'Chuyện trò thật an yên.')) ?></em></h1>
             <p class="landing-lede"><?= nl2br(e(setting('hero_lede', 'Một chiếc bàn thân quen ngập tràn ánh nắng, tách cà phê rang mộc chuẩn gu và những khoảng thời gian thư thái dành riêng cho bạn. Ghé Góc Nhỏ để tìm lại nhịp thở chậm giữa phố thị tất bật.'))) ?></p>
             
@@ -126,8 +143,8 @@ function get_item_badge($index, $catFilter, $price) {
             <div class="floating-card-rating">
                 <span class="rating-stars">★★★★★</span>
                 <div class="rating-text">
-                    <b>Đậm vị &amp; Cực Chill</b>
-                    <small>Hơn 1.200+ lượt khách yêu thích</small>
+                    <b><?= e(setting('hero_rating_title', 'Đậm vị & Cực Chill')) ?></b>
+                    <small><?= e(setting('hero_rating_note', 'Hơn 1.200+ lượt khách yêu thích')) ?></small>
                 </div>
             </div>
 
@@ -173,34 +190,15 @@ function get_item_badge($index, $catFilter, $price) {
             <p><?= nl2br(e(setting('story_desc', 'Góc Nhỏ được xây dựng từ niềm đam mê với những hạt cà phê Việt Nam và khát khao tạo ra một không gian dừng chân ấm áp. Từng góc bàn, chậu cây cho đến từng giai điệu lofi êm dịu đều được chăm chút kỹ lưỡng để mang lại cảm giác thân quen như trở về nhà.'))) ?></p>
 
             <div class="story-highlights-grid">
+                <?php foreach ($storyHighlights as $hl): ?>
                 <div class="story-highlight-box">
-                    <span class="box-icon" aria-hidden="true">✨</span>
+                    <span class="box-icon" aria-hidden="true"><?= e($hl[0]) ?></span>
                     <div>
-                        <b>12+ Món nước &amp; Bánh</b>
-                        <small>Pha chế chuẩn vị mỗi ngày</small>
+                        <b><?= e($hl[1]) ?></b>
+                        <small><?= e($hl[2]) ?></small>
                     </div>
                 </div>
-                <div class="story-highlight-box">
-                    <span class="box-icon" aria-hidden="true">⚡</span>
-                    <div>
-                        <b>Wifi &amp; Ổ cắm đầy đủ</b>
-                        <small>Tiện lợi cho việc học &amp; làm việc</small>
-                    </div>
-                </div>
-                <div class="story-highlight-box">
-                    <span class="box-icon" aria-hidden="true">🪴</span>
-                    <div>
-                        <b>3 Không gian trải nghiệm</b>
-                        <small>Sân vườn, máy lạnh, góc sofa</small>
-                    </div>
-                </div>
-                <div class="story-highlight-box">
-                    <span class="box-icon" aria-hidden="true">💛</span>
-                    <div>
-                        <b>Phục vụ tận tâm</b>
-                        <small>Luôn đón tiếp bằng nụ cười</small>
-                    </div>
-                </div>
+                <?php endforeach; ?>
             </div>
 
             <div class="story-actions">
@@ -441,7 +439,7 @@ function get_item_badge($index, $catFilter, $price) {
                 <div class="contact-card-icon" aria-hidden="true">📍</div>
                 <h4>Địa chỉ quán</h4>
                 <p><?= e($shopAddress) ?></p>
-                <p style="margin-top: 8px; font-size: 11.5px; color: var(--c-primary);">(Có chỗ đậu xe máy &amp; ô tô miễn phí)</p>
+                <p style="margin-top: 8px; font-size: 11.5px; color: var(--c-primary);"><?= e(setting('shop_parking_note', '(Có chỗ đậu xe máy & ô tô miễn phí)')) ?></p>
             </div>
 
             <div class="contact-card">
@@ -449,7 +447,7 @@ function get_item_badge($index, $catFilter, $price) {
                 <h4>Giờ mở cửa</h4>
                 <p>Thứ 2 – Thứ 6: <strong><?= e($shopHours) ?></strong></p>
                 <p style="margin-top: 4px; font-size: 12.5px;">Thứ 7 – CN: <strong><?= e($shopHoursWeekend) ?></strong></p>
-                <p style="margin-top: 8px; font-size: 11.5px; color: var(--c-primary);">Phục vụ xuyên Lễ &amp; Tết</p>
+                <p style="margin-top: 8px; font-size: 11.5px; color: var(--c-primary);"><?= e(setting('shop_holiday_note', 'Phục vụ xuyên Lễ & Tết')) ?></p>
             </div>
 
             <div class="contact-card">
@@ -463,7 +461,7 @@ function get_item_badge($index, $catFilter, $price) {
                 <div class="contact-card-icon" aria-hidden="true">✉️</div>
                 <h4>Email &amp; Mạng xã hội</h4>
                 <p><a href="mailto:<?= e($shopEmail) ?>"><?= e($shopEmail) ?></a></p>
-                <p style="margin-top: 8px; font-size: 11.5px; color: var(--c-text-light);">Theo dõi @gocnhocoffee</p>
+                <p style="margin-top: 8px; font-size: 11.5px; color: var(--c-text-light);">Theo dõi <?= e(setting('shop_social_handle', '@gocnhocoffee')) ?></p>
             </div>
         </div>
     </section>
@@ -488,12 +486,15 @@ function get_item_badge($index, $catFilter, $price) {
                 <?= e($brandName) ?>
                 <small><?= e($brandTagline) ?></small>
             </a>
-            <p class="footer-desc">Một góc nhỏ an yên giữa phố thị tất bật. Nơi bạn tìm thấy ly cà phê chuẩn vị, bản nhạc êm dịu và những cuộc hẹn đáng nhớ.</p>
+            <p class="footer-desc"><?= e(setting('footer_desc', 'Một góc nhỏ an yên giữa phố thị tất bật. Nơi bạn tìm thấy ly cà phê chuẩn vị, bản nhạc êm dịu và những cuộc hẹn đáng nhớ.')) ?></p>
+            <?php $hasSocial = false; foreach ($socialLinks as $sl) { if (home_safe_url($sl[2]) !== '') { $hasSocial = true; } } ?>
+            <?php if ($hasSocial): ?>
             <div class="footer-socials">
-                <a class="social-btn" href="https://facebook.com" target="_blank" rel="noopener" aria-label="Facebook">f</a>
-                <a class="social-btn" href="https://instagram.com" target="_blank" rel="noopener" aria-label="Instagram">ig</a>
-                <a class="social-btn" href="https://tiktok.com" target="_blank" rel="noopener" aria-label="TikTok">tk</a>
+                <?php foreach ($socialLinks as $sl): $socialUrl = home_safe_url($sl[2]); if ($socialUrl === '') continue; ?>
+                <a class="social-btn" href="<?= e($socialUrl) ?>" target="_blank" rel="noopener" aria-label="<?= e($sl[0]) ?>"><?= e($sl[1]) ?></a>
+                <?php endforeach; ?>
             </div>
+            <?php endif; ?>
         </div>
 
         <div class="footer-col">
