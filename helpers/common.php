@@ -137,3 +137,13 @@ function menu_item_image($item)
     }
     return 'assets/images/images.jpg';
 }
+
+// Lỗi nghiệp vụ có thông báo hiển thị cho người dùng (vd: nhập sai số tiền). Trang bắt bằng try/catch rồi in ra form.
+class AppException extends Exception
+{
+}
+
+function app_fail($message)
+{
+    throw new AppException($message);
+}

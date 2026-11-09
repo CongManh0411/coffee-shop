@@ -1,5 +1,5 @@
 <?php
-// api/modules/timesheet.php — Chấm công theo ngày (bảng timesheets).
+// helpers/timesheet.php — Chấm công theo ngày (bảng timesheets).
 // Mỗi nhân viên có tối đa 1 bản ghi / ngày: giờ vào ghi lần đầu mở trang, giờ ra ghi khi bấm "Giao ca".
 
 function timesheet_row($r)
@@ -39,19 +39,4 @@ function timesheet_clock_out($staffId)
         array(date('Y-m-d H:i:s'), (int) $staffId, date('Y-m-d'))
     );
     return timesheet_today($staffId);
-}
-
-// Danh sách nhân viên rút gọn cho mọi vai trò đã đăng nhập (không có tài khoản, SĐT, email).
-function staff_roster()
-{
-    $rows = db()->fetchAll("SELECT staff_id, full_name, role FROM staff WHERE status = 1 ORDER BY staff_id");
-    $out = array();
-    foreach ($rows as $r) {
-        $out[] = array(
-            'id'       => (int) $r['staff_id'],
-            'fullName' => $r['full_name'],
-            'role'     => array_search($r['role'], STAFF_ROLES, true),
-        );
-    }
-    return $out;
 }

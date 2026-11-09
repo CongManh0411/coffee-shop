@@ -2,6 +2,7 @@
 // admin/pages/staff/action.php — trang "Nhân viên" (Admin)
 // Thêm / sửa / xóa nhân viên bằng form POST (có CSRF) do PHP xử lý rồi redirect (Post/Redirect/Get), không còn JavaScript gọi API.
 require_once __DIR__ . '/../../../functions.php';
+require_once __DIR__ . '/functions.php';
 
 $title = 'Nhân viên';
 $css = array('staff.css');

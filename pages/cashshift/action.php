@@ -56,7 +56,7 @@ if ($me && ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && isset($_POST['cs_
         } else {
             $csError = 'Thao tác không hợp lệ.';
         }
-    } catch (ApiException $e) {
+    } catch (AppException $e) {
         $csError = $e->getMessage();
     }
     if ($csError === '') {
