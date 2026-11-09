@@ -32,7 +32,7 @@
                 </form>
 
                 <!-- PHP xuất danh sách từ truy vấn JOIN; JS chỉ bổ sung tương tác. -->
-                <div class="menu-category-list" id="menuCategoryList">
+                <div class="menu-category-list" id="menuCategoryList" data-ajax-region="admin-menu" data-ajax-sync="adminMenuData">
                     <?php foreach ($adminMenuPageGroups as $group): ?>
                         <?php if (!$group['items']) continue; ?>
                         <section class="menu-category">

@@ -40,12 +40,14 @@
         <?php elseif ($pmSearch !== ''): ?>
             <p id="menuStatus" class="menu-status" role="status">Tìm thấy <?= (int) $pmPager['total'] ?> món cho “<?= e($pmSearch) ?>”.</p>
         <?php endif; ?>
+        <div data-ajax-region="public-menu">
         <div id="publicMenuGrid" class="public-menu-grid">
             <?php foreach ($pmItems as $item): ?>
                 <article class="public-menu-card"><div class="public-menu-photo"><img src="<?= e(menu_item_image($item)) ?>" alt="<?= e($item['item_name']) ?>" loading="lazy"><span><?= e($item['category_name']) ?></span></div><div class="public-menu-card-body"><div><h3><?= e($item['item_name']) ?></h3><p><?= e($item['description'] ?? '') ?></p></div><strong><?= e(money($item['price'])) ?></strong></div></article>
             <?php endforeach; ?>
         </div>
         <div id="menuPagination"><?= render_pagination($pmPager['page'], $pmPager['pages'], array('page' => 'public-menu') + ($pmCategoryName !== '' ? array('category' => $pmCategoryName) : array()) + ($pmSearch !== '' ? array('q' => $pmSearch) : array())) ?></div>
+        </div>
     </section>
     <section class="menu-booking-banner"><div><p class="eyebrow">MỘT CHỖ NGỒI ĐANG CHỜ BẠN</p><h2>Hẹn nhau ở <?= e(brand_name()) ?> nhé.</h2></div><a class="button button-dark" href="index.php?page=home#booking">Đặt bàn <span aria-hidden="true">→</span></a></section>
 </main>

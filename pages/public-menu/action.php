@@ -5,7 +5,7 @@ require_once __DIR__ . '/../../functions.php';
 $title = 'Thực đơn | ' . brand_full();
 $bodyClass = 'public-home public-menu-page';
 $css = array('home.css', 'public-menu.css');
-$scripts = array();
+$scripts = array('ajax-pager.js');
 
 $pmPerPage = 9;
 $pmSearch = mb_substr(trim((string) ($_GET['q'] ?? '')), 0, 100, 'UTF-8');
