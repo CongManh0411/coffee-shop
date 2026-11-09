@@ -1,4 +1,20 @@
 <?php
+function orders_item_row($row)
+{
+    return array(
+        'id' => (int) $row['order_item_id'],
+        'menuId' => $row['menu_item_id'] === null ? null : (int) $row['menu_item_id'],
+        'name' => $row['item_name'],
+        'price' => (int) $row['unit_price'],
+        'quantity' => (int) $row['quantity'],
+        'note' => $row['note'] ?? '',
+        'status' => $row['status'],
+        'confirmedAt' => $row['confirmed_at'],
+        'startedAt' => $row['started_at'],
+        'doneAt' => $row['done_at'],
+    );
+}
+
 function orders_list($status = 'open')
 {
     $orders = db()->fetchAll(
