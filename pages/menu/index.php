@@ -25,6 +25,7 @@
     <?php if ($menuSearch !== ''): ?>
         <p class="catalog-result-note">Tìm thấy <?= (int) $menuPager['total'] ?> món cho “<?= e($menuSearch) ?>”.</p>
     <?php endif; ?>
+    <div data-ajax-region="catalog">
     <?php if ($menuItems): ?>
         <div class="catalog-grid">
             <?php foreach ($menuItems as $item): ?>
@@ -50,4 +51,5 @@
     if ($menuSearch !== '') $pagerQuery['q'] = $menuSearch;
     echo render_pagination($menuPager['page'], $menuPager['pages'], $pagerQuery);
     ?>
+    </div>
 </main>

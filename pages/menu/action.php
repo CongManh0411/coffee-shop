@@ -24,3 +24,4 @@ try {
 $title = 'Thực đơn | ' . brand_full();
 $bodyClass = 'public-catalog-page';
 $css = array('public-catalog.css');
+$scripts = array('ajax-pager.js');

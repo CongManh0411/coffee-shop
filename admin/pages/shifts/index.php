@@ -103,7 +103,7 @@
             <p class="sch-note">Lịch lưu ngay khi bấm Lưu. Nhân viên (Phục vụ) xem ở mục "Lịch ca làm". Lương chỉ tính cho giờ làm nằm trong ca đã xếp.</p>
 
             <!-- DANH SÁCH CA SẮP TỚI (PHP + MySQL) -->
-            <section class="shf-upcoming" id="upcomingBox">
+            <section class="shf-upcoming" id="upcomingBox" data-ajax-region="shifts-upcoming">
                 <h3>Danh sách ca sắp tới</h3>
                 <p class="sch-note">Từ hôm nay trở đi có <span id="upcomingTotal"><?= (int) $upcomingPager['total'] ?></span> ca, hiển thị 10 ca mỗi trang, đọc trực tiếp từ cơ sở dữ liệu. Danh sách tự cập nhật sau mỗi lần lưu ca.</p>
                 <div class="data-table-wrapper">

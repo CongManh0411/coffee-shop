@@ -39,6 +39,13 @@ function attachMenuItemEvents() {
     });
 }
 
+// Phân trang AJAX thay danh sách món: đọc lại dữ liệu JSON và gắn lại nút Sửa
+document.addEventListener('ajax-pager:updated', () => {
+    const el = document.getElementById('adminMenuData');
+    currentMenuData = el ? JSON.parse(el.textContent) : [];
+    attachMenuItemEvents();
+});
+
 // ============================================================
 // FORM "THÊM / SỬA MÓN"
 // ============================================================
