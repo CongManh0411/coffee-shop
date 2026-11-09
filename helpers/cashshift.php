@@ -1,5 +1,5 @@
 <?php
-// api/modules/cashshift.php — Ca & Quỹ tiền mặt của Thu ngân (bảng cash_shifts, cash_transactions).
+// helpers/cashshift.php — Ca & Quỹ tiền mặt của Thu ngân (bảng cash_shifts, cash_transactions).
 // Hóa đơn được gắn vào ca qua orders.cash_shift_id (gán lúc thanh toán trong orders_pay).
 
 function cashshift_len($text)
@@ -156,14 +156,14 @@ function cashshift_open($data, $user)
 {
     $opening = $data['openingCash'] ?? null;
     if (!is_numeric($opening) || (float) $opening < 0 || (float) $opening > 1000000000) {
-        api_fail('Tiền đầu ca không hợp lệ.');
+        app_fail('Tiền đầu ca không hợp lệ.');
     }
     $opening = (int) round((float) $opening);
     db()->fetchOne("SELECT GET_LOCK('coffee_cash_shift_open', 5) AS l");
     try {
         $existing = cashshift_open_row();
         if ($existing) {
-            api_fail('Ca của ' . $existing['cashier_name'] . ' đang mở (từ ' . date('H:i', strtotime($existing['opened_at'])) . '). Hãy kết ca đó trước.', 409);
+            app_fail('Ca của ' . $existing['cashier_name'] . ' đang mở (từ ' . date('H:i', strtotime($existing['opened_at'])) . '). Hãy kết ca đó trước.', 409);
         }
         db()->execute('INSERT INTO cash_shifts (staff_id, opening_amount) VALUES (?, ?)', array((int) $user['staffId'], $opening));
         $id = db()->insertId();
@@ -179,18 +179,18 @@ function cashshift_movement($data, $user)
     $category = trim((string) ($data['category'] ?? ''));
     $note = trim((string) ($data['note'] ?? ''));
     $allowed = array('in' => array('Tiền tip', 'Thu khác'), 'out' => array('Mua đá', 'Đồ lặt vặt', 'Chi khác'));
-    if (!isset($allowed[$kind]) || !in_array($category, $allowed[$kind], true)) api_fail('Loại thu/chi không hợp lệ.');
+    if (!isset($allowed[$kind]) || !in_array($category, $allowed[$kind], true)) app_fail('Loại thu/chi không hợp lệ.');
     $amount = $data['amount'] ?? null;
-    if (!is_numeric($amount) || (int) round((float) $amount) <= 0) api_fail('Số tiền phải lớn hơn 0.');
+    if (!is_numeric($amount) || (int) round((float) $amount) <= 0) app_fail('Số tiền phải lớn hơn 0.');
     $amount = (int) round((float) $amount);
-    if ($note === '') api_fail('Vui lòng ghi chú nội dung thu/chi.');
-    if (cashshift_len($note) > 200) api_fail('Ghi chú tối đa 200 ký tự.');
+    if ($note === '') app_fail('Vui lòng ghi chú nội dung thu/chi.');
+    if (cashshift_len($note) > 200) app_fail('Ghi chú tối đa 200 ký tự.');
     return db()->transaction(function () use ($kind, $category, $note, $amount, $user) {
         $row = db()->fetchOne('SELECT cash_shift_id, opening_amount FROM cash_shifts WHERE closed_at IS NULL ORDER BY cash_shift_id DESC LIMIT 1 FOR UPDATE');
-        if (!$row) api_fail('Chưa mở ca.', 409);
+        if (!$row) app_fail('Chưa mở ca.');
         if ($kind === 'out') {
             $stats = cashshift_stats($row['cash_shift_id'], $row['opening_amount'], cashshift_moves($row['cash_shift_id']));
-            if ($amount > $stats['expectedCash']) api_fail('Số tiền chi lớn hơn tiền mặt đang có trong két.');
+            if ($amount > $stats['expectedCash']) app_fail('Số tiền chi lớn hơn tiền mặt đang có trong két.');
         }
         db()->execute(
             'INSERT INTO cash_transactions (cash_shift_id, transaction_type, category, amount, note, staff_id) VALUES (?, ?, ?, ?, ?, ?)',
@@ -203,16 +203,16 @@ function cashshift_movement($data, $user)
 function cashshift_close($data, $user)
 {
     $counted = $data['countedCash'] ?? null;
-    if (!is_numeric($counted) || (float) $counted < 0 || (float) $counted > 1000000000) api_fail('Tiền đếm thực tế không hợp lệ.');
+    if (!is_numeric($counted) || (float) $counted < 0 || (float) $counted > 1000000000) app_fail('Tiền đếm thực tế không hợp lệ.');
     $counted = (int) round((float) $counted);
     $reason = trim((string) ($data['reason'] ?? ''));
-    if (cashshift_len($reason) > 500) api_fail('Lý do tối đa 500 ký tự.');
+    if (cashshift_len($reason) > 500) app_fail('Lý do tối đa 500 ký tự.');
     $id = db()->transaction(function () use ($counted, $reason, $user) {
         $row = db()->fetchOne('SELECT cash_shift_id, opening_amount FROM cash_shifts WHERE closed_at IS NULL ORDER BY cash_shift_id DESC LIMIT 1 FOR UPDATE');
-        if (!$row) api_fail('Chưa mở ca.', 409);
+        if (!$row) app_fail('Chưa mở ca.');
         $stats = cashshift_stats($row['cash_shift_id'], $row['opening_amount'], cashshift_moves($row['cash_shift_id']));
         $diff = $counted - $stats['expectedCash'];
-        if ($diff !== 0 && $reason === '') api_fail('Tiền đếm lệch so với hệ thống — bắt buộc ghi lý do.');
+        if ($diff !== 0 && $reason === '') app_fail('Tiền đếm lệch so với hệ thống — bắt buộc ghi lý do.');
         db()->execute(
             'UPDATE cash_shifts SET closed_at = NOW(), closed_by = ?, closing_amount = ?, expected_amount = ?,
              difference = ?, diff_reason = ?, summary_json = ? WHERE cash_shift_id = ?',

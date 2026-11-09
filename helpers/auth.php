@@ -1,7 +1,6 @@
 <?php
 if (!defined('AUTH_IDLE_SECONDS')) define('AUTH_IDLE_SECONDS', 14400);            // 4 giờ không hoạt động
 if (!defined('AUTH_REMEMBER_SECONDS')) define('AUTH_REMEMBER_SECONDS', 2592000);  // 30 ngày khi chọn "Ghi nhớ đăng nhập"
-require_once __DIR__ . "/../api/modules/auth.php";
 if (session_status() === PHP_SESSION_NONE) {
     ini_set('session.use_strict_mode', '1');
     ini_set('session.use_only_cookies', '1');
@@ -18,7 +17,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
     $scriptDirectory = basename(dirname($_SERVER['SCRIPT_NAME'] ?? '/'));
     $cookiePath = dirname($_SERVER['SCRIPT_NAME'] ?? '/');
-    if (in_array($scriptDirectory, array('admin', 'api'), true)) $cookiePath = dirname($cookiePath);
+    if (in_array($scriptDirectory, array('admin'), true)) $cookiePath = dirname($cookiePath);
     $cookiePath = rtrim(str_replace('\\', '/', $cookiePath), '/') . '/';
     if ($cookiePath === '//') $cookiePath = '/';
 
@@ -79,15 +78,6 @@ function csrf_token()
     return $_SESSION['csrf_token'];
 }
 
-function require_csrf_token()
-{
-    $sent = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
-    $expected = $_SESSION['csrf_token'] ?? '';
-    if (!is_string($sent) || $expected === '' || !hash_equals($expected, $sent)) {
-        json_error('Phiên bảo mật hết hạn. Hãy tải lại trang rồi thử lại.', 419);
-    }
-}
-
 function auth_attempt_file($username)
 {
     $directory = rtrim(sys_get_temp_dir(), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'coffee-shop-auth-attempts';
@@ -119,16 +109,52 @@ function auth_attempts($username, $recordFailure = false, $clear = false, $windo
     return count($events);
 }
 
-function require_login()
+// ---- Đăng nhập / đăng xuất ----
+function auth_login($username, $password, $remember = false)
 {
-    $user = current_user();
-    if (!$user) json_error('Chưa đăng nhập.', 401);
+    $row = db()->fetchOne(
+        "SELECT staff_id, full_name, username, password, role FROM staff WHERE username = ? AND status = 1",
+        array(trim($username))
+    );
+
+    $valid = password_verify((string) $password, $row['password'] ?? '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi.');
+    if (!$row || !$valid) {
+        return null;
+    }
+    if (password_needs_rehash($row['password'], PASSWORD_DEFAULT)) {
+        $row['password'] = password_hash((string) $password, PASSWORD_DEFAULT);
+        db()->execute('UPDATE staff SET password = ? WHERE staff_id = ?', array($row['password'], (int) $row['staff_id']));
+    }
+
+    session_regenerate_id(true);
+    unset($_SESSION['csrf_token']);
+    $user = array(
+        'staffId' => (int) $row['staff_id'],
+        'name'    => $row['full_name'],
+        'roleKey' => $row['role'],
+    );
+    $_SESSION['user'] = $user;
+    $_SESSION['credential_fingerprint'] = hash('sha256', $row['password']);
+    $_SESSION['last_activity'] = time();
+    $_SESSION['remember'] = (bool) $remember;
+    // Ghi nhớ đăng nhập: cookie phiên tồn tại 30 ngày; không thì là cookie phiên thường.
+    auth_send_session_cookie($remember ? AUTH_REMEMBER_SECONDS : 0);
     return $user;
 }
 
-function require_role($roles)
+function auth_logout()
 {
-    $user = require_login();
-    if (!in_array($user['roleKey'], $roles, true)) json_error('Bạn không có quyền thực hiện thao tác này.', 403);
-    return $user;
+    $_SESSION = array();
+    if (ini_get('session.use_cookies')) {
+        $params = session_get_cookie_params();
+        setcookie(session_name(), '', array(
+            'expires' => time() - 42000,
+            'path' => $params['path'],
+            'domain' => $params['domain'],
+            'secure' => $params['secure'],
+            'httponly' => $params['httponly'],
+            'samesite' => $params['samesite'] ?? 'Lax',
+        ));
+    }
+    session_destroy();
 }

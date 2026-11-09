@@ -1,5 +1,5 @@
 <?php
-// layout/footer.php — script dùng chung (api, auth, common) rồi tới script riêng của trang.
+// layout/footer.php — script dùng chung (common) rồi tới script riêng của trang.
 // Trang nào cần thứ tự/điều kiện riêng thì tạo pages/<trang>/scripts.php thay cho $scripts.
 $scripts = isset($scripts) ? $scripts : array();
 ?>

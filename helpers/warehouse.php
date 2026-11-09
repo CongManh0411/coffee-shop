@@ -1,5 +1,5 @@
 <?php
-// api/modules/warehouse.php — Quản lý kho theo số ly / số phần kết nối MySQL
+// helpers/warehouse.php — Quản lý kho theo số ly / số phần kết nối MySQL
 
 // Bound quantities to the signed INT used by quantity_delta; reject floats/bools/arrays.
 function warehouse_integer($value, $minimum = 0)
@@ -166,23 +166,6 @@ function warehouse_adjust($data, $user)
             array($itemId, $mode === 'import' ? 'import' : 'adjustment', $delta, $ref, $note, $staffId)
         );
 
-        return '';
-    });
-}
-
-function warehouse_set_min_level($data, $user)
-{
-    $itemId = warehouse_integer($data['itemId'] ?? null, 1);
-    $minLevel = warehouse_integer($data['minLevel'] ?? null);
-
-    if ($itemId === null) return 'Vui lòng chọn món.';
-    if ($minLevel === null) return 'Mức cảnh báo sắp hết phải là số nguyên không âm.';
-
-    return db()->transaction(function () use ($itemId, $minLevel) {
-        if (!db()->fetchOne('SELECT item_id FROM menu_items WHERE item_id = ? FOR UPDATE', array($itemId))) return 'Món không tồn tại trong thực đơn.';
-        db()->execute("INSERT IGNORE INTO menu_stock (menu_item_id, quantity, min_quantity) VALUES (?, 0, ?)", array($itemId, $minLevel));
-        db()->execute("UPDATE menu_stock SET min_quantity = ? WHERE menu_item_id = ?", array($minLevel, $itemId));
-        db()->execute("UPDATE menu_items SET min_stock = ? WHERE item_id = ?", array($minLevel, $itemId));
         return '';
     });
 }

@@ -1,18 +1,17 @@
 <?php
-// Shared business functions used by Public, Admin, and API routes.
+// Nạp các hàm nghiệp vụ dùng chung cho Public và Admin (mỗi nhóm hàm nằm trong helpers/).
 require_once __DIR__ . '/helpers/upload.php';
-require_once __DIR__ . '/api/modules/auth.php';
-require_once __DIR__ . '/api/modules/staff.php';
-require_once __DIR__ . '/api/modules/menu.php';
-require_once __DIR__ . '/api/modules/tables.php';
-require_once __DIR__ . '/api/modules/shifts.php';
-require_once __DIR__ . '/api/modules/timesheet.php';
-require_once __DIR__ . '/api/modules/orders.php';
-require_once __DIR__ . '/api/modules/cashshift.php';
-require_once __DIR__ . '/api/modules/reservations.php';
-require_once __DIR__ . '/api/modules/ops.php';
-require_once __DIR__ . '/api/modules/warehouse.php';
-require_once __DIR__ . '/api/modules/auditlog.php';
+require_once __DIR__ . '/helpers/auth.php';
+require_once __DIR__ . '/helpers/menu.php';
+require_once __DIR__ . '/helpers/tables.php';
+require_once __DIR__ . '/helpers/shifts.php';
+require_once __DIR__ . '/helpers/timesheet.php';
+require_once __DIR__ . '/helpers/orders.php';
+require_once __DIR__ . '/helpers/cashshift.php';
+require_once __DIR__ . '/helpers/reservations.php';
+require_once __DIR__ . '/helpers/ops.php';
+require_once __DIR__ . '/helpers/warehouse.php';
+require_once __DIR__ . '/helpers/auditlog.php';
 require_once __DIR__ . '/helpers/nav.php';
 
 // Escape ký tự đặc biệt của LIKE (% _ \\) để từ khóa được so khớp đúng nghĩa đen.
@@ -799,7 +798,7 @@ function kitchen_set_status($ids, $status)
     return '';
 }
 
-// HTML các dòng <tr> của bảng "Danh sách ca sắp tới" (dùng cho cả trang lẫn API AJAX).
+// HTML các dòng <tr> của bảng "Danh sách ca sắp tới".
 function shifts_upcoming_rows_html($rows)
 {
     if (!$rows) {

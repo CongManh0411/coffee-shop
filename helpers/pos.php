@@ -267,7 +267,7 @@ function pos_handle_post($me)
             default:
                 $r['error'] = 'Thao tác không hợp lệ.';
         }
-    } catch (ApiException $e) {
+    } catch (AppException $e) {
         $r['error'] = $e->getMessage();
     }
     if ($r['error'] === '' && $r['to'] === null) $r['to'] = $back;

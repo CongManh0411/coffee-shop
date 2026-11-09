@@ -9,26 +9,6 @@ function shifts_to_min($t)
     return ((int) $p[0]) * 60 + (int) ($p[1] ?? 0);
 }
 
-function shifts_row($r)
-{
-    return array(
-        'id'      => (int) $r['shift_id'],
-        'staffId' => (int) $r['staff_id'],
-        'date'    => $r['shift_date'],
-        'start'   => substr($r['start_time'], 0, 5),
-        'end'     => substr($r['end_time'], 0, 5),
-        'registered' => (int) ($r['registered'] ?? 0) === 1,
-        'leftAt'  => !empty($r['left_at']) ? substr($r['left_at'], 11, 5) : null,
-    );
-}
-
-function shifts_list()
-{
-    $rows = db()->fetchAll("SELECT shift_id, staff_id, shift_date, start_time, end_time, registered, left_at
-                            FROM shifts ORDER BY shift_date, start_time");
-    return array_map('shifts_row', $rows);
-}
-
 function shifts_valid_date($d)
 {
     if (!is_string($d) || !preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $d, $matches)) {
