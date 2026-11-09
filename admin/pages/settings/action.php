@@ -69,7 +69,13 @@ if ($method === 'POST' && isset($_POST['save_settings'])) {
         'shop_phone',
         'shop_email',
         'shop_hours',
-        'shop_hours_weekend'
+        'shop_hours_weekend',
+        'shop_parking_note', 'shop_holiday_note', 'shop_social_handle',
+        'social_facebook', 'social_instagram', 'social_tiktok',
+        'footer_desc',
+        'hero_eyebrow', 'hero_rating_title', 'hero_rating_note',
+        'story_hl1_title', 'story_hl1_desc', 'story_hl2_title', 'story_hl2_desc',
+        'story_hl3_title', 'story_hl3_desc', 'story_hl4_title', 'story_hl4_desc'
     );
 
     foreach ($keys as $k) {
