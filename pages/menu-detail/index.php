@@ -2,7 +2,7 @@
     <a href="index.php?page=home" class="catalog-brand"><?= e(brand_name()) ?> <span><?= e(brand_subtitle()) ?></span></a>
     <nav aria-label="Điều hướng chính">
         <a href="index.php?page=home">Trang chủ</a>
-        <a href="index.php?page=menu">Thực đơn</a>
+        <a href="index.php?page=public-menu">Thực đơn</a>
     </nav>
 </header>
 
@@ -12,12 +12,12 @@
             <p class="catalog-eyebrow">404 · KHÔNG TÌM THẤY</p>
             <h1>Món này không có trong thực đơn</h1>
             <p>Món có thể đã bị ẩn hoặc đường dẫn không còn hợp lệ.</p>
-            <a class="catalog-back" href="index.php?page=menu">Quay lại thực đơn <span aria-hidden="true">→</span></a>
+            <a class="catalog-back" href="index.php?page=public-menu">Quay lại thực đơn <span aria-hidden="true">→</span></a>
         </section>
     <?php else: ?>
         <nav class="catalog-breadcrumb" aria-label="Đường dẫn">
             <a href="index.php?page=home">Trang chủ</a><span aria-hidden="true">/</span>
-            <a href="index.php?page=menu">Thực đơn</a><span aria-hidden="true">/</span>
+            <a href="index.php?page=public-menu">Thực đơn</a><span aria-hidden="true">/</span>
             <span><?= e($menuItem['item_name']) ?></span>
         </nav>
 
@@ -42,7 +42,7 @@
                     <p><b>Món đang có trong thực đơn</b><small>Ghé quán để thưởng thức món này tại <?= e(brand_name()) ?>.</small></p>
                 </div>
 
-                <a class="catalog-back catalog-back-link" href="index.php?page=menu"><span aria-hidden="true">←</span> Khám phá thêm món</a>
+                <a class="catalog-back catalog-back-link" href="index.php?page=public-menu"><span aria-hidden="true">←</span> Khám phá thêm món</a>
             </div>
         </article>
 
@@ -50,7 +50,7 @@
             <section class="catalog-related" aria-labelledby="relatedMenuHeading">
                 <div class="catalog-related-heading">
                     <div><p class="catalog-eyebrow">CÙNG DANH MỤC</p><h2 id="relatedMenuHeading">Có thể bạn cũng thích</h2></div>
-                    <a href="index.php?page=menu&amp;category=<?= (int) $menuItem['category_id'] ?>">Xem danh mục <span aria-hidden="true">→</span></a>
+                    <a href="index.php?page=public-menu&amp;category=<?= e(rawurlencode($menuItem['category_name'])) ?>">Xem danh mục <span aria-hidden="true">→</span></a>
                 </div>
                 <div class="catalog-related-grid">
                     <?php foreach ($relatedMenuItems as $related): ?>

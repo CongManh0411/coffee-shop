@@ -35,10 +35,10 @@ Cấu hình localhost mặc định dùng user `root` và mật khẩu trống �
 
 ## Các trang chính
 
-- Danh mục thực đơn: đã gộp vào trang Thực đơn (thanh lọc có số món); `page=menu-categories` tự chuyển về `page=menu`.
+- Danh mục thực đơn: đã gộp vào trang Thực đơn (thanh lọc có số món); `page=menu-categories` và `page=menu` tự chuyển về `page=public-menu`.
 
 - Trang giới thiệu khách: `/` hoặc `index.php?page=home`.
-- Thực đơn đầy đủ, lọc theo danh mục: `index.php?page=menu`.
+- Thực đơn đầy đủ, lọc theo danh mục: `index.php?page=public-menu`.
 - Chi tiết món: `index.php?page=menu-detail&id=1` (mã món không hợp lệ trả HTTP 404).
 - Thực đơn nổi bật: hiển thị ngay trên trang chủ tại `index.php?page=home#menu`.
 - Đăng nhập nhân viên: `admin/index.php?page=login`.
