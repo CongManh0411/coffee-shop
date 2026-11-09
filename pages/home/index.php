@@ -43,7 +43,6 @@ function get_item_badge($index, $catFilter, $price) {
         <a href="#story">Về <?= e($brandName) ?></a>
         <a href="#space">Không gian</a>
         <a href="#menu">Thực đơn</a>
-        <a href="#booking">Đặt bàn</a>
         <a href="#contact">Liên hệ</a>
     </nav>
 

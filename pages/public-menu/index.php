@@ -3,7 +3,7 @@
         <img src="<?= e(shop_logo()) ?>" alt=""><span><b><?= e(brand_name()) ?></b><small><?= e(mb_strtoupper(brand_subtitle(), "UTF-8")) ?></small></span>
     </a>
     <nav class="site-nav" aria-label="Điều hướng chính">
-        <a href="index.php?page=home#story">Về <?= e(brand_name()) ?></a>
+        <a href="index.php?page=home">Trang chủ</a>
         <a href="index.php?page=public-menu" aria-current="page">Thực đơn</a>
         <a href="index.php?page=home#booking">Đặt bàn</a>
     </nav>
