@@ -51,9 +51,9 @@ Cấu hình localhost mặc định dùng user `root` và mật khẩu trống �
 
 Tài khoản, thực đơn (kể cả món tạm hết), bàn, trạng thái bàn / đơn đang mở, ca làm, đăng ký ca, chấm công giao ca, ca tiền mặt, nhật ký thao tác, đơn hàng, đặt bàn, hàng chờ, khách hàng, khuyến mãi, nhà cung cấp, vật tư kho và đơn giao hàng đều được lưu ở MySQL. Kho theo ly/phần và lịch sử biến động kho được lưu MySQL; thanh toán trừ kho tại máy chủ cùng giao dịch với hóa đơn. Ứng dụng không còn đọc hay ghi `localStorage` / `sessionStorage`: mọi trang do PHP đọc/ghi MySQL trực tiếp (form POST rồi redirect), nên dữ liệu đồng bộ giữa các thiết bị. Dữ liệu cũ còn trong localStorage của trình duyệt không được chuyển sang database.
 
-Muốn có dữ liệu demo cho mọi chức năng (nhân viên, lịch ca, 14 ngày đơn hàng, ca thu ngân, kho, đặt bàn, giao hàng, nhật ký): sau khi nhập `database/coffee.sql`, nhập thêm `database/demo_data.sql` (nhập một lần; file không dùng ID cố định nên chạy được cả khi database đã có dữ liệu của bạn và không sửa hay xóa dữ liệu đó; nếu đã tạo quản lý bằng `create_manager.php` thì tài khoản `quanly` được bỏ qua, bạn đăng nhập bằng tài khoản quản lý của mình; nhập lần hai sẽ báo lỗi ngay ở dòng đầu mà không ghi thêm gì; muốn nhập lại thì xóa database `coffee_shop` rồi nhập từ `coffee.sql`). Mật khẩu chung của tài khoản demo là `Demo@2026pass` (`quanly`, `thungan1`, `thungan2`, `phucvu1-3`, `bep1`, `bep2`). Ngày giờ trong file tính theo lúc nhập nên dữ liệu luôn mới. Trước khi dùng thật hãy chạy `php database/replace_demo_accounts.php` để tắt các tài khoản này.
+`database/coffee.sql` đã gồm sẵn dữ liệu demo cho mọi chức năng (nhân viên, lịch ca, 14 ngày đơn hàng, ca thu ngân, kho, đặt bàn, giao hàng, nhật ký), không cần nhập thêm file nào khác. Mật khẩu chung của tài khoản demo là `Demo@2026pass` (`quanly`, `thungan1`, `thungan2`, `phucvu1-3`, `bep1`, `bep2`). Ngày giờ trong file tính theo lúc nhập nên dữ liệu luôn mới. Chỉ nhập vào database mới: nhập lần hai sẽ báo lỗi ở phần dữ liệu demo mà không ghi thêm gì; muốn nhập lại thì xóa database `coffee_shop` rồi nhập lại từ đầu. Nếu đã tạo quản lý bằng `create_manager.php` thì tài khoản `quanly` trong dữ liệu demo được bỏ qua, bạn đăng nhập bằng tài khoản quản lý của mình. Trước khi dùng thật hãy chạy `php database/replace_demo_accounts.php` để tắt các tài khoản demo.
 
-Bản nâng cấp từ trước: nhập lại `database/coffee.sql` trong phpMyAdmin để tạo bảng `timesheets` (chấm công); các bảng dùng `CREATE TABLE IF NOT EXISTS` nên không ghi đè dữ liệu đã có.
+Bản nâng cấp từ trước: không nhập lại `database/coffee.sql` lên database đã có dữ liệu (sẽ báo lỗi ở phần dữ liệu demo). Chỉ cần chạy riêng lệnh `CREATE TABLE IF NOT EXISTS timesheets ...` (copy từ file) trong phpMyAdmin nếu thiếu bảng chấm công.
 
 Đơn giao hàng nhập tay được lưu vào database. Kết nối webhook GrabFood, ShopeeFood và BeFood chưa có. Đơn giao hàng chưa tự tạo hóa đơn doanh thu khi hoàn tất.
 
@@ -64,11 +64,6 @@ Bản nâng cấp từ trước: nhập lại `database/coffee.sql` trong phpMyA
 - `helpers/`: các nhóm hàm nghiệp vụ dùng chung (orders, menu, tables, shifts, warehouse, auth, ...); hàm riêng của một trang nằm cạnh trang đó (vd. `admin/pages/staff/functions.php`).
 - `config/`, `helpers/`, `classes/`: cấu hình và lớp dùng chung.
 - `layouts/`, `assets/`: giao diện, CSS, JavaScript và ảnh.
-- `database/coffee.sql`: schema và dữ liệu menu mẫu ban đầu.
-- `database/demo_data.sql`: dữ liệu demo cho mọi chức năng, nhập sau `coffee.sql` trên database mới.
+- `database/coffee.sql`: schema, dữ liệu menu mẫu và dữ liệu demo cho mọi chức năng, nhập một lần trên database mới.
 - `database/create_manager.php`: tạo quản lý đầu tiên, chỉ chạy được từ CLI.
 - `database/replace_demo_accounts.php`: thay tài khoản mẫu cũ trên database đang dùng, chỉ chạy được từ CLI.
-
-## Bản sửa kho và nhân viên
-
-Xem `HUONG_DAN_BAN_SUA.md` để thay bản chạy, xem thay đổi và kết quả kiểm tra.
