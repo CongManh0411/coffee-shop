@@ -82,7 +82,6 @@ function get_item_badge($index, $catFilter, $price) {
         <a href="#story">Về <?= e($brandName) ?> <span aria-hidden="true">→</span></a>
         <a href="#space">Không gian quán <span aria-hidden="true">→</span></a>
         <a href="#menu">Thực đơn <span aria-hidden="true">→</span></a>
-        <a href="#menu">Thực đơn <span aria-hidden="true">↗</span></a>
         <a href="#booking">Đặt bàn trước <span aria-hidden="true">→</span></a>
         <a href="#contact">Địa chỉ &amp; Giờ mở cửa <span aria-hidden="true">→</span></a>
     </nav>
@@ -118,8 +117,6 @@ function get_item_badge($index, $catFilter, $price) {
                     <span aria-hidden="true">☕</span>
                 </a>
             </div>
-
-            
         </div>
 
         <div class="landing-visual">
@@ -153,7 +150,7 @@ function get_item_badge($index, $catFilter, $price) {
         </div>
     </section>
 
-    <!-- Section 3: Story Section -->
+    <!-- Section 2: Story Section -->
     <section class="story-section" id="story">
         <div class="story-visual-wrap">
             <div class="story-image-wrap">
@@ -219,7 +216,7 @@ function get_item_badge($index, $catFilter, $price) {
         </div>
     </section>
 
-    <!-- Section 4: Signature Menu Section (ĐỘNG TỪ DATABASE) -->
+    <!-- Section 3: Signature Menu Section (ĐỘNG TỪ DATABASE) -->
     <section class="menu-section" id="menu">
         <div class="section-heading">
             <div>
@@ -276,7 +273,7 @@ function get_item_badge($index, $catFilter, $price) {
         </div>
     </section>
 
-    <!-- Section 5: Ambiance & Space Showcase -->
+    <!-- Section 4: Ambiance & Space Showcase -->
     <section class="space-section" id="space">
         <div class="section-heading">
             <div>
@@ -314,7 +311,7 @@ function get_item_badge($index, $catFilter, $price) {
         </div>
     </section>
 
-    <!-- Section 7: Booking & Reservation -->
+    <!-- Section 5: Booking & Reservation -->
     <section class="booking-section" id="booking">
         <div class="booking-copy">
             <p class="eyebrow">HẸN GẶP BẠN TẠI <?= mb_strtoupper(e($brandName), 'UTF-8') ?></p>
@@ -429,7 +426,7 @@ function get_item_badge($index, $catFilter, $price) {
         </form>
     </section>
 
-    <!-- Section 8: Contact & Location -->
+    <!-- Section 6: Contact & Location -->
     <section class="contact-section" id="contact">
         <div class="section-heading">
             <div>
@@ -504,7 +501,6 @@ function get_item_badge($index, $catFilter, $price) {
             <ul class="footer-links">
                 <li><a href="#story">Về <?= e($brandName) ?></a></li>
                 <li><a href="#space">Không gian quán</a></li>
-                <li><a href="#menu">Món uống signature</a></li>
                 <li><a href="#menu">Thực đơn</a></li>
             </ul>
         </div>

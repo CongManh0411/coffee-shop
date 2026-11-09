@@ -423,18 +423,6 @@ body.public-home [id] {
     box-shadow: 0 8px 24px rgba(34, 23, 15, 0.32);
 }
 
-.button-gold {
-    background: linear-gradient(135deg, #c98a4b, #b47535);
-    color: #ffffff !important;
-    box-shadow: 0 6px 18px rgba(201, 138, 75, 0.3);
-}
-
-.button-gold:hover {
-    background: linear-gradient(135deg, #d89b5c, #c0803e);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(201, 138, 75, 0.42);
-}
-
 .button-outline {
     border: 1.5px solid var(--c-border-gold);
     color: var(--c-primary-dark);
@@ -547,40 +535,6 @@ body.public-home [id] {
     flex-wrap: wrap;
     align-items: center;
     gap: 16px;
-}
-
-.hero-stats-row {
-    margin-top: 44px;
-    padding-top: 28px;
-    border-top: 1px solid var(--c-border);
-    display: flex;
-    align-items: center;
-    gap: 36px;
-}
-
-.hero-stat-item {
-    display: flex;
-    flex-direction: column;
-}
-
-.hero-stat-num {
-    font: 700 24px/1 "Playfair Display", serif;
-    color: var(--c-dark);
-    display: flex;
-    align-items: baseline;
-    gap: 3px;
-}
-
-.hero-stat-num span {
-    color: var(--c-accent);
-    font-size: 20px;
-}
-
-.hero-stat-label {
-    margin-top: 6px;
-    color: var(--c-text-light);
-    font-size: 12px;
-    font-weight: 500;
 }
 
 /* Hero Visual composition */
@@ -731,62 +685,6 @@ body.public-home [id] {
 /* ============================================================
    Section 2: Qualities / Core Strengths
    ============================================================ */
-.qualities-section {
-    position: relative;
-    background: #ffffff;
-    border-top: 1px solid var(--c-border);
-    border-bottom: 1px solid var(--c-border);
-    padding: 44px 0;
-}
-
-.qualities-grid {
-    width: min(1240px, calc(100% - 48px));
-    margin: 0 auto;
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 24px;
-}
-
-.quality-card {
-    display: flex;
-    align-items: flex-start;
-    gap: 16px;
-    padding: 12px 16px;
-    border-radius: var(--radius-sm);
-    transition: var(--transition);
-}
-
-.quality-card:hover {
-    background: var(--c-bg);
-    transform: translateY(-2px);
-}
-
-.quality-icon-wrap {
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
-    background: var(--c-accent-soft);
-    display: grid;
-    place-items: center;
-    color: var(--c-primary);
-    font-size: 22px;
-    flex-shrink: 0;
-    border: 1px solid rgba(201, 138, 75, 0.25);
-}
-
-.quality-text b {
-    display: block;
-    color: var(--c-dark);
-    font: 600 15.5px "Playfair Display", serif;
-    margin-bottom: 4px;
-}
-
-.quality-text p {
-    margin: 0;
-    color: var(--c-text-muted);
-    font-size: 12.5px;
-    line-height: 1.5;
-}
 
 /* ============================================================
    Section 3: Story Section
@@ -1005,16 +903,6 @@ body.public-home [id] {
 }
 
 .menu-card[hidden] {
-    display: none !important;
-}
-
-.menu-show-more {
-    border: 0;
-    cursor: pointer;
-    font-family: inherit;
-}
-
-.menu-show-more[hidden] {
     display: none !important;
 }
 
@@ -1850,9 +1738,6 @@ body.public-home [id] {
    Responsive Breakpoints
    ============================================================ */
 @media (max-width: 1024px) {
-    .qualities-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
     .landing-hero {
         grid-template-columns: 1fr;
         gap: 48px;
@@ -1868,9 +1753,6 @@ body.public-home [id] {
         margin: 20px auto 28px;
     }
     .landing-actions {
-        justify-content: center;
-    }
-    .hero-stats-row {
         justify-content: center;
     }
     .landing-visual {
@@ -1943,16 +1825,6 @@ body.public-home [id] {
     .landing-lede {
         font-size: 13.5px;
     }
-    .hero-stats-row {
-        flex-direction: row;
-        gap: 20px;
-    }
-    .hero-stat-num {
-        font-size: 20px;
-    }
-    .hero-stat-label {
-        font-size: 10.5px;
-    }
     .hero-image-main {
         width: 90%;
         height: 380px;
@@ -1974,10 +1846,6 @@ body.public-home [id] {
         bottom: 0;
         min-width: 150px;
         padding: 10px 12px;
-    }
-    .qualities-grid {
-        grid-template-columns: 1fr;
-        gap: 16px;
     }
     .story-section {
         width: calc(100% - 32px);
