@@ -5,7 +5,6 @@ require_once __DIR__ . '/functions.php';
 $routes = array(
     'home' => 'home/index.php',
     'public-menu' => 'public-menu/index.php',
-    'menu' => 'menu/index.php',
     'menu-detail' => 'menu-detail/index.php',
     'tables' => 'tables/index.php',
     'schedule' => 'schedule/index.php',
@@ -43,9 +42,24 @@ if ($page === 'login') {
     redirect('admin/index.php?page=login');
 }
 
-// Trang Danh mục đã gộp vào Thực đơn: giữ link cũ hoạt động
-if ($page === 'menu-categories') {
-    redirect('index.php?page=menu');
+// Trang Danh mục và trang Thực đơn cũ (page=menu) đã gộp vào public-menu: giữ link cũ hoạt động
+if ($page === 'menu-categories' || $page === 'menu') {
+    $menuRedirect = array('page' => 'public-menu');
+    $oldQ = trim((string) ($_GET['q'] ?? ''));
+    if ($oldQ !== '') $menuRedirect['q'] = $oldQ;
+    $oldP = (int) ($_GET['p'] ?? 0);
+    if ($oldP > 1) $menuRedirect['p'] = $oldP;
+    // public-menu lọc theo tên danh mục, link cũ dùng mã danh mục
+    $oldCategory = (int) ($_GET['category'] ?? 0);
+    if ($oldCategory > 0) {
+        try {
+            foreach (public_menu_category_summary() as $c) {
+                if ((int) $c['category_id'] === $oldCategory) $menuRedirect['category'] = $c['category_name'];
+            }
+        } catch (Throwable $e) {
+        }
+    }
+    redirect('index.php?' . http_build_query($menuRedirect));
 }
 
 if (!is_string($page) || !isset($routes[$page])) {
@@ -61,7 +75,7 @@ if (!is_file($file)) {
     $file = __DIR__ . '/pages/404/index.php';
 }
 
-if (!in_array($page, array('404', 'home', 'public-menu', 'menu', 'menu-detail'), true)) {
+if (!in_array($page, array('404', 'home', 'public-menu', 'menu-detail'), true)) {
     if (!$user) {
         redirect('admin/index.php?page=login');
     }
