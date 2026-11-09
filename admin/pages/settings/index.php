@@ -257,6 +257,83 @@
                 <?php endforeach; ?>
             </div>
 
+            <div class="settings-card">
+                <h3 class="settings-card-title"><span aria-hidden="true">📌</span> Nội dung khác của trang chủ</h3>
+                <p class="settings-card-subtitle">Các dòng chữ nhỏ ở banner, phần câu chuyện, liên hệ và chân trang. Xóa trống một ô sẽ quay về nội dung mặc định.</p>
+
+                <div class="settings-grid-2">
+                    <div class="settings-form-group">
+                        <label for="hero_eyebrow">Dòng nhỏ phía trên tiêu đề banner</label>
+                        <input type="text" id="hero_eyebrow" name="hero_eyebrow" maxlength="80" value="<?= e(setting('hero_eyebrow', 'COFFEE · TEA · A LITTLE PAUSE')) ?>">
+                    </div>
+                    <div class="settings-form-group">
+                        <label for="hero_rating_title">Thẻ đánh giá: dòng chính</label>
+                        <input type="text" id="hero_rating_title" name="hero_rating_title" maxlength="80" value="<?= e(setting('hero_rating_title', 'Đậm vị & Cực Chill')) ?>">
+                    </div>
+                    <div class="settings-form-group">
+                        <label for="hero_rating_note">Thẻ đánh giá: dòng phụ (số lượt khách)</label>
+                        <input type="text" id="hero_rating_note" name="hero_rating_note" maxlength="100" value="<?= e(setting('hero_rating_note', 'Hơn 1.200+ lượt khách yêu thích')) ?>">
+                        <span class="settings-field-hint">Nên nhập số liệu thật của quán.</span>
+                    </div>
+                </div>
+
+                <h4 style="margin-top:18px;">Bốn ô nổi bật ở phần câu chuyện</h4>
+                <div class="settings-grid-2">
+                    <?php
+                    $storyHlDefaults = array(
+                        1 => array('12+ Món nước & Bánh', 'Pha chế chuẩn vị mỗi ngày'),
+                        2 => array('Wifi & Ổ cắm đầy đủ', 'Tiện lợi cho việc học & làm việc'),
+                        3 => array('3 Không gian trải nghiệm', 'Sân vườn, máy lạnh, góc sofa'),
+                        4 => array('Phục vụ tận tâm', 'Luôn đón tiếp bằng nụ cười'),
+                    );
+                    foreach ($storyHlDefaults as $n => $def): ?>
+                    <div class="settings-form-group">
+                        <label for="story_hl<?= $n ?>_title">Ô <?= $n ?>: tiêu đề</label>
+                        <input type="text" id="story_hl<?= $n ?>_title" name="story_hl<?= $n ?>_title" maxlength="80" value="<?= e(setting('story_hl' . $n . '_title', $def[0])) ?>">
+                    </div>
+                    <div class="settings-form-group">
+                        <label for="story_hl<?= $n ?>_desc">Ô <?= $n ?>: mô tả</label>
+                        <input type="text" id="story_hl<?= $n ?>_desc" name="story_hl<?= $n ?>_desc" maxlength="120" value="<?= e(setting('story_hl' . $n . '_desc', $def[1])) ?>">
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+
+                <h4 style="margin-top:18px;">Liên hệ &amp; chân trang</h4>
+                <div class="settings-grid-2">
+                    <div class="settings-form-group">
+                        <label for="shop_parking_note">Ghi chú chỗ đậu xe</label>
+                        <input type="text" id="shop_parking_note" name="shop_parking_note" maxlength="120" value="<?= e(setting('shop_parking_note', '(Có chỗ đậu xe máy & ô tô miễn phí)')) ?>">
+                    </div>
+                    <div class="settings-form-group">
+                        <label for="shop_holiday_note">Ghi chú giờ mở cửa dịp Lễ/Tết</label>
+                        <input type="text" id="shop_holiday_note" name="shop_holiday_note" maxlength="120" value="<?= e(setting('shop_holiday_note', 'Phục vụ xuyên Lễ & Tết')) ?>">
+                    </div>
+                    <div class="settings-form-group">
+                        <label for="shop_social_handle">Tên tài khoản mạng xã hội</label>
+                        <input type="text" id="shop_social_handle" name="shop_social_handle" maxlength="60" value="<?= e(setting('shop_social_handle', '@gocnhocoffee')) ?>">
+                    </div>
+                </div>
+                <div class="settings-form-group" style="margin-top:14px;">
+                    <label for="footer_desc">Đoạn giới thiệu ở chân trang</label>
+                    <textarea id="footer_desc" name="footer_desc" rows="2" maxlength="300"><?= e(setting('footer_desc', 'Một góc nhỏ an yên giữa phố thị tất bật. Nơi bạn tìm thấy ly cà phê chuẩn vị, bản nhạc êm dịu và những cuộc hẹn đáng nhớ.')) ?></textarea>
+                </div>
+                <div class="settings-grid-2" style="margin-top:14px;">
+                    <div class="settings-form-group">
+                        <label for="social_facebook">Link Facebook</label>
+                        <input type="url" id="social_facebook" name="social_facebook" maxlength="255" placeholder="https://facebook.com/tên-trang" value="<?= e(setting('social_facebook', '')) ?>">
+                    </div>
+                    <div class="settings-form-group">
+                        <label for="social_instagram">Link Instagram</label>
+                        <input type="url" id="social_instagram" name="social_instagram" maxlength="255" placeholder="https://instagram.com/tên-tài-khoản" value="<?= e(setting('social_instagram', '')) ?>">
+                    </div>
+                    <div class="settings-form-group">
+                        <label for="social_tiktok">Link TikTok</label>
+                        <input type="url" id="social_tiktok" name="social_tiktok" maxlength="255" placeholder="https://tiktok.com/@tên-tài-khoản" value="<?= e(setting('social_tiktok', '')) ?>">
+                        <span class="settings-field-hint">Để trống thì nút mạng xã hội tương ứng không hiện ở chân trang. Chỉ nhận link bắt đầu bằng http:// hoặc https://.</span>
+                    </div>
+                </div>
+            </div>
+
             <!-- Sticky Save Bar -->
             <div class="settings-actions-bar">
                 <span>Nhớ bấm <strong>Lưu cài đặt</strong> sau khi thay đổi để áp dụng ra trang chủ.</span>
