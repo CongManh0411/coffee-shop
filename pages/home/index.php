@@ -3,7 +3,8 @@
 $brandName = setting('brand_name', 'Góc Nhỏ');
 $brandTagline = setting('brand_tagline', 'COFFEE & TEA • EST. 2024');
 $shopPhone = setting('shop_phone', '0901 234 567');
-$shopEmail = setting('shop_email', 'contact@gocnhocoffee.vn');
+$shopEmail = setting('shop_email', '');
+$shopSocialHandle = setting('shop_social_handle', '');
 $shopAddress = setting('shop_address', '123 Đường Cà Phê, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh');
 $shopHours = setting('shop_hours', '07:00 – 22:30');
 $shopHoursWeekend = setting('shop_hours_weekend', '06:30 – 23:00');
@@ -118,11 +119,11 @@ function get_item_badge($index, $catFilter, $price) {
         <div class="landing-copy">
             <div class="hero-pill-badge">
                 <span class="sparkle">✨</span>
-                <span><?= e(setting('hero_badge', 'CHÀO MỪNG BẠN ĐẾN VỚI GÓC NHỎ')) ?></span>
+                <span><?= e(brand_text(setting('hero_badge', 'CHÀO MỪNG BẠN ĐẾN VỚI {BRAND}'))) ?></span>
             </div>
             <p class="eyebrow"><?= e(setting('hero_eyebrow', 'COFFEE · TEA · A LITTLE PAUSE')) ?></p>
             <h1><?= e(setting('hero_title', 'Cà phê thơm đượm vị.')) ?><br><em><?= e(setting('hero_subtitle', 'Chuyện trò thật an yên.')) ?></em></h1>
-            <p class="landing-lede"><?= nl2br(e(setting('hero_lede', 'Một chiếc bàn thân quen ngập tràn ánh nắng, tách cà phê rang mộc chuẩn gu và những khoảng thời gian thư thái dành riêng cho bạn. Ghé Góc Nhỏ để tìm lại nhịp thở chậm giữa phố thị tất bật.'))) ?></p>
+            <p class="landing-lede"><?= nl2br(e(brand_text(setting('hero_lede', 'Một chiếc bàn thân quen ngập tràn ánh nắng, tách cà phê rang mộc chuẩn gu và những khoảng thời gian thư thái dành riêng cho bạn. Ghé {brand} để tìm lại nhịp thở chậm giữa phố thị tất bật.')))) ?></p>
             
             <div class="landing-actions">
                 <a class="button button-dark" href="#booking">
@@ -160,7 +161,7 @@ function get_item_badge($index, $catFilter, $price) {
 
             <!-- Floating Product Note -->
             <div class="floating-card-feature">
-                <span class="feature-tag">GÓC NHỎ GỢI Ý</span>
+                <span class="feature-tag"><?= e(mb_strtoupper($brandName, 'UTF-8')) ?> GỢI Ý</span>
                 <b><?= e(setting('hero_suggestion', 'Cà phê sữa đá phin')) ?></b>
                 <small><?= e(setting('hero_suggestion_desc', 'Phin truyền thống đậm đà, ngọt béo.')) ?></small>
             </div>
@@ -187,7 +188,7 @@ function get_item_badge($index, $catFilter, $price) {
                 <?= e(setting('story_quote', '“Chúng tôi tin rằng ly cà phê tuyệt vời nhất là ly cà phê được thưởng thức trong sự an yên, thoải mái và trọn vẹn nhất.”')) ?>
             </div>
 
-            <p><?= nl2br(e(setting('story_desc', 'Góc Nhỏ được xây dựng từ niềm đam mê với những hạt cà phê Việt Nam và khát khao tạo ra một không gian dừng chân ấm áp. Từng góc bàn, chậu cây cho đến từng giai điệu lofi êm dịu đều được chăm chút kỹ lưỡng để mang lại cảm giác thân quen như trở về nhà.'))) ?></p>
+            <p><?= nl2br(e(brand_text(setting('story_desc', '{brand} được xây dựng từ niềm đam mê với những hạt cà phê Việt Nam và khát khao tạo ra một không gian dừng chân ấm áp. Từng góc bàn, chậu cây cho đến từng giai điệu lofi êm dịu đều được chăm chút kỹ lưỡng để mang lại cảm giác thân quen như trở về nhà.')))) ?></p>
 
             <div class="story-highlights-grid">
                 <?php foreach ($storyHighlights as $hl): ?>
@@ -457,12 +458,14 @@ function get_item_badge($index, $catFilter, $price) {
                 <p style="margin-top: 8px; font-size: 11.5px; color: var(--c-text-light);">Hỗ trợ đặt bàn &amp; mang đi</p>
             </div>
 
+            <?php if ($shopEmail !== '' || $shopSocialHandle !== ''): ?>
             <div class="contact-card">
                 <div class="contact-card-icon" aria-hidden="true">✉️</div>
                 <h4>Email &amp; Mạng xã hội</h4>
-                <p><a href="mailto:<?= e($shopEmail) ?>"><?= e($shopEmail) ?></a></p>
-                <p style="margin-top: 8px; font-size: 11.5px; color: var(--c-text-light);">Theo dõi <?= e(setting('shop_social_handle', '@gocnhocoffee')) ?></p>
+                <?php if ($shopEmail !== ''): ?><p><a href="mailto:<?= e($shopEmail) ?>"><?= e($shopEmail) ?></a></p><?php endif; ?>
+                <?php if ($shopSocialHandle !== ''): ?><p style="margin-top: 8px; font-size: 11.5px; color: var(--c-text-light);">Theo dõi <?= e($shopSocialHandle) ?></p><?php endif; ?>
             </div>
+            <?php endif; ?>
         </div>
     </section>
 </main>
@@ -486,7 +489,7 @@ function get_item_badge($index, $catFilter, $price) {
                 <?= e($brandName) ?>
                 <small><?= e($brandTagline) ?></small>
             </a>
-            <p class="footer-desc"><?= e(setting('footer_desc', 'Một góc nhỏ an yên giữa phố thị tất bật. Nơi bạn tìm thấy ly cà phê chuẩn vị, bản nhạc êm dịu và những cuộc hẹn đáng nhớ.')) ?></p>
+            <p class="footer-desc"><?= e(brand_text(setting('footer_desc', 'Một góc nhỏ an yên giữa phố thị tất bật. Nơi bạn tìm thấy ly cà phê chuẩn vị, bản nhạc êm dịu và những cuộc hẹn đáng nhớ.'))) ?></p>
             <?php $hasSocial = false; foreach ($socialLinks as $sl) { if (home_safe_url($sl[2]) !== '') { $hasSocial = true; } } ?>
             <?php if ($hasSocial): ?>
             <div class="footer-socials">
