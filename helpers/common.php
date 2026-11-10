@@ -161,27 +161,7 @@ function shop_logo($isAdmin = false)
 // Lấy đường dẫn ảnh hoặc ảnh base64 của món ăn
 function menu_item_image($item)
 {
-    if (!empty($item['image'])) {
-        return $item['image'];
-    }
-    $nameMap = array(
-        'Cà phê sữa đá' => 'assets/images/menu/01-ca-phe-sua-da.jpg',
-        'Cà phê đen đá' => 'assets/images/menu/02-ca-phe-den-da.jpg',
-        'Cà phê đen nóng' => 'assets/images/menu/03-ca-phe-den-nong.jpg',
-        'Cà phê bạc xỉu' => 'assets/images/menu/04-ca-phe-bac-xiu.jpg',
-        'Cà phê cappuccino' => 'assets/images/menu/05-ca-phe-cappuccino.jpg',
-        'Trà sữa trân châu' => 'assets/images/menu/06-tra-sua-tran-chau.jpg',
-        'Trà sữa matcha' => 'assets/images/menu/07-tra-sua-matcha.jpg',
-        'Trà đào cam sả' => 'assets/images/menu/08-tra-dao-cam-sa.jpg',
-        'Trà vải hoa hồng' => 'assets/images/menu/09-tra-vai-hoa-hong.jpg',
-        'Bánh tiramisu' => 'assets/images/menu/10-banh-tiramisu.jpg',
-        'Bánh croissant' => 'assets/images/menu/10-banh-tiramisu.jpg',
-    );
-    $name = trim($item['item_name'] ?? '');
-    if (isset($nameMap[$name])) {
-        return $nameMap[$name];
-    }
-    return 'assets/images/images.jpg';
+    return !empty($item['image']) ? $item['image'] : 'assets/images/images.jpg';
 }
 
 // Lỗi nghiệp vụ có thông báo hiển thị cho người dùng (vd: nhập sai số tiền). Trang bắt bằng try/catch rồi in ra form.

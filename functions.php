@@ -155,7 +155,7 @@ function admin_menu_items($search = '', $limit = 0, $offset = 0)
         $sql .= ' WHERE (m.item_name LIKE ? OR m.description LIKE ? OR c.category_name LIKE ?)';
         $params = array(like_escape($search), like_escape($search), like_escape($search));
     }
-    $sql .= ' ORDER BY c.category_name, m.item_name';
+    $sql .= ' ORDER BY c.category_id, m.item_name';
     if ((int) $limit > 0) {
         $sql .= ' LIMIT ? OFFSET ?';
         $params[] = (int) $limit;
