@@ -21,9 +21,9 @@ $today = date('Y-m-d');
 if ($ordTab === 'processing') {
     $ordProcessing = array_values(array_filter(pos_open_orders(), function ($o) { return $o['count'] > 0; }));
 } else {
-    foreach (orders_invoice_list('all') as $inv) {
-        $day = substr((string) ($ordTab === 'cancelled' ? ($inv['cancelledAt'] ?: $inv['createdAt']) : $inv['createdAt']), 0, 10);
-        if ($day !== $today) continue;
+    // Chỉ lấy hóa đơn của hôm nay ngay trong SQL (trước đây tải toàn bộ hóa đơn rồi mới lọc bằng PHP)
+    $ordFilter = $ordTab === 'cancelled' ? array('activityOn' => $today) : array('paidOn' => $today);
+    foreach (orders_invoice_list('all', $ordFilter) as $inv) {
         if ($ordTab === 'done' && $inv['status'] === 'active') $ordInvoices[] = $inv;
         if ($ordTab === 'cancelled' && $inv['status'] === 'cancelled') $ordInvoices[] = $inv;
     }

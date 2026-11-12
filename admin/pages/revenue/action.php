@@ -63,15 +63,20 @@ foreach (admin_revenue_per_day_since(date('Y-m-d', $todayTs - 13 * 86400)) as $r
 
 // Xuất Excel (CSV): ?export=csv — thay cho nút xuất bằng JavaScript
 if (isset($_GET['export']) && $_GET['export'] === 'csv') {
-    $invoices = admin_invoices('active', '', $range['start'], $range['end'], 1000);
     header('Content-Type: text/csv; charset=utf-8');
     header('Content-Disposition: attachment; filename="bao-cao-doanh-thu.csv"');
     $out = fopen('php://output', 'w');
     fwrite($out, "\xEF\xBB\xBF");
     fputcsv($out, array('Mã HĐ', 'Thời gian', 'Kênh', 'Thanh toán', 'Giảm giá', 'Tổng tiền'));
-    foreach ($invoices as $inv) {
-        fputcsv($out, array($inv['order_code'], date('d/m/Y H:i', strtotime($inv['paid_at'])), order_channel_label($inv['order_type']),
-            payment_method_label($inv['payment_method']), (int) $inv['discount'], (int) $inv['total']));
+    // Đọc từng đợt 500 hóa đơn cho tới hết, không cắt ở một con số cố định (trước đây chỉ xuất tối đa 1000 hóa đơn)
+    $csvBatch = 500;
+    for ($csvOffset = 0; ; $csvOffset += $csvBatch) {
+        $invoices = admin_invoices('active', '', $range['start'], $range['end'], $csvBatch, $csvOffset);
+        foreach ($invoices as $inv) {
+            fputcsv($out, array($inv['order_code'], date('d/m/Y H:i', strtotime($inv['paid_at'])), order_channel_label($inv['order_type']),
+                payment_method_label($inv['payment_method']), (int) $inv['discount'], (int) $inv['total']));
+        }
+        if (count($invoices) < $csvBatch) break;
     }
     fputcsv($out, array());
     fputcsv($out, array('Doanh thu', $valid['total']));
