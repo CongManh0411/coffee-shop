@@ -91,8 +91,7 @@
 <?php elseif ($opsTab === 'stock'): ?>
             <?php
             $movLabel = array('import' => 'Nhập', 'export' => 'Xuất', 'waste' => 'Hao hụt');
-            $costAcc = array();
-            foreach ($opsData['movements'] as $m) if ($m['type'] === 'import') { $costAcc[$m['item']]['q'] = ($costAcc[$m['item']]['q'] ?? 0) + $m['qty']; $costAcc[$m['item']]['v'] = ($costAcc[$m['item']]['v'] ?? 0) + $m['qty'] * $m['price']; }
+            $costAcc = ops_import_costs(); // giá nhập trung bình tính trong SQL trên toàn bộ phiếu nhập
             $today = date('Y-m-d'); $soon = date('Y-m-d', strtotime('+7 days'));
             ?>
             <div class="ops-card"><h3>Nhà cung cấp</h3>
@@ -118,7 +117,7 @@
                     <label>Hạn dùng <input name="expiresOn" type="date"></label><input name="note" placeholder="Ghi chú / lý do"><button type="submit">Ghi phiếu</button></form>
                 <p style="font-size:13px">Giá nhập bình quân:
                     <?php if ($costAcc): $parts = array(); foreach ($costAcc as $name => $c) $parts[] = '<b>' . e($name) . '</b> ' . e(money($c['v'] / $c['q'])); echo implode(' · ', $parts); else: ?>chưa có phiếu nhập<?php endif; ?></p>
-                <?php if (!$opsData['movements']): ?><div class="ops-empty">Chưa có dữ liệu.</div><?php else: ?>
+                <?php if (!$opsPager['total']): ?><div class="ops-empty">Chưa có dữ liệu.</div><?php else: ?>
                 <div data-ajax-region="ops-list"><div class="ops-scroll"><table class="ops-table"><tr><th>Ngày</th><th>Loại</th><th>Mặt hàng</th><th>SL</th><th>Đơn giá</th><th>NCC</th><th>Hạn dùng</th><th>Ghi chú</th></tr>
                 <?php foreach ($opsPaged as $m): ?>
                     <tr><td><?= e(substr($m['date'], 0, 10)) ?></td><td><?= e($movLabel[$m['type']] ?? $m['type']) ?></td><td><?= e($m['item']) ?></td><td><?= e(rtrim(rtrim(number_format($m['qty'], 3, '.', ''), '0'), '.')) ?></td><td><?= $m['price'] ? e(money($m['price'])) : '—' ?></td><td><?= e($m['sup'] ?: '—') ?></td>
@@ -136,7 +135,7 @@
                 <form method="post" action="<?= e($act) ?>" class="ops-form"><?= ops_hidden('generic', array('op_method' => 'POST', 'action' => 'delivery')) ?>
                     <select name="platform"><?php foreach (array_keys($platforms) as $pl): ?><option><?= e($pl) ?></option><?php endforeach; ?></select>
                     <input name="code" placeholder="Mã đơn / vận đơn" required><input name="name" placeholder="Khách"><input name="items" placeholder="Món (vd: 2 Cà phê sữa đá)"><input name="total" type="number" min="1" placeholder="Tổng tiền" required><button type="submit">Nhận đơn</button></form>
-                <?php if (!$opsData['deliveries']): ?><div class="ops-empty">Chưa có dữ liệu.</div><?php else: ?>
+                <?php if (!$opsPager['total']): ?><div class="ops-empty">Chưa có dữ liệu.</div><?php else: ?>
                 <div data-ajax-region="ops-list"><div class="ops-scroll"><table class="ops-table"><tr><th>Nền tảng</th><th>Mã đơn</th><th>Khách</th><th>Món</th><th>Tổng</th><th>Hoa hồng ước tính</th><th>Trạng thái</th><th></th></tr>
                 <?php foreach ($opsPaged as $d): $next = $delNext[$d['status']] ?? null; ?>
                     <tr><td><?= e($d['plat']) ?></td><td><?= e($d['code']) ?></td><td><?= e($d['name']) ?></td><td><?= e($d['items']) ?></td><td><?= e(money($d['total'])) ?></td><td><?= e(money($d['total'] * ($platforms[$d['plat']] ?? 0) / 100)) ?></td>

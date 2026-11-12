@@ -31,14 +31,54 @@ function auditlog_create($d, $me)
     return '';
 }
 
-// 3000 dòng mới nhất, cũ -> mới (giống thứ tự mảng cũ trong trình duyệt).
-function auditlog_list()
+// Điều kiện lọc nhật ký, chạy ngay trong SQL. $f: type, who (tên người), flag (true = chỉ mục cần chú ý), since (datetime 'Y-m-d H:i:s' hoặc rỗng).
+function auditlog_where($f = array())
 {
+    $where = array();
+    $params = array();
+    if (!empty($f['type']) && in_array($f['type'], auditlog_types(), true)) {
+        $where[] = 'type = ?';
+        $params[] = $f['type'];
+    }
+    if (isset($f['who']) && $f['who'] !== '') {
+        $where[] = 'staff_name = ?';
+        $params[] = (string) $f['who'];
+    }
+    if (!empty($f['flag'])) {
+        $where[] = 'flag = 1';
+    }
+    if (!empty($f['since'])) {
+        $where[] = 'created_at >= ?';
+        $params[] = (string) $f['since'];
+    }
+    return array($where ? 'WHERE ' . implode(' AND ', $where) : '', $params);
+}
+
+function auditlog_count($f = array())
+{
+    list($whereSql, $params) = auditlog_where($f);
+    $row = db()->fetchOne('SELECT COUNT(*) AS n FROM audit_logs ' . $whereSql, $params);
+    return (int) ($row['n'] ?? 0);
+}
+
+// Tên người thực hiện (cho ô lọc), không phụ thuộc bộ lọc hiện tại.
+function auditlog_actor_names()
+{
+    $rows = db()->fetchAll("SELECT DISTINCT staff_name FROM audit_logs WHERE staff_name IS NOT NULL AND staff_name <> '' ORDER BY staff_name");
+    return array_map(function ($r) { return $r['staff_name']; }, $rows);
+}
+
+// Một trang nhật ký, mới -> cũ, đã lọc trong SQL.
+function auditlog_page($f, $limit, $offset)
+{
+    list($whereSql, $params) = auditlog_where($f);
+    $params[] = max(1, min(500, (int) $limit));
+    $params[] = max(0, (int) $offset);
     $rows = db()->fetchAll(
         "SELECT log_id, staff_id, staff_name, role, type, text, amount, flag, created_at
-         FROM audit_logs ORDER BY log_id DESC LIMIT 3000"
+         FROM audit_logs " . $whereSql . " ORDER BY log_id DESC LIMIT ? OFFSET ?",
+        $params
     );
-    $rows = array_reverse($rows);
     return array_map(function ($r) {
         return array(
             'id'        => (int) $r['log_id'],

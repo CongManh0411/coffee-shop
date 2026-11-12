@@ -6,13 +6,6 @@ function ops_snapshot()
     $promotions = db()->fetchAll('SELECT promotion_id, code, label, discount_type, discount_value, starts_on, ends_on, max_uses, used_count, hour_from, hour_to, is_active FROM promotions ORDER BY promotion_id DESC');
     $suppliers = db()->fetchAll('SELECT supplier_id, supplier_name, phone FROM suppliers WHERE is_active = 1 ORDER BY supplier_name');
     $stockItems = db()->fetchAll('SELECT stock_item_id, item_name, unit, quantity, min_quantity FROM stock_items WHERE is_active = 1 ORDER BY item_name');
-    $movements = db()->fetchAll(
-        'SELECT m.movement_id, m.movement_type, m.quantity, m.unit_cost, m.expires_on, m.note, m.created_at,
-                i.item_name, s.supplier_name
-         FROM stock_movements m JOIN stock_items i ON i.stock_item_id = m.stock_item_id
-         LEFT JOIN suppliers s ON s.supplier_id = m.supplier_id ORDER BY m.movement_id DESC LIMIT 500'
-    );
-    $deliveries = db()->fetchAll('SELECT delivery_id, platform, external_code, customer_name, items_summary, total, status, created_at FROM delivery_orders ORDER BY delivery_id DESC LIMIT 500');
 
     return array(
         'waitlist' => array_map(function ($r) { return array('id' => (int) $r['waitlist_id'], 'name' => $r['customer_name'], 'phone' => $r['phone'] ?? '', 'pax' => (int) $r['party_size'], 'at' => strtotime($r['created_at']) * 1000); }, $waitlist),
@@ -20,9 +13,55 @@ function ops_snapshot()
         'promotions' => array_map(function ($r) { return array('id' => (int) $r['promotion_id'], 'code' => $r['code'], 'label' => $r['label'], 'type' => $r['discount_type'], 'value' => (int) $r['discount_value'], 'from' => $r['starts_on'] ?? '', 'to' => $r['ends_on'] ?? '', 'maxUses' => (int) $r['max_uses'], 'used' => (int) $r['used_count'], 'hourFrom' => $r['hour_from'] === null ? '' : (int) $r['hour_from'], 'hourTo' => $r['hour_to'] === null ? '' : (int) $r['hour_to'], 'active' => (bool) $r['is_active']); }, $promotions),
         'suppliers' => array_map(function ($r) { return array('id' => (int) $r['supplier_id'], 'name' => $r['supplier_name'], 'phone' => $r['phone'] ?? ''); }, $suppliers),
         'stockItems' => array_map(function ($r) { return array('id' => (int) $r['stock_item_id'], 'name' => $r['item_name'], 'unit' => $r['unit'], 'stock' => (float) $r['quantity'], 'minLevel' => (float) $r['min_quantity']); }, $stockItems),
-        'movements' => array_map(function ($r) { return array('id' => (int) $r['movement_id'], 'type' => $r['movement_type'], 'item' => $r['item_name'], 'qty' => (float) $r['quantity'], 'price' => (int) $r['unit_cost'], 'sup' => $r['supplier_name'] ?? '', 'exp' => $r['expires_on'] ?? '', 'note' => $r['note'] ?? '', 'date' => $r['created_at']); }, $movements),
-        'deliveries' => array_map(function ($r) { return array('id' => (int) $r['delivery_id'], 'plat' => $r['platform'], 'code' => $r['external_code'], 'name' => $r['customer_name'] ?? '', 'items' => $r['items_summary'] ?? '', 'total' => (int) $r['total'], 'status' => $r['status'], 'at' => $r['created_at']); }, $deliveries),
     );
+}
+
+// Phiếu kho / đơn giao hàng: chia trang trong SQL (snapshot không còn tải 500 dòng mỗi lần).
+function ops_movements_count()
+{
+    $row = db()->fetchOne('SELECT COUNT(*) AS n FROM stock_movements');
+    return (int) ($row['n'] ?? 0);
+}
+
+function ops_movements_page($limit, $offset)
+{
+    $rows = db()->fetchAll(
+        'SELECT m.movement_id, m.movement_type, m.quantity, m.unit_cost, m.expires_on, m.note, m.created_at,
+                i.item_name, s.supplier_name
+         FROM stock_movements m JOIN stock_items i ON i.stock_item_id = m.stock_item_id
+         LEFT JOIN suppliers s ON s.supplier_id = m.supplier_id ORDER BY m.movement_id DESC LIMIT ? OFFSET ?',
+        array(max(1, (int) $limit), max(0, (int) $offset))
+    );
+    return array_map(function ($r) { return array('id' => (int) $r['movement_id'], 'type' => $r['movement_type'], 'item' => $r['item_name'], 'qty' => (float) $r['quantity'], 'price' => (int) $r['unit_cost'], 'sup' => $r['supplier_name'] ?? '', 'exp' => $r['expires_on'] ?? '', 'note' => $r['note'] ?? '', 'date' => $r['created_at']); }, $rows);
+}
+
+// Giá nhập trung bình theo mặt hàng, tính trong SQL trên toàn bộ phiếu nhập: array(tên => array('q' => tổng SL, 'v' => tổng tiền)).
+function ops_import_costs()
+{
+    $rows = db()->fetchAll(
+        "SELECT i.item_name, SUM(m.quantity) AS q, SUM(m.quantity * m.unit_cost) AS v
+         FROM stock_movements m JOIN stock_items i ON i.stock_item_id = m.stock_item_id
+         WHERE m.movement_type = 'import' GROUP BY i.stock_item_id, i.item_name HAVING SUM(m.quantity) > 0 ORDER BY i.item_name"
+    );
+    $out = array();
+    foreach ($rows as $r) $out[$r['item_name']] = array('q' => (float) $r['q'], 'v' => (float) $r['v']);
+    return $out;
+}
+
+function ops_deliveries_count()
+{
+    $row = db()->fetchOne('SELECT COUNT(*) AS n FROM delivery_orders');
+    return (int) ($row['n'] ?? 0);
+}
+
+function ops_deliveries_page($limit, $offset)
+{
+    $rows = db()->fetchAll(
+        'SELECT delivery_id, platform, external_code, customer_name, items_summary, total, status, created_at
+         FROM delivery_orders ORDER BY delivery_id DESC LIMIT ? OFFSET ?',
+        array(max(1, (int) $limit), max(0, (int) $offset))
+    );
+    return array_map(function ($r) { return array('id' => (int) $r['delivery_id'], 'plat' => $r['platform'], 'code' => $r['external_code'], 'name' => $r['customer_name'] ?? '', 'items' => $r['items_summary'] ?? '', 'total' => (int) $r['total'], 'status' => $r['status'], 'at' => $r['created_at']); }, $rows);
 }
 
 function ops_promotion_list()

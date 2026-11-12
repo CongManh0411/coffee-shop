@@ -65,9 +65,11 @@ if ($opsTab === 'res') {
 } elseif ($opsTab === 'promo') {
     list($opsPaged, $opsPager) = paginate_rows($opsData['promotions'], request_page('p'), 10);
 } elseif ($opsTab === 'stock') {
-    list($opsPaged, $opsPager) = paginate_rows($opsData['movements'], request_page('p'), 10);
+    $opsPager = paginate(ops_movements_count(), request_page('p'), 10);
+    $opsPaged = ops_movements_page($opsPager['perPage'], $opsPager['offset']);
 } else {
-    list($opsPaged, $opsPager) = paginate_rows($opsData['deliveries'], request_page('p'), 10);
+    $opsPager = paginate(ops_deliveries_count(), request_page('p'), 10);
+    $opsPaged = ops_deliveries_page($opsPager['perPage'], $opsPager['offset']);
 }
 $opsPageQs = $opsPager['page'] > 1 ? '&p=' . $opsPager['page'] : ''; // form POST quay lại đúng trang đang xem
 

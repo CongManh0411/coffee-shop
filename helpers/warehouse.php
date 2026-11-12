@@ -170,7 +170,7 @@ function warehouse_adjust($data, $user)
     });
 }
 
-function warehouse_movements($filters = array())
+function warehouse_movements_where($filters = array())
 {
     $where = array();
     $params = array();
@@ -204,7 +204,20 @@ function warehouse_movements($filters = array())
         }
     }
 
-    $whereSql = $where ? 'WHERE ' . implode(' AND ', $where) : '';
+    return array($where ? 'WHERE ' . implode(' AND ', $where) : '', $params);
+}
+
+function warehouse_movements_count($filters = array())
+{
+    list($whereSql, $params) = warehouse_movements_where($filters);
+    $row = db()->fetchOne('SELECT COUNT(*) AS n FROM menu_stock_movements m ' . $whereSql, $params);
+    return (int) ($row['n'] ?? 0);
+}
+
+// $limit = 0: lấy hết; ngược lại chia trang bằng LIMIT/OFFSET trong SQL (không còn cắt cứng 500 dòng).
+function warehouse_movements($filters = array(), $limit = 0, $offset = 0)
+{
+    list($whereSql, $params) = warehouse_movements_where($filters);
     $sql = "SELECT 
                 m.movement_id AS id,
                 m.menu_item_id AS itemId,
@@ -223,8 +236,12 @@ function warehouse_movements($filters = array())
             JOIN categories c ON c.category_id = mi.category_id
             LEFT JOIN staff s ON s.staff_id = m.staff_id
             {$whereSql}
-            ORDER BY m.movement_id DESC
-            LIMIT 500";
+            ORDER BY m.movement_id DESC";
+    if ((int) $limit > 0) {
+        $sql .= ' LIMIT ? OFFSET ?';
+        $params[] = (int) $limit;
+        $params[] = max(0, (int) $offset);
+    }
 
     $rows = db()->fetchAll($sql, $params);
     $typeNames = array(
