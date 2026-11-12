@@ -683,3 +683,11 @@ body {
 .sidebar-menu .tab { position: relative; }
 .sidebar-menu .tab .notif-badge { position: absolute; top: 50%; right: 12px; transform: translateY(-50%); min-width: 20px; height: 20px; padding: 0 6px; box-sizing: border-box; border-radius: 10px; background: #e53935; color: #fff; font-size: 11px; font-weight: 600; line-height: 20px; text-align: center; }
 .sidebar-footer form { margin: 0; }
+
+/* Phân trang dùng chung (render_pagination + ajax-pager.js); từng trang có thể ghi đè trong CSS riêng */
+.pagination { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px; margin: 18px 0 8px; }
+.pg-btn { min-width: 36px; padding: 7px 12px; border: 1px solid #e0d3bd; border-radius: 8px; background: #fff; color: #3b2313; font-size: 14px; text-align: center; text-decoration: none; box-sizing: border-box; }
+a.pg-btn:hover { background: #f6efe3; }
+.pg-btn.is-current { background: #7a4a28; border-color: #7a4a28; color: #fff; }
+.pg-btn.is-disabled { opacity: .45; }
+.pg-gap { color: #a28d79; }

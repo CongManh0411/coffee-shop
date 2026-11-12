@@ -5,7 +5,7 @@ require_once __DIR__ . '/../../helpers/pos.php';
 
 $title = 'Đơn hàng';
 $css = array('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css', 'history.css', 'notifications.css', 'cashier.css');
-$scripts = array();
+$scripts = array('ajax-pager.js'); // đổi trang hóa đơn (tab Hoàn thành / Đã hủy) bằng AJAX
 
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && isset($_POST['pos'])) {
     $_POST['back'] = 'orders';
@@ -28,3 +28,7 @@ if ($ordTab === 'processing') {
         if ($ordTab === 'cancelled' && $inv['status'] === 'cancelled') $ordInvoices[] = $inv;
     }
 }
+// Tổng/đếm tính trên toàn bộ hóa đơn trong ngày, rồi mới cắt 10 hóa đơn/trang
+$ordTotalCount = count($ordInvoices);
+$ordTotalMoney = array_sum(array_column($ordInvoices, 'total'));
+list($ordInvoices, $ordPager) = paginate_rows($ordInvoices, request_page('p'), 10);

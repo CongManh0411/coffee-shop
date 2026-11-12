@@ -15,9 +15,10 @@ $fmtT = function ($iso) { return $iso ? date('H:i', strtotime($iso)) : '—'; };
             <div class="menu-page-header">
                 <h2><?= $ordTab === 'processing' ? 'Đơn đang xử lý' : ($ordTab === 'done' ? 'Đơn đã hoàn thành hôm nay' : 'Đơn đã hủy / hoàn tiền hôm nay') ?></h2>
                 <p><?php if ($ordTab === 'processing'): ?><?= count($ordProcessing) ?> đơn đang có món
-                   <?php elseif ($ordTab === 'done'): ?><?= count($ordInvoices) ?> hóa đơn • <?= e(money(array_sum(array_column($ordInvoices, 'total')))) ?>
-                   <?php else: ?><?= count($ordInvoices) ?> hóa đơn bị hủy / hoàn<?php endif; ?></p>
+                   <?php elseif ($ordTab === 'done'): ?><?= $ordTotalCount ?> hóa đơn • <?= e(money($ordTotalMoney)) ?>
+                   <?php else: ?><?= $ordTotalCount ?> hóa đơn bị hủy / hoàn<?php endif; ?></p>
             </div>
+            <div data-ajax-region="orders-list">
             <div class="data-table-wrapper">
                 <table class="data-table">
                 <?php if ($ordTab === 'processing'): ?>
@@ -53,7 +54,7 @@ $fmtT = function ($iso) { return $iso ? date('H:i', strtotime($iso)) : '—'; };
                             <td><?= e(money($inv['total'])) ?></td>
                             <td><div class="cs-actions">
                                 <a class="btn-outline" href="index.php?page=tables&receipt=<?= (int) $inv['orderId'] ?>">In</a>
-                                <form method="post" action="index.php?page=orders&tab=done" class="pos-inline" onsubmit="return confirm('Hoàn tiền hóa đơn này cho khách?');">
+                                <form method="post" action="<?= e('index.php?' . http_build_query(array_filter(array('page' => 'orders', 'tab' => 'done', 'p' => $ordPager['page'] > 1 ? $ordPager['page'] : null)))) ?>" class="pos-inline" onsubmit="return confirm('Hoàn tiền hóa đơn này cho khách?');">
                                     <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>"><input type="hidden" name="pos" value="refund"><input type="hidden" name="order_id" value="<?= (int) $inv['orderId'] ?>">
                                     <input name="reason" class="pos-note" maxlength="200" required placeholder="Lý do hoàn tiền (bắt buộc)">
                                     <button type="submit" class="btn-danger">Hoàn tiền</button></form>
@@ -73,6 +74,8 @@ $fmtT = function ($iso) { return $iso ? date('H:i', strtotime($iso)) : '—'; };
                     </tbody>
                 <?php endif; ?>
                 </table>
+            </div>
+            <?= $ordTab === 'processing' ? '' : render_pagination($ordPager['page'], $ordPager['pages'], array('page' => 'orders', 'tab' => $ordTab)) ?>
             </div>
             <p class="cs-note"><?= $ordTab === 'processing' ? 'Trạng thái pha chế do Bếp cập nhật. Trang tự tải lại mỗi 15 giây. Thêm / sửa món: vào "Bán hàng".' : ($ordTab === 'done' ? 'Hoàn tiền bắt buộc ghi lý do và được ghi Nhật ký cho Quản lý.' : '') ?></p>
         </div>

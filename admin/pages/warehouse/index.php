@@ -34,6 +34,7 @@
             </div>
 
             <div class="content-section-title">Danh sách tồn kho theo món</div>
+            <div data-ajax-region="warehouse-items">
             <div class="data-table-wrapper">
                 <table class="data-table" id="inventoryTable">
                     <thead>
@@ -48,10 +49,10 @@
                         </tr>
                     </thead>
                     <tbody id="tableBody">
-                        <?php if (empty($warehouseData['items'])): ?>
+                        <?php if (empty($warehousePageItems)): ?>
                             <tr><td colspan="7" class="empty-table-state">Chưa có món trong Thực đơn. Hãy thêm món ở trang Thực đơn.</td></tr>
                         <?php else: ?>
-                            <?php foreach ($warehouseData['items'] as $item): ?>
+                            <?php foreach ($warehousePageItems as $item): ?>
                                 <?php
                                 $stock = (int) $item['stock'];
                                 $minLevel = (int) $item['minLevel'];
@@ -83,6 +84,8 @@
                         <?php endif; ?>
                     </tbody>
                 </table>
+            </div>
+            <?= render_pagination($warehousePager['page'], $warehousePager['pages'], array('page' => 'warehouse')) ?>
             </div>
         </div>
 
@@ -193,6 +196,7 @@
                 </div>
             </form>
 
+            <div data-ajax-region="warehouse-history">
             <div class="data-table-wrapper">
                 <table class="data-table" id="stockLogTable">
                     <thead>
@@ -227,6 +231,8 @@
                         <?php endif; ?>
                     </tbody>
                 </table>
+            </div>
+            <?= render_pagination($stockPager['page'], $stockPager['pages'], $stockPagerQuery) ?>
             </div>
         </div>
     </div>

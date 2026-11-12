@@ -55,6 +55,7 @@
             </div>
             <?php endif; ?>
 
+            <div data-ajax-region="logs-list">
             <div class="data-table-wrapper">
                 <table class="data-table">
                     <?php if ($tab === 'logs'): ?>
@@ -106,6 +107,8 @@
                     </tbody>
                     <?php endif; ?>
                 </table>
+            </div>
+            <?= render_pagination($logPager['page'], $logPager['pages'], $logPagerQuery) ?>
             </div>
             <p class="cs-note">
                 <?php if ($tab === 'logs'): ?>Thu ngân tự làm các thao tác này (không cần duyệt) — nhật ký là nơi Quản lý kiểm tra lại.

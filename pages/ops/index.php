@@ -1,6 +1,6 @@
 <!-- pages/ops/index.php — trang "Vận hành": PHP in dữ liệu từ MySQL; mọi thao tác là form POST. -->
     <?php
-    $act = 'index.php?page=ops&tab=' . $opsTab;
+    $act = 'index.php?page=ops&tab=' . $opsTab . $opsPageQs;
     $moneyV = function ($n) { return money($n); };
     $tierOf = function ($p) { return $p >= 300 ? 'Vàng' : ($p >= 100 ? 'Bạc' : 'Đồng'); };
     ?>
@@ -26,7 +26,7 @@
                     <button type="submit">Tạo đặt bàn</button>
                 </form>
                 <?php if (!$opsReservations): ?><div class="ops-empty">Chưa có yêu cầu đặt bàn.</div><?php else: ?>
-                <div class="ops-scroll"><table class="ops-table"><tr><th>Khách</th><th>SĐT</th><th>Người</th><th>Giờ đặt</th><th>Bàn</th><th>Trạng thái</th><th>Ghi chú</th><th></th></tr>
+                <div data-ajax-region="ops-list"><div class="ops-scroll"><table class="ops-table"><tr><th>Khách</th><th>SĐT</th><th>Người</th><th>Giờ đặt</th><th>Bàn</th><th>Trạng thái</th><th>Ghi chú</th><th></th></tr>
                 <?php $resStatus = array('booked' => 'Đã đặt', 'arrived' => 'Đã đến', 'cancelled' => 'Đã hủy', 'no_show' => 'Không đến'); ?>
                 <?php foreach ($opsReservations as $r): ?>
                     <tr><td><?= e($r['name']) ?></td><td><?= e($r['phone'] ?: '—') ?></td><td><?= (int) $r['partySize'] ?></td><td><?= e(substr(str_replace('T', ' ', $r['reservedAt']), 0, 16)) ?></td><td><?= e($r['tableName'] ?: 'Chưa xếp') ?></td>
@@ -36,7 +36,7 @@
                             <?= ops_row_form('reservation_status', array('id' => $r['id'], 'status' => 'cancelled'), 'Hủy', 'red') ?>
                             <?= ops_row_form('reservation_status', array('id' => $r['id'], 'status' => 'no_show'), 'Không đến') ?>
                         <?php endif; ?></td></tr>
-                <?php endforeach; ?></table></div><?php endif; ?>
+                <?php endforeach; ?></table></div><?= render_pagination($opsPager['page'], $opsPager['pages'], array('page' => 'ops', 'tab' => $opsTab)) ?></div><?php endif; ?>
             </div>
             <div class="ops-card"><h3>Hàng chờ (khách vãng lai)</h3>
                 <form method="post" action="<?= e($act) ?>" class="ops-form"><?= ops_hidden('generic', array('op_method' => 'POST', 'action' => 'waitlist')) ?>
@@ -57,15 +57,15 @@
                     <input name="name" placeholder="Tên khách" required maxlength="150"><input name="phone" placeholder="SĐT" required><input name="birth" type="date" title="Sinh nhật"><button type="submit">Thêm khách</button>
                 </form>
                 <?php if (!$opsData['customers']): ?><div class="ops-empty">Chưa có dữ liệu.</div><?php else: ?>
-                <div class="ops-scroll"><table class="ops-table"><tr><th>Khách</th><th>SĐT</th><th>Sinh nhật</th><th>Điểm</th><th>Hạng</th><th>Chi tiêu</th><th></th></tr>
-                <?php $curMonth = (int) date('n'); foreach ($opsData['customers'] as $c): ?>
+                <div data-ajax-region="ops-list"><div class="ops-scroll"><table class="ops-table"><tr><th>Khách</th><th>SĐT</th><th>Sinh nhật</th><th>Điểm</th><th>Hạng</th><th>Chi tiêu</th><th></th></tr>
+                <?php $curMonth = (int) date('n'); foreach ($opsPaged as $c): ?>
                     <tr><td><?= e($c['name']) ?></td><td><?= e($c['phone']) ?></td>
                         <td><?php if ($c['birth']): ?><?= (int) substr($c['birth'], 5, 2) === $curMonth ? '<span class="ops-warn">' . e(substr($c['birth'], 5)) . ' 🎂 tháng này – gửi ưu đãi</span>' : e(substr($c['birth'], 5)) ?><?php else: ?>—<?php endif; ?></td>
                         <td><?= (int) $c['points'] ?></td><td><span class="ops-tag"><?= e($tierOf($c['points'])) ?></span></td><td><?= e(money($c['spent'])) ?></td>
                         <td><form method="post" action="<?= e($act) ?>" style="display:inline"><?= ops_hidden('generic', array('op_method' => 'PUT', 'action' => 'customer-points', 'id' => $c['id'])) ?>
                                 <input name="amount" type="number" min="1" placeholder="Hóa đơn (đ)" required style="width:110px"><button class="ops-btn sm green" type="submit">+ Điểm</button></form>
                             <?= ops_row_form('generic', array('op_method' => 'DELETE', 'action' => 'customer', 'id' => $c['id']), 'Xóa', 'red', 'Xóa khách này?') ?></td></tr>
-                <?php endforeach; ?></table></div><?php endif; ?>
+                <?php endforeach; ?></table></div><?= render_pagination($opsPager['page'], $opsPager['pages'], array('page' => 'ops', 'tab' => $opsTab)) ?></div><?php endif; ?>
             </div>
 
 <?php elseif ($opsTab === 'promo'): ?>
@@ -78,14 +78,14 @@
                     <button type="submit">Thêm mã</button>
                 </form>
                 <?php if (!$opsData['promotions']): ?><div class="ops-empty">Chưa có dữ liệu.</div><?php else: ?>
-                <div class="ops-scroll"><table class="ops-table"><tr><th>Mã</th><th>Chương trình</th><th>Giảm</th><th>Hạn</th><th>Lượt</th><th>Giờ</th><th></th></tr>
-                <?php foreach ($opsData['promotions'] as $p): ?>
+                <div data-ajax-region="ops-list"><div class="ops-scroll"><table class="ops-table"><tr><th>Mã</th><th>Chương trình</th><th>Giảm</th><th>Hạn</th><th>Lượt</th><th>Giờ</th><th></th></tr>
+                <?php foreach ($opsPaged as $p): ?>
                     <tr><td><b><?= e($p['code']) ?></b></td><td><?= e($p['label']) ?></td><td><?= $p['type'] === 'pct' ? (int) $p['value'] . '%' : e(money($p['value'])) ?></td>
                         <td><?= e(($p['from'] ?: '…') . ' → ' . ($p['to'] ?: '…')) ?></td><td><?= (int) $p['used'] ?>/<?= $p['maxUses'] ? (int) $p['maxUses'] : '∞' ?></td>
                         <td><?= $p['hourFrom'] === '' ? 'Cả ngày' : (int) $p['hourFrom'] . 'h–' . (int) $p['hourTo'] . 'h' ?></td>
                         <td><?= ops_row_form('generic', array('op_method' => 'PUT', 'action' => 'promotion', 'id' => $p['id']), $p['active'] ? 'Tắt' : 'Bật') ?>
                             <?= ops_row_form('generic', array('op_method' => 'DELETE', 'action' => 'promotion', 'id' => $p['id']), 'Xóa', 'red', 'Xóa mã này?') ?></td></tr>
-                <?php endforeach; ?></table></div><?php endif; ?>
+                <?php endforeach; ?></table></div><?= render_pagination($opsPager['page'], $opsPager['pages'], array('page' => 'ops', 'tab' => $opsTab)) ?></div><?php endif; ?>
             </div>
 
 <?php elseif ($opsTab === 'stock'): ?>
@@ -119,11 +119,11 @@
                 <p style="font-size:13px">Giá nhập bình quân:
                     <?php if ($costAcc): $parts = array(); foreach ($costAcc as $name => $c) $parts[] = '<b>' . e($name) . '</b> ' . e(money($c['v'] / $c['q'])); echo implode(' · ', $parts); else: ?>chưa có phiếu nhập<?php endif; ?></p>
                 <?php if (!$opsData['movements']): ?><div class="ops-empty">Chưa có dữ liệu.</div><?php else: ?>
-                <div class="ops-scroll"><table class="ops-table"><tr><th>Ngày</th><th>Loại</th><th>Mặt hàng</th><th>SL</th><th>Đơn giá</th><th>NCC</th><th>Hạn dùng</th><th>Ghi chú</th></tr>
-                <?php foreach ($opsData['movements'] as $m): ?>
+                <div data-ajax-region="ops-list"><div class="ops-scroll"><table class="ops-table"><tr><th>Ngày</th><th>Loại</th><th>Mặt hàng</th><th>SL</th><th>Đơn giá</th><th>NCC</th><th>Hạn dùng</th><th>Ghi chú</th></tr>
+                <?php foreach ($opsPaged as $m): ?>
                     <tr><td><?= e(substr($m['date'], 0, 10)) ?></td><td><?= e($movLabel[$m['type']] ?? $m['type']) ?></td><td><?= e($m['item']) ?></td><td><?= e(rtrim(rtrim(number_format($m['qty'], 3, '.', ''), '0'), '.')) ?></td><td><?= $m['price'] ? e(money($m['price'])) : '—' ?></td><td><?= e($m['sup'] ?: '—') ?></td>
                         <td><?php if ($m['exp']): ?><?= $m['exp'] < $today ? '<span class="ops-warn">' . e($m['exp']) . ' (hết hạn)</span>' : ($m['exp'] <= $soon ? '<span class="ops-warn">' . e($m['exp']) . ' (sắp hết)</span>' : e($m['exp'])) ?><?php else: ?>—<?php endif; ?></td><td><?= e($m['note'] ?: '—') ?></td></tr>
-                <?php endforeach; ?></table></div><?php endif; ?>
+                <?php endforeach; ?></table></div><?= render_pagination($opsPager['page'], $opsPager['pages'], array('page' => 'ops', 'tab' => $opsTab)) ?></div><?php endif; ?>
             </div>
 
 <?php else: ?>
@@ -137,12 +137,12 @@
                     <select name="platform"><?php foreach (array_keys($platforms) as $pl): ?><option><?= e($pl) ?></option><?php endforeach; ?></select>
                     <input name="code" placeholder="Mã đơn / vận đơn" required><input name="name" placeholder="Khách"><input name="items" placeholder="Món (vd: 2 Cà phê sữa đá)"><input name="total" type="number" min="1" placeholder="Tổng tiền" required><button type="submit">Nhận đơn</button></form>
                 <?php if (!$opsData['deliveries']): ?><div class="ops-empty">Chưa có dữ liệu.</div><?php else: ?>
-                <div class="ops-scroll"><table class="ops-table"><tr><th>Nền tảng</th><th>Mã đơn</th><th>Khách</th><th>Món</th><th>Tổng</th><th>Hoa hồng ước tính</th><th>Trạng thái</th><th></th></tr>
-                <?php foreach ($opsData['deliveries'] as $d): $next = $delNext[$d['status']] ?? null; ?>
+                <div data-ajax-region="ops-list"><div class="ops-scroll"><table class="ops-table"><tr><th>Nền tảng</th><th>Mã đơn</th><th>Khách</th><th>Món</th><th>Tổng</th><th>Hoa hồng ước tính</th><th>Trạng thái</th><th></th></tr>
+                <?php foreach ($opsPaged as $d): $next = $delNext[$d['status']] ?? null; ?>
                     <tr><td><?= e($d['plat']) ?></td><td><?= e($d['code']) ?></td><td><?= e($d['name']) ?></td><td><?= e($d['items']) ?></td><td><?= e(money($d['total'])) ?></td><td><?= e(money($d['total'] * ($platforms[$d['plat']] ?? 0) / 100)) ?></td>
                         <td><span class="ops-tag"><?= e($delStatus[$d['status']] ?? $d['status']) ?></span></td>
                         <td><?php if ($next): ?><?= ops_row_form('generic', array('op_method' => 'PUT', 'action' => 'delivery', 'id' => $d['id'], 'status' => $next), '→ ' . $delStatus[$next], 'green') ?><?= ops_row_form('generic', array('op_method' => 'PUT', 'action' => 'delivery', 'id' => $d['id'], 'status' => 'cancelled'), 'Hủy', 'red') ?><?php endif; ?></td></tr>
-                <?php endforeach; ?></table></div><?php endif; ?>
+                <?php endforeach; ?></table></div><?= render_pagination($opsPager['page'], $opsPager['pages'], array('page' => 'ops', 'tab' => $opsTab)) ?></div><?php endif; ?>
             </div>
 <?php endif; ?>
         </div>

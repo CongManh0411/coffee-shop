@@ -5,7 +5,7 @@ require_once __DIR__ . '/../../../functions.php';
 
 $title = 'Kho';
 $css = array('warehouse.css');
-$scripts = array();
+$scripts = array('ajax-pager.js'); // đổi trang danh sách kho / lịch sử kho bằng AJAX
 
 $tab = (string) ($_GET['tab'] ?? $_POST['tab'] ?? 'list');
 if (!in_array($tab, array('list', 'add', 'history'), true)) $tab = 'list';
@@ -63,3 +63,12 @@ $historyFilters = array(
     'dateTo'   => (string) ($_GET['f_to'] ?? ''),
 );
 $stockMovements = $tab === 'history' ? warehouse_movements($historyFilters) : array();
+
+// Phân trang: danh sách tồn kho 10 món/trang, lịch sử kho 15 dòng/trang (cùng tham số ?p=, mỗi tab một danh sách)
+$whPage = request_page('p');
+list($warehousePageItems, $warehousePager) = paginate_rows($warehouseItems, $tab === 'list' ? $whPage : 1, 10);
+list($stockMovements, $stockPager) = paginate_rows($stockMovements, $tab === 'history' ? $whPage : 1, 15);
+$stockPagerQuery = array('page' => 'warehouse', 'tab' => 'history') + array_filter(array(
+    'f_item' => $historyFilters['itemId'], 'f_type' => $historyFilters['type'],
+    'f_from' => $historyFilters['dateFrom'], 'f_to' => $historyFilters['dateTo'],
+), 'strlen');

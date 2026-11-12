@@ -6,7 +6,7 @@ require_once __DIR__ . '/../../../helpers/shift_report.php';
 
 $title = 'Nhật ký';
 $css = array('history.css', 'cashier.css');
-$scripts = array();
+$scripts = array('ajax-pager.js'); // đổi trang bằng AJAX; bộ lọc vẫn là form GET
 
 $logTypes = array(
     'discount' => 'Giảm giá', 'discount_big' => 'Giảm giá lớn', 'void_item' => 'Hủy món', 'void_done' => 'Hủy món đã làm',
@@ -51,6 +51,19 @@ if ($tab === 'logs') {
     foreach ($cashHistory as $s) if ($s['id'] === $repId) $reportShift = $s;
 } else {
     $stockRows = warehouse_movements();
+}
+
+// Phân trang 15 dòng/trang cho cả 3 tab (dữ liệu đã nằm trong mảng PHP nên cắt bằng paginate_rows). Giữ nguyên bộ lọc trên link.
+$logPage = request_page('p');
+$logPager = paginate(0, 1, 15);
+$logPagerQuery = array('page' => 'logs', 'tab' => $tab);
+if ($tab === 'logs') {
+    list($logRows, $logPager) = paginate_rows($logRows, $logPage, 15);
+    $logPagerQuery += array_filter(array('type' => $fType, 'range' => $fRange === '1' ? '' : $fRange, 'who' => $fWho, 'flag' => $fFlag ? '1' : ''), 'strlen');
+} elseif ($tab === 'shifts') {
+    list($cashHistory, $logPager) = paginate_rows($cashHistory, $logPage, 15);
+} else {
+    list($stockRows, $logPager) = paginate_rows($stockRows, $logPage, 15);
 }
 
 function logs_url($tab, $extra = array())
