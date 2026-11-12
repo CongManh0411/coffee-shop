@@ -49,7 +49,7 @@ function render_sidebar($user, $page, $isAdmin)
     ob_start();
     ?>
 <aside class="sidebar">
-    <div class="sidebar-shop"><img src="<?= e($assets) ?>images/images.jpg" alt="Coffee Logo" class="shop-logo" id="shopLogo"></div>
+    <div class="sidebar-shop"><img src="<?= e(shop_logo($isAdmin)) ?>" alt="Logo <?= e(brand_name()) ?>" class="shop-logo" id="shopLogo"></div>
     <div class="sidebar-user">
         <div class="user-name" id="userName"><?= e($user['name'] ?? 'Người dùng') ?></div>
         <div class="user-role" id="userRole"><?= e(NAV_ROLE_LABELS[$roleKey] ?? '—') ?></div>
