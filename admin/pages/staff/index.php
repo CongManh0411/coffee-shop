@@ -16,8 +16,8 @@
                     <h2>Nhân viên</h2>
                     <p>Danh sách tài khoản, chức vụ và thông tin liên hệ của nhân viên.</p>
                 </div>
-                <div class="staff-list" id="staffList">
-                    <?php foreach ($staffRows as $st): ?>
+                <div class="staff-list" id="staffList" data-ajax-region="staff-list">
+                    <?php foreach ($staffPageRows as $st): ?>
                         <div class="staff-item">
                             <div class="staff-info">
                                 <div class="staff-name"><?= e($st['fullName']) ?></div>
@@ -46,6 +46,7 @@
                     <?php if (!$staffRows): ?>
                         <div class="menu-empty-state">Chưa có nhân viên nào. Bấm "Thêm nhân viên" để bắt đầu.</div>
                     <?php endif; ?>
+                    <?= render_pagination($staffPager['page'], $staffPager['pages'], array('page' => 'staff')) ?>
                 </div>
             </div>
             <?php else: ?>

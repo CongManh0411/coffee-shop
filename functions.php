@@ -43,6 +43,13 @@ function paginate($total, $page, $perPage)
     return array('page' => $page, 'pages' => $pages, 'offset' => ($page - 1) * $perPage, 'perPage' => $perPage, 'total' => (int) $total);
 }
 
+// Phân trang một mảng đã có sẵn trong PHP. Trả về array(các dòng của trang, $pager như paginate()).
+function paginate_rows(array $rows, $page, $perPage)
+{
+    $pager = paginate(count($rows), $page, $perPage);
+    return array(array_slice(array_values($rows), $pager['offset'], $pager['perPage']), $pager);
+}
+
 // Dựng điều kiện WHERE cho thực đơn công khai. Trả về array(sql, params).
 function public_menu_where($categoryId = 0, $search = '')
 {
@@ -620,7 +627,7 @@ function admin_revenue_per_day_since($fromDate)
 
 // Admin: danh sách hóa đơn (JOIN orders với staff, order_cancellations, order_refunds).
 // $status: all | active | cancelled. $keyword tìm theo mã HĐ hoặc tên bàn.
-function admin_invoices($status = 'all', $keyword = '', $start = null, $end = null, $limit = 300)
+function admin_invoices_where($status = 'all', $keyword = '', $start = null, $end = null)
 {
     $where = array("o.status IN ('paid','cancelled')", 'o.subtotal > 0');
     $params = array();
@@ -641,7 +648,22 @@ function admin_invoices($status = 'all', $keyword = '', $start = null, $end = nu
         $params[] = $start;
         $params[] = $end;
     }
+    return array(implode(' AND ', $where), $params);
+}
+
+// Tổng số hóa đơn khớp bộ lọc (dùng để chia trang).
+function admin_invoices_count($status = 'all', $keyword = '', $start = null, $end = null)
+{
+    list($where, $params) = admin_invoices_where($status, $keyword, $start, $end);
+    $row = db()->fetchOne('SELECT COUNT(*) AS n FROM orders o WHERE ' . $where, $params);
+    return (int) ($row['n'] ?? 0);
+}
+
+function admin_invoices($status = 'all', $keyword = '', $start = null, $end = null, $limit = 300, $offset = 0)
+{
+    list($where, $params) = admin_invoices_where($status, $keyword, $start, $end);
     $params[] = max(1, min(1000, (int) $limit));
+    $params[] = max(0, (int) $offset);
     return db()->fetchAll(
         "SELECT o.order_id, o.order_code, o.table_name, o.order_type, o.subtotal, o.discount, o.total,
                 o.payment_method, o.status, o.paid_at,
@@ -658,9 +680,9 @@ function admin_invoices($status = 'all', $keyword = '', $start = null, $end = nu
          LEFT JOIN order_refunds r ON r.refund_id = (
              SELECT MAX(r2.refund_id) FROM order_refunds r2 WHERE r2.order_id = o.order_id)
          LEFT JOIN staff rs ON rs.staff_id = r.refunded_by
-         WHERE " . implode(' AND ', $where) . "
+         WHERE " . $where . "
          ORDER BY o.paid_at DESC, o.order_id DESC
-         LIMIT ?",
+         LIMIT ? OFFSET ?",
         $params
     );
 }

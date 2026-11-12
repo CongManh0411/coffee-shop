@@ -6,7 +6,7 @@ require_once __DIR__ . '/functions.php';
 
 $title = 'Nhân viên';
 $css = array('staff.css');
-$scripts = array();
+$scripts = array('ajax-pager.js'); // đổi trang danh sách nhân viên bằng AJAX
 
 $staffError = '';
 $staffForm = null; // dữ liệu form đang mở (null = chỉ hiện danh sách)
@@ -68,6 +68,8 @@ $staffSavedMessage = $_SESSION['staff_saved'] ?? '';
 unset($_SESSION['staff_saved']);
 
 $staffRows = staff_list();
+// Danh sách hiển thị: 8 nhân viên/trang ($staffRows vẫn giữ đủ để tìm người cần sửa)
+list($staffPageRows, $staffPager) = paginate_rows($staffRows, request_page('p'), 8);
 
 // Mở form bằng link ?add=1 hoặc ?edit=ID (khi POST lỗi thì giữ lại dữ liệu vừa nhập)
 if ($staffForm === null) {

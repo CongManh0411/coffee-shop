@@ -6,7 +6,7 @@ require_once __DIR__ . '/../../functions.php';
 
 $title = 'Vận hành';
 $css = array('menu.css', 'ops.css', 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css', 'notifications.css', 'cashier.css');
-$scripts = array();
+$scripts = array('ajax-pager.js'); // đổi trang các danh sách dài bằng AJAX
 
 $opsTabs = array('res' => 'Đặt bàn & hàng chờ', 'crm' => 'Khách thân thiết', 'promo' => 'Khuyến mãi', 'stock' => 'Kho nâng cao', 'deliv' => 'Giao hàng');
 $opsTab = (string) ($_GET['tab'] ?? $_POST['tab'] ?? 'res');
@@ -45,7 +45,7 @@ if ($opsMe && ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && isset($_POST['
     }
     if ($opsError === '') {
         $_SESSION['ops_saved'] = $msg;
-        redirect('index.php?' . http_build_query(array('page' => 'ops', 'tab' => $opsTab)));
+        redirect('index.php?' . http_build_query(array_filter(array('page' => 'ops', 'tab' => $opsTab, 'p' => request_page('p') > 1 ? request_page('p') : null))));
     }
 }
 $opsSaved = $_SESSION['ops_saved'] ?? '';
@@ -54,6 +54,22 @@ unset($_SESSION['ops_saved']);
 $opsData = ops_snapshot();
 $opsReservations = $opsTab === 'res' ? reservations_list() : array();
 $opsTables = $opsTab === 'res' ? tables_list() : array();
+
+// Phân trang 10 dòng/trang cho danh sách chính của từng tab (đặt bàn, khách, mã khuyến mãi, phiếu kho, đơn giao hàng); trang nằm trên URL (?p=2)
+$opsPager = paginate(0, 1, 10);
+$opsPaged = array();
+if ($opsTab === 'res') {
+    list($opsReservations, $opsPager) = paginate_rows($opsReservations, request_page('p'), 10);
+} elseif ($opsTab === 'crm') {
+    list($opsPaged, $opsPager) = paginate_rows($opsData['customers'], request_page('p'), 10);
+} elseif ($opsTab === 'promo') {
+    list($opsPaged, $opsPager) = paginate_rows($opsData['promotions'], request_page('p'), 10);
+} elseif ($opsTab === 'stock') {
+    list($opsPaged, $opsPager) = paginate_rows($opsData['movements'], request_page('p'), 10);
+} else {
+    list($opsPaged, $opsPager) = paginate_rows($opsData['deliveries'], request_page('p'), 10);
+}
+$opsPageQs = $opsPager['page'] > 1 ? '&p=' . $opsPager['page'] : ''; // form POST quay lại đúng trang đang xem
 
 // Dựng form ẩn chung: csrf + hành động + tab hiện tại
 function ops_hidden($op, $extra = array())
@@ -64,6 +80,6 @@ function ops_hidden($op, $extra = array())
 }
 function ops_row_form($op, $extra, $label, $cls = '', $confirm = '')
 {
-    return '<form method="post" action="index.php?page=ops&tab=' . e($GLOBALS['opsTab']) . '" style="display:inline"' . ($confirm ? ' onsubmit="return confirm(\'' . e($confirm) . '\');"' : '') . '>'
+    return '<form method="post" action="index.php?page=ops&tab=' . e($GLOBALS['opsTab']) . e($GLOBALS['opsPageQs']) . '" style="display:inline"' . ($confirm ? ' onsubmit="return confirm(\'' . e($confirm) . '\');"' : '') . '>'
         . ops_hidden($op, $extra) . '<button class="ops-btn sm ' . e($cls) . '" type="submit">' . e($label) . '</button></form>';
 }

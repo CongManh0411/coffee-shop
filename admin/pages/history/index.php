@@ -2,6 +2,7 @@
 // admin/pages/history/index.php — giao diện "Lịch sử hóa đơn" (header/sidebar/footer do router in).
 $statusTabs = array('all' => 'Tất cả', 'active' => 'Đang hiệu lực', 'cancelled' => 'Đã hủy');
 $baseQuery = array('status' => $statusFilter, 'q' => $keyword);
+if ($invoicePager['page'] > 1) $baseQuery['p'] = $invoicePager['page']; // đóng hộp thoại thì quay lại đúng trang đang xem
 ?>
     <main class="main">
         <nav class="topnav period-filter-bar" style="padding:16px 24px 0; border-bottom:none;">
@@ -19,7 +20,7 @@ $baseQuery = array('status' => $statusFilter, 'q' => $keyword);
         <div class="main-content">
             <div class="menu-page-header">
                 <h2>Hóa đơn</h2>
-                <p>Tổng cộng <?= count($invoices) ?> hóa đơn</p>
+                <p>Tổng cộng <?= (int) $invoicePager['total'] ?> hóa đơn</p>
 <?php if ($savedMessage !== ''): ?>
                 <p class="badge badge-active" role="status"><?= e($savedMessage) ?></p>
 <?php endif; ?>
@@ -28,6 +29,7 @@ $baseQuery = array('status' => $statusFilter, 'q' => $keyword);
 <?php endif; ?>
             </div>
 
+            <div data-ajax-region="history-invoices">
             <div class="data-table-wrapper">
                 <table class="data-table">
                     <thead>
@@ -73,6 +75,8 @@ $baseQuery = array('status' => $statusFilter, 'q' => $keyword);
 <?php endforeach; ?>
                     </tbody>
                 </table>
+            </div>
+            <?= render_pagination($invoicePager['page'], $invoicePager['pages'], array_filter(array('page' => 'history', 'status' => $statusFilter === 'all' ? '' : $statusFilter, 'q' => $keyword), 'strlen')) ?>
             </div>
 
             <p class="sync-hint">Hóa đơn được tạo khi Thu ngân xác nhận thanh toán. Hủy hoặc hoàn tiền chỉ đánh dấu "Đã hủy" kèm lý do (ghi vào order_cancellations / order_refunds), không xóa dữ liệu.</p>
