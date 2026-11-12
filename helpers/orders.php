@@ -43,10 +43,26 @@ function orders_list($status = 'open')
     return $orders;
 }
 
-function orders_invoice_list($status = 'all')
+// $filters (tùy chọn, lọc ngay trong SQL để không tải toàn bộ hóa đơn):
+//   'orderId'    => một hóa đơn theo order_id
+//   'paidOn'     => 'Y-m-d' — hóa đơn thanh toán trong ngày đó
+//   'activityOn' => 'Y-m-d' — ngày hủy/hoàn tiền (nếu có), không thì ngày thanh toán
+function orders_invoice_list($status = 'all', $filters = array())
 {
     $where = $status === 'all' ? "o.status IN ('paid','cancelled')" : 'o.status = ?';
     $params = $status === 'all' ? array() : array($status);
+    if (!empty($filters['orderId'])) {
+        $where .= ' AND o.order_id = ?';
+        $params[] = (int) $filters['orderId'];
+    }
+    if (!empty($filters['paidOn'])) {
+        $where .= ' AND DATE(o.paid_at) = ?';
+        $params[] = (string) $filters['paidOn'];
+    }
+    if (!empty($filters['activityOn'])) {
+        $where .= ' AND DATE(COALESCE(c.created_at, r.created_at, o.paid_at)) = ?';
+        $params[] = (string) $filters['activityOn'];
+    }
     $rows = db()->fetchAll(
         "SELECT o.order_id, o.order_code, o.table_name, o.order_type, o.subtotal, o.discount,
                 o.total, o.voucher, o.payment_method, o.payment_ref, o.created_by,

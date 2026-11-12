@@ -32,7 +32,7 @@ $invoice = null;    // hóa đơn vừa thanh toán
 $paid = null;
 
 if ($receiptParam > 0) {
-    foreach (orders_invoice_list('all') as $inv) if ((int) $inv['orderId'] === $receiptParam) $invoice = $inv;
+    foreach (orders_invoice_list('all', array('orderId' => $receiptParam)) as $inv) $invoice = $inv;
     if ($invoice) {
         $mode = 'receipt';
         $paid = $_SESSION['pos_paid'] ?? null;
