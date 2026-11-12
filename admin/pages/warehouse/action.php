@@ -62,12 +62,12 @@ $historyFilters = array(
     'dateFrom' => (string) ($_GET['f_from'] ?? ''),
     'dateTo'   => (string) ($_GET['f_to'] ?? ''),
 );
-$stockMovements = $tab === 'history' ? warehouse_movements($historyFilters) : array();
 
 // Phân trang: danh sách tồn kho 10 món/trang, lịch sử kho 15 dòng/trang (cùng tham số ?p=, mỗi tab một danh sách)
 $whPage = request_page('p');
 list($warehousePageItems, $warehousePager) = paginate_rows($warehouseItems, $tab === 'list' ? $whPage : 1, 10);
-list($stockMovements, $stockPager) = paginate_rows($stockMovements, $tab === 'history' ? $whPage : 1, 15);
+$stockPager = paginate($tab === 'history' ? warehouse_movements_count($historyFilters) : 0, $tab === 'history' ? $whPage : 1, 15);
+$stockMovements = $tab === 'history' ? warehouse_movements($historyFilters, $stockPager['perPage'], $stockPager['offset']) : array();
 $stockPagerQuery = array('page' => 'warehouse', 'tab' => 'history') + array_filter(array(
     'f_item' => $historyFilters['itemId'], 'f_type' => $historyFilters['type'],
     'f_from' => $historyFilters['dateFrom'], 'f_to' => $historyFilters['dateTo'],
