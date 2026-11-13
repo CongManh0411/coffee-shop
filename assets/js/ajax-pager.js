@@ -53,7 +53,7 @@
         return Array.from(document.querySelectorAll(REGION)).map(el => el.dataset.ajaxRegion);
     }
 
-    async function go(url, region, push) {
+    async function go(url, region, push, scroll) {
         const id = ++requestId;
         const names = push ? [region.dataset.ajaxRegion] : regionNames();
         document.querySelectorAll(REGION).forEach(el => { if (names.indexOf(el.dataset.ajaxRegion) !== -1) { el.classList.add('is-loading'); el.setAttribute('aria-busy', 'true'); } });
@@ -63,7 +63,7 @@
             if (!swapRegions(doc, names)) throw new Error('Thiếu vùng');
             if (push) {
                 history.pushState({ ajaxPager: true }, '', url);
-                region.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                if (scroll !== false) region.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
         } catch (err) {
             if (id === requestId) location.href = url;          // lỗi mạng/phiên hết hạn: mở trang đầy đủ
@@ -74,15 +74,24 @@
 
     document.addEventListener('click', function (e) {
         if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-        const link = e.target.closest('.pagination a[href]');
+        const link = e.target.closest('.pagination a[href], a[data-ajax-link][href]');
         if (!link) return;
-        const region = link.closest(REGION);
+        const region = link.closest(REGION) || document.querySelector(REGION);
         if (!region) return;
         const url = new URL(link.getAttribute('href'), location.href);
         if (url.origin !== location.origin) return;
         e.preventDefault();
-        go(url.href, region, true);
+        go(url.href, region, true, !link.hasAttribute('data-ajax-link'));
     });
+
+    // Cho script riêng của trang (vd. tìm kiếm) gọi lại cùng cơ chế: AjaxPager.load(url)
+    window.AjaxPager = {
+        load: function (url, name) {
+            const region = name ? document.querySelector('[data-ajax-region="' + name + '"]') : document.querySelector(REGION);
+            if (region) go(url, region, true, false);
+            else location.href = url;
+        }
+    };
 
     // Nút Back/Forward của trình duyệt: tải lại các vùng theo URL hiện tại
     window.addEventListener('popstate', function () {

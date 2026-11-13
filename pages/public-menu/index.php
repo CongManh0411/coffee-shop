@@ -21,16 +21,17 @@
         <div class="public-menu-heading"><div><p class="eyebrow">THỰC ĐƠN</p><h2>Chọn món bạn thích.</h2></div><p>Giá và món hiện có được cập nhật trực tiếp từ quán.</p></div>
         <form id="menuSearchForm" class="catalog-search" role="search" method="get" action="index.php">
             <input type="hidden" name="page" value="public-menu">
-            <?php if ($pmCategoryName !== ''): ?><input type="hidden" name="category" value="<?= e($pmCategoryName) ?>"><?php endif; ?>
+            <input type="hidden" name="category" value="<?= e($pmCategoryName) ?>">
             <label for="menuSearch" class="sr-only">Tìm món</label>
             <input type="search" id="menuSearch" name="q" placeholder="Tìm món theo tên hoặc mô tả…" maxlength="100" autocomplete="off" value="<?= e($pmSearch) ?>">
             <button type="submit">Tìm</button>
-            <?php if ($pmSearch !== ''): ?><a id="menuSearchClear" class="catalog-search-clear" href="<?= e(pm_url($pmCategoryName, '')) ?>">Xóa lọc</a><?php endif; ?>
+            <a id="menuSearchClear" class="catalog-search-clear" data-ajax-link href="<?= e(pm_url($pmCategoryName, '')) ?>"<?= $pmSearch === '' ? ' hidden' : '' ?>>Xóa lọc</a>
         </form>
+        <div data-ajax-region="public-menu">
         <nav id="menuCategories" class="menu-category-tabs" aria-label="Lọc theo danh mục">
-            <a class="menu-category-tab<?= $pmCategoryName === '' ? ' is-active' : '' ?>" href="<?= e(pm_url('', $pmSearch)) ?>">Tất cả</a>
+            <a class="menu-category-tab<?= $pmCategoryName === '' ? ' is-active' : '' ?>" data-ajax-link data-category="" href="<?= e(pm_url('', $pmSearch)) ?>">Tất cả</a>
             <?php foreach ($pmCategories as $c): ?>
-                <a class="menu-category-tab<?= $pmCategoryName === $c['category_name'] ? ' is-active' : '' ?>" href="<?= e(pm_url($c['category_name'], $pmSearch)) ?>"><?= e($c['category_name']) ?></a>
+                <a class="menu-category-tab<?= $pmCategoryName === $c['category_name'] ? ' is-active' : '' ?>" data-ajax-link data-category="<?= e($c['category_name']) ?>" href="<?= e(pm_url($c['category_name'], $pmSearch)) ?>"><?= e($c['category_name']) ?></a>
             <?php endforeach; ?>
         </nav>
         <?php if ($pmError): ?>
@@ -40,7 +41,6 @@
         <?php elseif ($pmSearch !== ''): ?>
             <p id="menuStatus" class="menu-status" role="status">Tìm thấy <?= (int) $pmPager['total'] ?> món cho “<?= e($pmSearch) ?>”.</p>
         <?php endif; ?>
-        <div data-ajax-region="public-menu">
         <div id="publicMenuGrid" class="public-menu-grid">
             <?php foreach ($pmItems as $item): ?>
                 <?php $pmDetailUrl = 'index.php?page=menu-detail&id=' . (int) $item['item_id']; ?>
