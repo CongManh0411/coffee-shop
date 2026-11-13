@@ -6,7 +6,7 @@ require_once __DIR__ . '/../../../helpers/charts.php';
 
 $title = 'Doanh thu';
 $css = array('revenue.css', 'dashboard.css');
-$scripts = array(); // không còn revenue.js / dashboard.js: số liệu và biểu đồ do PHP in ra
+$scripts = array('ajax-pager.js'); // đổi trang bảng doanh thu theo ngày bằng AJAX; không còn revenue.js / dashboard.js: số liệu và biểu đồ do PHP in ra
 
 // Kỳ xem: ?period=today|week|month|quarter|year|custom (&from=&to= khi chọn "Tùy chọn")
 $period = isset($_GET['period']) && is_string($_GET['period']) ? $_GET['period'] : 'today';

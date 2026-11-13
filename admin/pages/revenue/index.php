@@ -4,6 +4,8 @@
 $periods = array('today' => 'Hôm nay', 'week' => 'Tuần này', 'month' => 'Tháng này', 'quarter' => 'Quý này', 'year' => 'Năm nay', 'custom' => 'Tùy chọn');
 $methodNames = array('cash' => 'Tiền mặt', 'transfer' => 'Chuyển khoản', 'card' => 'Thẻ ATM');
 $exportQuery = array('period' => $period, 'from' => $range['from'], 'to' => $range['to'], 'cost' => $costPct);
+// Bảng theo ngày: 10 dòng/trang (số liệu tổng ở trên vẫn tính trên toàn bộ các ngày)
+list($dailyPageRows, $dailyPager) = paginate_rows($dailyRows, request_page('p'), 10);
 ?>
     <main class="main">
         <nav class="topnav period-filter-bar" style="padding:16px 24px 0; border-bottom:none;">
@@ -98,6 +100,7 @@ $exportQuery = array('period' => $period, 'from' => $range['from'], 'to' => $ran
             <div class="menu-page-header" style="margin-bottom:12px;">
                 <h2 style="font-size:18px;">Doanh thu theo ngày</h2>
             </div>
+            <div data-ajax-region="revenue-daily">
             <div class="data-table-wrapper">
                 <table class="data-table">
                     <thead>
@@ -107,7 +110,7 @@ $exportQuery = array('period' => $period, 'from' => $range['from'], 'to' => $ran
 <?php if (!$dailyRows): ?>
                         <tr><td colspan="6"><div class="empty-table-state">Chưa có dữ liệu trong khoảng thời gian này.</div></td></tr>
 <?php endif; ?>
-<?php foreach ($dailyRows as $row): ?>
+<?php foreach ($dailyPageRows as $row): ?>
                         <tr>
                             <td><?= e(date('d/m/Y', strtotime($row['day']))) ?></td>
                             <td><?= (int) $row['invoice_count'] ?></td>
@@ -119,6 +122,8 @@ $exportQuery = array('period' => $period, 'from' => $range['from'], 'to' => $ran
 <?php endforeach; ?>
                     </tbody>
                 </table>
+            </div>
+            <?= render_pagination($dailyPager['page'], $dailyPager['pages'], array('page' => 'revenue') + $exportQuery) ?>
             </div>
 
             <p class="sync-hint">Số liệu đọc trực tiếp từ MySQL (bảng orders, order_items) theo các hóa đơn đã thanh toán. Hóa đơn đã hủy hoặc hoàn tiền không tính vào tổng.</p>

@@ -36,6 +36,7 @@
                 <p class="tm-summary">Tổng cộng <?= count($adminTables) ?> bàn — <?= count($adminTables) - $tablesOccupied ?> trống, <?= $tablesOccupied ?> đang phục vụ</p>
             </div>
 
+            <div data-ajax-region="table-manage">
             <div class="data-table-wrapper">
                 <table class="data-table">
                     <thead>
@@ -47,7 +48,7 @@
                         </tr>
                     </thead>
                     <tbody id="tableManageBody">
-                        <?php foreach ($adminTables as $table): ?>
+                        <?php foreach ($adminTablesPage as $table): ?>
                             <tr>
                                 <td><b><?= e($table['table_name']) ?></b><?= (int) $table['is_active'] ? '' : ' <small>(ngừng hoạt động)</small>' ?></td>
                                 <td>
@@ -79,6 +80,8 @@
                         <?php endif; ?>
                     </tbody>
                 </table>
+            </div>
+            <?= render_pagination($tablePager['page'], $tablePager['pages'], array('page' => 'tablemanage')) ?>
             </div>
 
             <p class="sync-hint">Chỉ xóa được bàn đang trống. Bàn đang phục vụ sẽ xóa được sau khi Phục vụ thanh toán xong. Đổi tên bàn không ảnh hưởng hóa đơn đã lập.</p>

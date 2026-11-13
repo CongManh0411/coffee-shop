@@ -5,7 +5,7 @@ require_once __DIR__ . '/../../../functions.php';
 
 $title = 'Bàn';
 $css = array('table-manage.css');
-$scripts = array(); // trang này dùng form POST của PHP, không cần JavaScript
+$scripts = array('ajax-pager.js'); // thêm/sửa/xóa bàn dùng form POST của PHP; đổi trang danh sách bàn bằng AJAX
 
 $tableFormError = '';
 $formTableId = 0;      // 0 = đang thêm bàn mới, > 0 = đang sửa bàn có id này
@@ -61,6 +61,9 @@ foreach ($adminTables as $tableRow) {
         $tablesOccupied++;
     }
 }
+
+// Danh sách hiển thị: 10 bàn/trang (tổng số bàn / số bàn trống vẫn tính trên toàn bộ)
+list($adminTablesPage, $tablePager) = paginate_rows($adminTables, request_page('p'), 10);
 
 $tableFlash = $_SESSION['table_flash'] ?? null;
 unset($_SESSION['table_flash']);

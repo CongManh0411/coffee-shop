@@ -6,7 +6,7 @@ require_once __DIR__ . '/../../helpers/shift_report.php';
 
 $title = 'Ca & Quỹ';
 $css = array('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css', 'history.css', 'notifications.css', 'cashier.css');
-$scripts = array();
+$scripts = array('ajax-pager.js'); // đổi trang danh sách thu/chi trong ca bằng AJAX
 
 $me = current_user();
 $csError = '';
@@ -73,6 +73,7 @@ $csHistory = array_reverse($csSnap['history']); // mới -> cũ
 $csMine = array_slice(array_values(array_filter($csHistory, function ($s) use ($me) {
     return (int) $s['cashierId'] === (int) $me['staffId'] || (int) ($s['closedById'] ?? 0) === (int) $me['staffId'];
 })), 0, 8);
+list($csMovsPage, $csMovsPager) = paginate_rows(array_reverse($csCurrent['movements'] ?? array()), request_page('p'), 8);
 $csReport = null;
 $repId = (string) ($_GET['report'] ?? '');
 foreach ($csHistory as $s) if ($s['id'] === $repId) $csReport = $s;

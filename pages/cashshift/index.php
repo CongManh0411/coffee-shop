@@ -58,13 +58,14 @@
                         <button class="cs-btn" type="submit">Ghi sổ</button>
                     </form>
                     <?php if ($csError && $csErrorBox === 'movement'): ?><p class="cs-msg" role="alert"><?= e($csError) ?></p><?php endif; ?>
-                    <?php $movs = array_reverse($csCurrent['movements'] ?? array()); ?>
+                    <?php $movs = $csMovsPage; ?>
                     <?php if ($movs): ?>
-                        <div class="data-table-wrapper" style="margin-top:12px"><table class="data-table"><thead><tr><th>Giờ</th><th>Loại</th><th>Nội dung</th><th>Số tiền</th><th>Người ghi</th></tr></thead><tbody>
+                        <div data-ajax-region="cashshift-movements"><div class="data-table-wrapper" style="margin-top:12px"><table class="data-table"><thead><tr><th>Giờ</th><th>Loại</th><th>Nội dung</th><th>Số tiền</th><th>Người ghi</th></tr></thead><tbody>
                             <?php foreach ($movs as $m): ?>
                                 <tr><td><?= e(date('H:i', strtotime($m['time']))) ?></td><td><?= $m['kind'] === 'in' ? 'Thu' : 'Chi' ?> — <?= e($m['category']) ?></td><td><?= e($m['note']) ?></td><td style="color:<?= $m['kind'] === 'in' ? '#2c7046' : '#b5573c' ?>;font-weight:600"><?= $m['kind'] === 'in' ? '+' : '−' ?><?= e(money($m['amount'])) ?></td><td><?= e($m['by']) ?></td></tr>
                             <?php endforeach; ?>
                         </tbody></table></div>
+                        <?= render_pagination($csMovsPager['page'], $csMovsPager['pages'], array('page' => 'cashshift')) ?></div>
                     <?php else: ?><p class="cs-note">Chưa có khoản thu / chi nào trong ca.</p><?php endif; ?>
                     <p class="cs-note">Thu/chi lớn (từ 200.000đ) được đánh dấu trong Nhật ký của Quản lý.</p>
                 </div>
