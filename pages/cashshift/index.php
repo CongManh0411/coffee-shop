@@ -65,7 +65,7 @@
                                 <tr><td><?= e(date('H:i', strtotime($m['time']))) ?></td><td><?= $m['kind'] === 'in' ? 'Thu' : 'Chi' ?> — <?= e($m['category']) ?></td><td><?= e($m['note']) ?></td><td style="color:<?= $m['kind'] === 'in' ? '#2c7046' : '#b5573c' ?>;font-weight:600"><?= $m['kind'] === 'in' ? '+' : '−' ?><?= e(money($m['amount'])) ?></td><td><?= e($m['by']) ?></td></tr>
                             <?php endforeach; ?>
                         </tbody></table></div>
-                        <?= render_pagination($csMovsPager['page'], $csMovsPager['pages'], array('page' => 'cashshift')) ?></div>
+                        <?= render_pagination($csMovsPager['page'], $csMovsPager['pages'], array('page' => 'cashshift') + ($csMinePager['page'] > 1 ? array('hp' => $csMinePager['page']) : array()), 'mp') ?></div>
                     <?php else: ?><p class="cs-note">Chưa có khoản thu / chi nào trong ca.</p><?php endif; ?>
                     <p class="cs-note">Thu/chi lớn (từ 200.000đ) được đánh dấu trong Nhật ký của Quản lý.</p>
                 </div>
@@ -90,6 +90,7 @@
 
             <div class="cs-panel"><h3>Báo cáo các ca gần đây</h3>
                 <?php if ($csMine): ?>
+                    <div data-ajax-region="cashshift-history">
                     <div class="data-table-wrapper"><table class="data-table"><thead><tr><th>Ca</th><th>Thời gian</th><th>Số đơn</th><th>Doanh thu</th><th>Chênh lệch</th><th></th></tr></thead><tbody>
                         <?php foreach ($csMine as $s): ?>
                             <tr><td><?= e($s['cashierName']) ?></td><td><?= e(date('d/m/Y H:i', strtotime($s['openedAt']))) ?> → <?= e(date('H:i', strtotime($s['closedAt']))) ?></td><td><?= (int) $s['summary']['orders'] ?></td><td><?= e(money($s['summary']['revenue'])) ?></td>
@@ -97,6 +98,8 @@
                                 <td><a class="btn-outline" href="<?= e($formUrl . '&report=' . rawurlencode($s['id'])) ?>">Xem / In</a></td></tr>
                         <?php endforeach; ?>
                     </tbody></table></div>
+                    <?= render_pagination($csMinePager['page'], $csMinePager['pages'], array('page' => 'cashshift') + ($csMovsPager['page'] > 1 ? array('mp' => $csMovsPager['page']) : array()), 'hp') ?>
+                    </div>
                 <?php else: ?><p class="cs-note">Chưa có ca nào đã kết.</p><?php endif; ?>
             </div>
         </div>

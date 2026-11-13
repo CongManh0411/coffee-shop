@@ -70,10 +70,12 @@ unset($_SESSION['cs_saved']);
 $csSnap = $me ? cashshift_snapshot($me) : array('current' => null, 'history' => array());
 $csCurrent = $csSnap['current'];
 $csHistory = array_reverse($csSnap['history']); // mới -> cũ
-$csMine = array_slice(array_values(array_filter($csHistory, function ($s) use ($me) {
+$csMine = array_values(array_filter($csHistory, function ($s) use ($me) {
     return (int) $s['cashierId'] === (int) $me['staffId'] || (int) ($s['closedById'] ?? 0) === (int) $me['staffId'];
-})), 0, 8);
-list($csMovsPage, $csMovsPager) = paginate_rows(array_reverse($csCurrent['movements'] ?? array()), request_page('p'), 8);
+}));
+// Báo cáo các ca đã kết: 8 ca/trang
+list($csMine, $csMinePager) = paginate_rows($csMine, request_page('hp'), 8);
+list($csMovsPage, $csMovsPager) = paginate_rows(array_reverse($csCurrent['movements'] ?? array()), request_page('mp'), 8);
 $csReport = null;
 $repId = (string) ($_GET['report'] ?? '');
 foreach ($csHistory as $s) if ($s['id'] === $repId) $csReport = $s;
