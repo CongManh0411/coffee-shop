@@ -48,38 +48,6 @@ function menu_resolve_category($d)
     return array(db()->insertId(), '');
 }
 
-// Quản lý danh mục: danh sách kèm số món, đổi tên, xóa (chỉ khi danh mục không còn món)
-function menu_category_list()
-{
-    return db()->fetchAll(
-        "SELECT c.category_id, c.category_name, COUNT(m.item_id) AS item_count
-         FROM categories c LEFT JOIN menu_items m ON m.category_id = c.category_id
-         GROUP BY c.category_id, c.category_name ORDER BY c.category_id"
-    );
-}
-
-function menu_category_rename($id, $name)
-{
-    $name = trim((string) $name);
-    if (!db()->fetchOne("SELECT category_id FROM categories WHERE category_id = ?", array((int) $id))) return 'Không tìm thấy danh mục.';
-    if ($name === '') return 'Vui lòng nhập tên danh mục.';
-    if (mb_strlen($name, 'UTF-8') > 100) return 'Tên danh mục tối đa 100 ký tự.';
-    $dup = db()->fetchOne("SELECT category_id FROM categories WHERE category_name = ? AND category_id <> ?", array($name, (int) $id));
-    if ($dup) return 'Danh mục "' . $name . '" đã tồn tại.';
-    db()->execute("UPDATE categories SET category_name = ? WHERE category_id = ?", array($name, (int) $id));
-    return '';
-}
-
-function menu_category_delete($id)
-{
-    $row = db()->fetchOne("SELECT category_name FROM categories WHERE category_id = ?", array((int) $id));
-    if (!$row) return 'Không tìm thấy danh mục.';
-    $count = db()->fetchOne("SELECT COUNT(*) AS n FROM menu_items WHERE category_id = ?", array((int) $id));
-    if ((int) ($count['n'] ?? 0) > 0) return 'Danh mục "' . $row['category_name'] . '" còn món, hãy chuyển hoặc xóa hết món trước.';
-    db()->execute("DELETE FROM categories WHERE category_id = ?", array((int) $id));
-    return '';
-}
-
 function menu_validate($name, $price, $categoryId, $exceptId = 0)
 {
     if ($name === '') return 'Vui lòng nhập tên món.';
