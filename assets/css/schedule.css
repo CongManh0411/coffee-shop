@@ -11,15 +11,6 @@
     font-family: "Playfair Display", serif;
     font-size: 28px;
 }
-.sch-demo {
-    margin-bottom: 16px;
-    padding: 10px 14px;
-    background: #fdeccf;
-    color: #a65a0c;
-    border-radius: 10px;
-    font-size: 13px;
-}
-.sch-demo[hidden] { display: none; }
 
 /* ---- Đầu trang: đang trong ca / chưa tới ca ---- */
 .sch-now {
@@ -152,38 +143,9 @@
 .sch-shift.st-upcoming { background: #fdf0dc; border-left-color: #d9822b; }
 
 .sch-note { margin: 12px 2px 0; font-size: 12.5px; color: #8a6b4f; }
-.sch-day-tabs { display: none; }
 
 @media (max-width: 768px) {
     .sch-table-wrap { display: none; }
-    .sch-day-tabs {
-        display: grid;
-        grid-template-columns: repeat(7, minmax(0, 1fr));
-        gap: 4px;
-        margin: 10px 0;
-    }
-    .sch-day-tab {
-        display: flex;
-        min-width: 0;
-        min-height: 52px;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 2px;
-        padding: 4px 1px;
-        border: 1px solid #e6d8c3;
-        border-radius: 9px;
-        background: #fffaf3;
-        color: #5a3d28;
-        font-family: inherit;
-        font-size: 10px;
-        line-height: 1.15;
-    }
-    .sch-day-tab small, .sch-day-tab em { color: #8a6b4f; font-size: 9px; }
-    .sch-day-tab em { font-style: normal; }
-    .sch-day-tab.active { border-color: #8a4f24; background: #4a2a18; color: #fff7ec; }
-    .sch-day-tab.active small, .sch-day-tab.active em { color: #e8c79b; }
-    .sch-day-tab.today { box-shadow: inset 0 -2px #c99a5b; }
     .sch-list { display: block; }
     .sch-me { grid-template-columns: 1fr; }
     #schedule-app { padding: 70px 14px 30px; }
@@ -207,7 +169,6 @@
 .sch-table thead th.sch-total { background: #351d10; }
 .sch-weekbar input[type="date"] { font-family: inherit; font-size: 13px; padding: 7px 10px; border: 1px solid #c99a5b; border-radius: 8px; background: #fff; color: #3b2313; }
 .sch-person span.warn { color: #b3441f; font-weight: 600; }
-.sch-demo { font-weight: 600; border: 1px solid #e8b878; }
 
 /* ---- Trạng thái chưa vào ca / không chấm công ---- */
 .sch-shift.st-noshow, .sch-shift.st-absent { background: #fbe9e3; border-left-color: #c96a5b; }
