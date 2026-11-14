@@ -9,13 +9,13 @@
       <input type="hidden" name="auth_action" value="login">
       <label class="login-field">
         <span>Tên đăng nhập</span>
-        <input type="text" id="username" name="username" autocomplete="off" autocapitalize="none" spellcheck="false" value="<?= e($loginUsername) ?>" required autofocus>
+        <input type="text" id="username" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" value="<?= e($loginUsername) ?>" required autofocus>
       </label>
 
       <label class="login-field">
         <span>Mật khẩu</span>
         <div class="login-pass">
-          <input type="password" id="password" name="password" autocomplete="new-password" required>
+          <input type="password" id="password" name="password" autocomplete="current-password" required>
           <button type="button" class="login-eye" data-toggle-password="password" aria-pressed="false" aria-label="Hiện hoặc ẩn mật khẩu">Hiện</button>
         </div>
       </label>
