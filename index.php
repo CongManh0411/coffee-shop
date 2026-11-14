@@ -62,13 +62,7 @@ if ($page === 'menu-categories' || $page === 'menu') {
     redirect('index.php?' . http_build_query($menuRedirect));
 }
 
-if (!is_string($page) || !isset($routes[$page])) {
-    http_response_code(404);
-    $page = '404';
-    $file = __DIR__ . '/pages/404/index.php';
-} else {
-    $file = __DIR__ . '/pages/' . $routes[$page];
-}
+$file = (is_string($page) && isset($routes[$page])) ? __DIR__ . '/pages/' . $routes[$page] : '';
 if (!is_file($file)) {
     http_response_code(404);
     $page = '404';

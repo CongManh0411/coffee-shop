@@ -1,7 +1,6 @@
 <?php
 require_once __DIR__ . '/includes/bootstrap.php';
 header('Cache-Control: no-store, private');
-header('Pragma: no-cache');
 
 $routes = array(
     'login' => 'login/index.php',
@@ -28,22 +27,11 @@ $page = $_GET['page'] ?? 'login';
 if (is_string($page) && in_array($page, array('tables', 'notify', 'handover', 'schedule', 'orders', 'cashshift', 'kitchen'), true)) {
     redirect('../index.php?page=' . rawurlencode($page));
 }
-if (!is_string($page) || !isset($routes[$page])) {
-    http_response_code(404);
-    $page = '404';
-    $file = __DIR__ . '/pages/404/index.php';
-} else {
-    $file = __DIR__ . '/pages/' . $routes[$page];
-}
+$file = (is_string($page) && isset($routes[$page])) ? __DIR__ . '/pages/' . $routes[$page] : '';
 if (!is_file($file)) {
     http_response_code(404);
     $page = '404';
     $file = __DIR__ . '/pages/404/index.php';
-    if (!is_file($file)) {
-        header('Content-Type: text/plain; charset=utf-8');
-        echo '404 - Khong tim thay trang.';
-        exit;
-    }
 }
 
 $user = current_user();
