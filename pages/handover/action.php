@@ -5,7 +5,8 @@ require_once __DIR__ . '/../../functions.php';
 $title = 'Giao ca';
 $css = array('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css', 'notifications.css', 'cashier.css');
 $scripts = array();
-const HANDOVER_HOURLY_RATE = 21000; // đồng / giờ — mức chung cho cả quán
+// đồng / giờ — mức chung cho cả quán, quản lý chỉnh ở Admin → Cài đặt (mặc định 21.000)
+define('HANDOVER_HOURLY_RATE', max(0, (int) setting('handover_hourly_rate', 21000)));
 
 $hoError = '';
 $staffId = (int) $user['staffId'];

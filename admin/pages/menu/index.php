@@ -23,6 +23,35 @@
                     <p>Thêm, sửa, ẩn, xóa món trực tiếp.</p>
                 </div>
  
+                <details class="menu-category-manager" style="margin:0 0 16px">
+                    <summary style="cursor:pointer;font-weight:600">Quản lý danh mục (<?= count($adminCategoryRows) ?>)</summary>
+                    <div style="margin-top:10px;display:grid;gap:8px">
+                        <?php foreach ($adminCategoryRows as $cat): ?>
+                            <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+                                <form method="post" action="<?= e(admin_url('menu')) ?>" class="menu-inline-form" style="display:flex;gap:8px;align-items:center;flex:1 1 320px">
+                                    <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
+                                    <input type="hidden" name="menu_action" value="rename_category">
+                                    <input type="hidden" name="category_id" value="<?= (int) $cat['category_id'] ?>">
+                                    <label class="sr-only" for="catName<?= (int) $cat['category_id'] ?>">Tên danh mục</label>
+                                    <input type="text" id="catName<?= (int) $cat['category_id'] ?>" name="category_name" class="menu-search-input" maxlength="100" value="<?= e($cat['category_name']) ?>" style="flex:1">
+                                    <button type="submit" class="btn-outline">Đổi tên</button>
+                                </form>
+                                <span style="font-size:13px;color:#725f50"><?= (int) $cat['item_count'] ?> món</span>
+                                <?php if ((int) $cat['item_count'] === 0): ?>
+                                    <form method="post" action="<?= e(admin_url('menu')) ?>" class="menu-inline-form" onsubmit="return confirm('Xóa danh mục <?= e(addslashes($cat['category_name'])) ?>?');">
+                                        <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
+                                        <input type="hidden" name="menu_action" value="delete_category">
+                                        <input type="hidden" name="category_id" value="<?= (int) $cat['category_id'] ?>">
+                                        <button type="submit" class="btn-danger">Xóa</button>
+                                    </form>
+                                <?php else: ?>
+                                    <span style="font-size:12px;color:#8a7766">Còn món nên chưa xóa được</span>
+                                <?php endif; ?>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                </details>
+
                 <form class="menu-toolbar" method="get" action="<?= e(admin_url('menu')) ?>" role="search">
                     <input type="hidden" name="page" value="menu">
                     <label for="menuSearchInput" class="sr-only">Tìm món theo tên</label>

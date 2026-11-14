@@ -78,6 +78,17 @@ if ($method === 'POST' && isset($_POST['save_settings'])) {
         'story_hl3_title', 'story_hl3_desc', 'story_hl4_title', 'story_hl4_desc'
     );
 
+    // Lương mỗi giờ: phải là số nguyên không âm (đồng), tối đa 1.000.000
+    if (isset($_POST['handover_hourly_rate']) && trim((string) $_POST['handover_hourly_rate']) !== '') {
+        $rate = trim((string) $_POST['handover_hourly_rate']);
+        if (!ctype_digit($rate) || (int) $rate > 1000000) {
+            $errorMessage = 'Lương mỗi giờ phải là số nguyên từ 0 đến 1.000.000 đồng.';
+            $success = false;
+        } else {
+            update_setting('handover_hourly_rate', (string) (int) $rate);
+        }
+    }
+
     foreach ($keys as $k) {
         if (isset($_POST[$k])) {
             $val = trim((string) $_POST[$k]);

@@ -514,7 +514,7 @@ function get_item_badge($index, $catFilter, $price) {
             <ul class="footer-hours-list">
                 <li><span>Thứ 2 – Thứ 6:</span> <b><?= e($shopHours) ?></b></li>
                 <li><span>Thứ 7 – CN:</span> <b><?= e($shopHoursWeekend) ?></b></li>
-                <li><span>Ngày Lễ / Tết:</span> <b>Mở cửa bình thường</b></li>
+                <li><span>Ngày Lễ / Tết:</span> <b><?= e(setting('shop_holiday_note', 'Mở cửa bình thường')) ?></b></li>
                 <li><span>Hotline:</span> <b><?= e($shopPhone) ?></b></li>
             </ul>
         </div>

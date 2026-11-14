@@ -5,6 +5,7 @@ $adminSearch = request_search('q');
 $adminPager = paginate(admin_menu_count($adminSearch), request_page('p'), 10);
 $adminPageItems = admin_menu_items($adminSearch, $adminPager['perPage'], $adminPager['offset']);
 $adminMenuCategories = db()->fetchAll('SELECT category_name FROM categories ORDER BY category_id');
+$adminCategoryRows = menu_category_list(); // cho khung "Quản lý danh mục"
 $adminMenuGroups = array();
 foreach ($adminMenuCategories as $category) {
     $adminMenuGroups[$category['category_name']] = array('category' => $category['category_name'], 'items' => array());
@@ -66,6 +67,12 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && isset($_POST['menu_actio
     } elseif ($_POST['menu_action'] === 'toggle_hide') {
         $menuFormError = menu_toggle_hidden($actionId);
         if ($menuFormError === '') $_SESSION['menu_saved'] = 'Đã cập nhật trạng thái hiển thị của món.';
+    } elseif ($_POST['menu_action'] === 'rename_category') {
+        $menuFormError = menu_category_rename((int) ($_POST['category_id'] ?? 0), $_POST['category_name'] ?? '');
+        if ($menuFormError === '') $_SESSION['menu_saved'] = 'Đã đổi tên danh mục.';
+    } elseif ($_POST['menu_action'] === 'delete_category') {
+        $menuFormError = menu_category_delete((int) ($_POST['category_id'] ?? 0));
+        if ($menuFormError === '') $_SESSION['menu_saved'] = 'Đã xóa danh mục.';
     } elseif ($_POST['menu_action'] === 'delete') {
         if (menu_in_open_order($actionId)) {
             $menuFormError = 'Không thể xóa món đang có trong đơn hàng chưa thanh toán.';

@@ -309,6 +309,10 @@
                         <input type="text" id="shop_holiday_note" name="shop_holiday_note" maxlength="120" value="<?= e(setting('shop_holiday_note', 'Phục vụ xuyên Lễ & Tết')) ?>">
                     </div>
                     <div class="settings-form-group">
+                        <label for="handover_hourly_rate">Lương mỗi giờ của nhân viên (đồng) <span class="settings-field-hint" style="display:inline">(dùng tính lương ở trang Giao ca)</span></label>
+                        <input type="number" id="handover_hourly_rate" name="handover_hourly_rate" min="0" max="1000000" step="1000" inputmode="numeric" value="<?= (int) setting('handover_hourly_rate', 21000) ?>">
+                    </div>
+                    <div class="settings-form-group">
                         <label for="shop_social_handle">Tên tài khoản mạng xã hội <span class="settings-field-hint" style="display:inline">(để trống thì ẩn)</span></label>
                         <input type="text" id="shop_social_handle" name="shop_social_handle" maxlength="60" value="<?= e(setting('shop_social_handle', '')) ?>">
                     </div>
