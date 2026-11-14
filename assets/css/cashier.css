@@ -41,7 +41,7 @@
 .wp-mail { display: flex; gap: 8px; margin-top: 10px; }
 
 /* ---- Khối thẻ thống kê dùng chung (Ca & Quỹ, Đơn hàng, Nhật ký) ---- */
-.cs-wrap { max-width: 1100px; }
+.cs-wrap { max-width: 1100px; margin: 0 auto; }
 .cs-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin-bottom: 18px; }
 .cs-card { background: #fff; border: 1px solid #e6d8c3; border-radius: 12px; padding: 14px 16px; }
 .cs-card span { display: block; font-size: 12.5px; color: #8a6b4f; margin-bottom: 4px; }
