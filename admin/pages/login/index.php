@@ -21,7 +21,7 @@
       </label>
 
       <label class="login-remember">
-        <input type="checkbox" id="rememberMe" name="remember" value="1">
+        <input type="checkbox" id="rememberMe" name="remember" value="1"<?= !empty($rememberChecked) ? ' checked' : '' ?>>
         <span>Lưu Mật khẩu</span>
       </label>
 

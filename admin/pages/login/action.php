@@ -15,7 +15,18 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && ($_POST['auth_action'] ?
 
 $loginError = '';
 $loginUsername = '';
+// Nhớ lựa chọn ô "Lưu Mật khẩu" để lần sau (kể cả sau khi đăng xuất) ô vẫn được tick sẵn.
+$rememberChecked = ($_COOKIE['remember_pref'] ?? '') === '1';
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && ($_POST['auth_action'] ?? '') === 'login') {
+    $rememberChecked = !empty($_POST['remember']);
+    if (!headers_sent()) {
+        setcookie('remember_pref', $rememberChecked ? '1' : '', array(
+            'expires' => $rememberChecked ? time() + 31536000 : time() - 3600,
+            'path' => '/',
+            'httponly' => true,
+            'samesite' => 'Lax',
+        ));
+    }
     $loginUsername = is_string($_POST['username'] ?? null) ? trim($_POST['username']) : '';
     $password = is_string($_POST['password'] ?? null) ? $_POST['password'] : '';
     if (!post_csrf_ok()) {
