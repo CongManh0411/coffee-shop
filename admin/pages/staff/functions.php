@@ -21,10 +21,28 @@ function staff_format($r)
     );
 }
 
-function staff_list()
+function staff_list($limit = 0, $offset = 0)
 {
-    $rows = db()->fetchAll("SELECT * FROM staff WHERE status = 1 ORDER BY staff_id");
-    return array_map('staff_format', $rows);
+    $sql = "SELECT * FROM staff WHERE status = 1 ORDER BY staff_id";
+    $params = array();
+    if ((int) $limit > 0) {
+        $sql .= ' LIMIT ? OFFSET ?';
+        $params = array((int) $limit, max(0, (int) $offset));
+    }
+    return array_map('staff_format', db()->fetchAll($sql, $params));
+}
+
+function staff_count()
+{
+    $row = db()->fetchOne("SELECT COUNT(*) AS n FROM staff WHERE status = 1");
+    return (int) ($row['n'] ?? 0);
+}
+
+// Một nhân viên đang hoạt động (dùng cho form sửa)
+function staff_get($id)
+{
+    $row = db()->fetchOne("SELECT * FROM staff WHERE staff_id = ? AND status = 1", array((int) $id));
+    return $row ? staff_format($row) : null;
 }
 
 // Kiểm tra dữ liệu; trả về chuỗi lỗi hoặc '' nếu hợp lệ

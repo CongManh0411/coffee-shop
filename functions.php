@@ -280,6 +280,32 @@ function admin_tables_with_status()
     return tables_status_rows($rows);
 }
 
+// Quản lý bàn: một trang bàn (LIMIT/OFFSET trong SQL). Chọn đúng $limit bàn trước rồi mới nối với đơn đang mở.
+function admin_tables_page($limit, $offset)
+{
+    $rows = db()->fetchAll(
+        "SELECT t.table_id, t.table_name, t.is_active,
+                o.order_id, o.order_code, o.total, o.created_at
+         FROM (SELECT table_id, table_name, is_active FROM dining_tables ORDER BY table_id LIMIT ? OFFSET ?) t
+         LEFT JOIN orders o ON o.table_id = t.table_id AND o.status = ? AND o.order_type = ?
+         ORDER BY t.table_id",
+        array((int) $limit, max(0, (int) $offset), 'open', 'dinein')
+    );
+    return tables_status_rows($rows);
+}
+
+// Tổng số bàn và số bàn đang có đơn mở (không cần đọc từng dòng)
+function admin_tables_counts()
+{
+    $total = db()->fetchOne("SELECT COUNT(*) AS n FROM dining_tables");
+    $busy = db()->fetchOne(
+        "SELECT COUNT(DISTINCT t.table_id) AS n FROM dining_tables t
+         JOIN orders o ON o.table_id = t.table_id AND o.status = ? AND o.order_type = ?",
+        array('open', 'dinein')
+    );
+    return array((int) ($total['n'] ?? 0), (int) ($busy['n'] ?? 0));
+}
+
 function get_dining_table($id)
 {
     return db()->fetchOne(
@@ -554,9 +580,9 @@ function admin_revenue_totals($status, $start, $end)
 }
 
 // Admin: doanh thu từng ngày, tách theo phương thức thanh toán.
-function admin_revenue_daily($start, $end)
+function admin_revenue_daily($start, $end, $limit = 0, $offset = 0)
 {
-    return db()->fetchAll(
+    $sql =
         "SELECT DATE(paid_at) AS day, COUNT(*) AS invoice_count,
                 SUM(CASE WHEN payment_method IS NULL OR payment_method = 'cash' THEN total ELSE 0 END) AS cash,
                 SUM(CASE WHEN payment_method IN ('qr','ewallet','transfer') THEN total ELSE 0 END) AS transfer,
@@ -565,9 +591,39 @@ function admin_revenue_daily($start, $end)
          FROM orders
          WHERE status = 'paid' AND subtotal > 0 AND paid_at BETWEEN ? AND ?
          GROUP BY DATE(paid_at)
-         ORDER BY day DESC",
+         ORDER BY day DESC";
+    $params = array($start, $end);
+    if ((int) $limit > 0) {
+        $sql .= ' LIMIT ? OFFSET ?';
+        $params[] = (int) $limit;
+        $params[] = max(0, (int) $offset);
+    }
+    return db()->fetchAll($sql, $params);
+}
+
+// Số ngày có doanh thu (để chia trang bảng theo ngày)
+function admin_revenue_daily_count($start, $end)
+{
+    $row = db()->fetchOne(
+        "SELECT COUNT(DISTINCT DATE(paid_at)) AS n FROM orders
+         WHERE status = 'paid' AND subtotal > 0 AND paid_at BETWEEN ? AND ?",
         array($start, $end)
     );
+    return (int) ($row['n'] ?? 0);
+}
+
+// Tổng tiền theo phương thức thanh toán trên toàn bộ kỳ (không phụ thuộc trang đang xem)
+function admin_revenue_method_totals($start, $end)
+{
+    $row = db()->fetchOne(
+        "SELECT COALESCE(SUM(CASE WHEN payment_method IS NULL OR payment_method = 'cash' THEN total ELSE 0 END), 0) AS cash,
+                COALESCE(SUM(CASE WHEN payment_method IN ('qr','ewallet','transfer') THEN total ELSE 0 END), 0) AS transfer,
+                COALESCE(SUM(CASE WHEN payment_method = 'card' THEN total ELSE 0 END), 0) AS card
+         FROM orders
+         WHERE status = 'paid' AND subtotal > 0 AND paid_at BETWEEN ? AND ?",
+        array($start, $end)
+    );
+    return array('cash' => (int) $row['cash'], 'transfer' => (int) $row['transfer'], 'card' => (int) $row['card']);
 }
 
 // Admin: doanh thu theo giờ trong ngày (biểu đồ cột).

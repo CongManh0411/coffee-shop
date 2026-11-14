@@ -25,13 +25,10 @@ $avgInvoice = $valid['count'] > 0 ? (int) round($valid['total'] / $valid['count'
 $grossProfit = (int) round($valid['total'] * (1 - $costPct / 100));
 
 // Bảng theo ngày + tổng theo phương thức thanh toán (cộng từ các dòng của bảng)
-$dailyRows = admin_revenue_daily($range['start'], $range['end']);
-$methodTotals = array('cash' => 0, 'transfer' => 0, 'card' => 0);
-foreach ($dailyRows as $row) {
-    $methodTotals['cash'] += (int) $row['cash'];
-    $methodTotals['transfer'] += (int) $row['transfer'];
-    $methodTotals['card'] += (int) $row['card'];
-}
+// Bảng theo ngày: 10 ngày/trang, lấy đúng một trang bằng LIMIT/OFFSET; tổng theo phương thức tính riêng trên cả kỳ
+$dailyPager = paginate(admin_revenue_daily_count($range['start'], $range['end']), request_page('p'), 10);
+$dailyPageRows = admin_revenue_daily($range['start'], $range['end'], $dailyPager['perPage'], $dailyPager['offset']);
+$methodTotals = admin_revenue_method_totals($range['start'], $range['end']);
 $methodSum = array_sum($methodTotals);
 $methodPct = array();
 foreach ($methodTotals as $key => $amount) {

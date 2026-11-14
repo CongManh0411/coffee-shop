@@ -33,7 +33,7 @@
             </form>
 
             <div class="tm-toolbar">
-                <p class="tm-summary">Tổng cộng <?= count($adminTables) ?> bàn — <?= count($adminTables) - $tablesOccupied ?> trống, <?= $tablesOccupied ?> đang phục vụ</p>
+                <p class="tm-summary">Tổng cộng <?= $tablesTotal ?> bàn — <?= $tablesTotal - $tablesOccupied ?> trống, <?= $tablesOccupied ?> đang phục vụ</p>
             </div>
 
             <div data-ajax-region="table-manage">
@@ -75,7 +75,7 @@
                                 </td>
                             </tr>
                         <?php endforeach; ?>
-                        <?php if (!$adminTables): ?>
+                        <?php if (!$tablesTotal): ?>
                             <tr><td colspan="4"><div class="empty-table-state">Chưa có bàn nào. Nhập tên bàn ở form phía trên để bắt đầu.</div></td></tr>
                         <?php endif; ?>
                     </tbody>

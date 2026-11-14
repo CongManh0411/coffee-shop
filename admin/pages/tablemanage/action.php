@@ -54,16 +54,10 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     }
 }
 
-$adminTables = admin_tables_with_status();
-$tablesOccupied = 0;
-foreach ($adminTables as $tableRow) {
-    if ($tableRow['status'] === 'occupied') {
-        $tablesOccupied++;
-    }
-}
-
-// Danh sách hiển thị: 10 bàn/trang (tổng số bàn / số bàn trống vẫn tính trên toàn bộ)
-list($adminTablesPage, $tablePager) = paginate_rows($adminTables, request_page('p'), 10);
+// Tổng số bàn / số bàn đang phục vụ đếm bằng SQL; danh sách chỉ lấy đúng 10 bàn của trang (LIMIT/OFFSET)
+list($tablesTotal, $tablesOccupied) = admin_tables_counts();
+$tablePager = paginate($tablesTotal, request_page('p'), 10);
+$adminTablesPage = admin_tables_page($tablePager['perPage'], $tablePager['offset']);
 
 $tableFlash = $_SESSION['table_flash'] ?? null;
 unset($_SESSION['table_flash']);

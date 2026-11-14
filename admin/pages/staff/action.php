@@ -67,16 +67,15 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && isset($_POST['staff_acti
 $staffSavedMessage = $_SESSION['staff_saved'] ?? '';
 unset($_SESSION['staff_saved']);
 
-$staffRows = staff_list();
-// Danh sách hiển thị: 8 nhân viên/trang ($staffRows vẫn giữ đủ để tìm người cần sửa)
-list($staffPageRows, $staffPager) = paginate_rows($staffRows, request_page('p'), 8);
+// Danh sách hiển thị: 8 nhân viên/trang, lấy đúng một trang bằng LIMIT/OFFSET
+$staffTotal = staff_count();
+$staffPager = paginate($staffTotal, request_page('p'), 8);
+$staffPageRows = staff_list($staffPager['perPage'], $staffPager['offset']);
 
 // Mở form bằng link ?add=1 hoặc ?edit=ID (khi POST lỗi thì giữ lại dữ liệu vừa nhập)
 if ($staffForm === null) {
     if (isset($_GET['edit'])) {
-        foreach ($staffRows as $r) {
-            if ((int) $r['id'] === (int) $_GET['edit']) $staffForm = $r;
-        }
+        $staffForm = staff_get((int) $_GET['edit']);
     } elseif (isset($_GET['add'])) {
         $staffForm = array('id' => 0, 'fullName' => '', 'username' => '', 'role' => '', 'phone' => '', 'email' => '', 'gender' => '', 'birthDate' => '');
     }

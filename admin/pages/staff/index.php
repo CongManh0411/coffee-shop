@@ -43,7 +43,7 @@
                             </div>
                         </div>
                     <?php endforeach; ?>
-                    <?php if (!$staffRows): ?>
+                    <?php if (!$staffTotal): ?>
                         <div class="menu-empty-state">Chưa có nhân viên nào. Bấm "Thêm nhân viên" để bắt đầu.</div>
                     <?php endif; ?>
                     <?= render_pagination($staffPager['page'], $staffPager['pages'], array('page' => 'staff')) ?>
