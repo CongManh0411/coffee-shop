@@ -52,16 +52,18 @@ $opsSaved = $_SESSION['ops_saved'] ?? '';
 unset($_SESSION['ops_saved']);
 
 $opsData = ops_snapshot();
-$opsReservations = $opsTab === 'res' ? reservations_list() : array();
+$opsReservations = array();
 $opsTables = $opsTab === 'res' ? tables_list() : array();
 
 // Phân trang 10 dòng/trang cho danh sách chính của từng tab (đặt bàn, khách, mã khuyến mãi, phiếu kho, đơn giao hàng); trang nằm trên URL (?p=2)
 $opsPager = paginate(0, 1, 10);
 $opsPaged = array();
 if ($opsTab === 'res') {
-    list($opsReservations, $opsPager) = paginate_rows($opsReservations, request_page('p'), 10);
+    $opsPager = paginate(reservations_count(), request_page('p'), 10);
+    $opsReservations = reservations_list($opsPager['perPage'], $opsPager['offset']);
 } elseif ($opsTab === 'crm') {
-    list($opsPaged, $opsPager) = paginate_rows($opsData['customers'], request_page('p'), 10);
+    $opsPager = paginate(ops_customers_count(), request_page('p'), 10);
+    $opsPaged = ops_customers_page($opsPager['perPage'], $opsPager['offset']);
 } elseif ($opsTab === 'promo') {
     list($opsPaged, $opsPager) = paginate_rows($opsData['promotions'], request_page('p'), 10);
 } elseif ($opsTab === 'stock') {

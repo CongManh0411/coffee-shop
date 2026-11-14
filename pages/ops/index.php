@@ -56,7 +56,7 @@
                 <form method="post" action="<?= e($act) ?>" class="ops-form"><?= ops_hidden('generic', array('op_method' => 'POST', 'action' => 'customer')) ?>
                     <input name="name" placeholder="Tên khách" required maxlength="150"><input name="phone" placeholder="SĐT" required><input name="birth" type="date" title="Sinh nhật"><button type="submit">Thêm khách</button>
                 </form>
-                <?php if (!$opsData['customers']): ?><div class="ops-empty">Chưa có dữ liệu.</div><?php else: ?>
+                <?php if (!$opsPager['total']): ?><div class="ops-empty">Chưa có dữ liệu.</div><?php else: ?>
                 <div data-ajax-region="ops-list"><div class="ops-scroll"><table class="ops-table"><tr><th>Khách</th><th>SĐT</th><th>Sinh nhật</th><th>Điểm</th><th>Hạng</th><th>Chi tiêu</th><th></th></tr>
                 <?php $curMonth = (int) date('n'); foreach ($opsPaged as $c): ?>
                     <tr><td><?= e($c['name']) ?></td><td><?= e($c['phone']) ?></td>

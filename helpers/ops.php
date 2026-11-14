@@ -2,18 +2,32 @@
 function ops_snapshot()
 {
     $waitlist = db()->fetchAll("SELECT waitlist_id, customer_name, phone, party_size, created_at FROM waitlist_entries WHERE status = 'waiting' ORDER BY created_at");
-    $customers = db()->fetchAll('SELECT customer_id, full_name, phone, birth_date, points, total_spent FROM customers ORDER BY full_name');
     $promotions = db()->fetchAll('SELECT promotion_id, code, label, discount_type, discount_value, starts_on, ends_on, max_uses, used_count, hour_from, hour_to, is_active FROM promotions ORDER BY promotion_id DESC');
     $suppliers = db()->fetchAll('SELECT supplier_id, supplier_name, phone FROM suppliers WHERE is_active = 1 ORDER BY supplier_name');
     $stockItems = db()->fetchAll('SELECT stock_item_id, item_name, unit, quantity, min_quantity FROM stock_items WHERE is_active = 1 ORDER BY item_name');
 
     return array(
         'waitlist' => array_map(function ($r) { return array('id' => (int) $r['waitlist_id'], 'name' => $r['customer_name'], 'phone' => $r['phone'] ?? '', 'pax' => (int) $r['party_size'], 'at' => strtotime($r['created_at']) * 1000); }, $waitlist),
-        'customers' => array_map(function ($r) { return array('id' => (int) $r['customer_id'], 'name' => $r['full_name'], 'phone' => $r['phone'], 'birth' => $r['birth_date'] ?? '', 'points' => (int) $r['points'], 'spent' => (int) $r['total_spent']); }, $customers),
         'promotions' => array_map(function ($r) { return array('id' => (int) $r['promotion_id'], 'code' => $r['code'], 'label' => $r['label'], 'type' => $r['discount_type'], 'value' => (int) $r['discount_value'], 'from' => $r['starts_on'] ?? '', 'to' => $r['ends_on'] ?? '', 'maxUses' => (int) $r['max_uses'], 'used' => (int) $r['used_count'], 'hourFrom' => $r['hour_from'] === null ? '' : (int) $r['hour_from'], 'hourTo' => $r['hour_to'] === null ? '' : (int) $r['hour_to'], 'active' => (bool) $r['is_active']); }, $promotions),
         'suppliers' => array_map(function ($r) { return array('id' => (int) $r['supplier_id'], 'name' => $r['supplier_name'], 'phone' => $r['phone'] ?? ''); }, $suppliers),
         'stockItems' => array_map(function ($r) { return array('id' => (int) $r['stock_item_id'], 'name' => $r['item_name'], 'unit' => $r['unit'], 'stock' => (float) $r['quantity'], 'minLevel' => (float) $r['min_quantity']); }, $stockItems),
     );
+}
+
+// Khách hàng: chia trang trong SQL (snapshot không còn tải toàn bộ khách mỗi lần)
+function ops_customers_count()
+{
+    $row = db()->fetchOne('SELECT COUNT(*) AS n FROM customers');
+    return (int) ($row['n'] ?? 0);
+}
+
+function ops_customers_page($limit, $offset)
+{
+    $rows = db()->fetchAll(
+        'SELECT customer_id, full_name, phone, birth_date, points, total_spent FROM customers ORDER BY full_name, customer_id LIMIT ? OFFSET ?',
+        array(max(1, (int) $limit), max(0, (int) $offset))
+    );
+    return array_map(function ($r) { return array('id' => (int) $r['customer_id'], 'name' => $r['full_name'], 'phone' => $r['phone'], 'birth' => $r['birth_date'] ?? '', 'points' => (int) $r['points'], 'spent' => (int) $r['total_spent']); }, $rows);
 }
 
 // Phiếu kho / đơn giao hàng: chia trang trong SQL (snapshot không còn tải 500 dòng mỗi lần).

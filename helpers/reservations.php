@@ -129,14 +129,26 @@ function reservation_create_public($data)
     return $result;
 }
 
-function reservations_list()
+function reservations_count()
 {
-    $rows = db()->fetchAll(
+    $row = db()->fetchOne('SELECT COUNT(*) AS n FROM reservations');
+    return (int) ($row['n'] ?? 0);
+}
+
+// Danh sách đặt bàn; truyền $limit/$offset để chỉ lấy một trang (chia trang trong SQL)
+function reservations_list($limit = 0, $offset = 0)
+{
+    $sql =
         "SELECT r.reservation_id, r.customer_name, r.phone, r.party_size, r.reserved_at,
                 r.table_id, t.table_name, r.note, r.status, r.created_at
          FROM reservations r LEFT JOIN dining_tables t ON t.table_id = r.table_id
-         ORDER BY (r.reserved_at < NOW()), r.reserved_at, r.reservation_id DESC"
-    );
+         ORDER BY (r.reserved_at < NOW()), r.reserved_at, r.reservation_id DESC";
+    $params = array();
+    if ((int) $limit > 0) {
+        $sql .= ' LIMIT ? OFFSET ?';
+        $params = array((int) $limit, max(0, (int) $offset));
+    }
+    $rows = db()->fetchAll($sql, $params);
     $out = array();
     foreach ($rows as $row) {
         $out[] = array(
