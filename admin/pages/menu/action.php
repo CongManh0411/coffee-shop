@@ -70,8 +70,13 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && isset($_POST['menu_actio
         if (menu_in_open_order($actionId)) {
             $menuFormError = 'Không thể xóa món đang có trong đơn hàng chưa thanh toán.';
         } else {
-            menu_delete($actionId);
-            $_SESSION['menu_saved'] = 'Đã xóa món.';
+            try {
+                menu_delete($actionId);
+                $_SESSION['menu_saved'] = 'Đã xóa món.';
+            } catch (mysqli_sql_exception $e) {
+                error_log($e);
+                $menuFormError = 'Món đã có lịch sử kho/bán hàng nên không xóa được. Hãy dùng nút "Ẩn".';
+            }
         }
     } else {
         $menuFormError = 'Thao tác không hợp lệ.';

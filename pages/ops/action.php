@@ -41,7 +41,12 @@ if ($opsMe && ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && isset($_POST['
             $w = db()->fetchOne("SELECT customer_name, phone FROM waitlist_entries WHERE waitlist_id = ?", array((int) ($data['id'] ?? 0)));
             if ($w) $msg = 'Mời khách ' . $w['customer_name'] . ($w['phone'] ? ' (' . $w['phone'] . ')' : '') . ' vào bàn.';
         }
-        $opsError = ops_action($data, $method, $opsMe);
+        try {
+            $opsError = ops_action($data, $method, $opsMe);
+        } catch (mysqli_sql_exception $e) {
+            error_log($e);
+            $opsError = $e->getCode() == 1062 ? 'Dữ liệu bị trùng (SĐT / mã / tên đã tồn tại).' : 'Lỗi cơ sở dữ liệu, vui lòng thử lại.';
+        }
     }
     if ($opsError === '') {
         $_SESSION['ops_saved'] = $msg;

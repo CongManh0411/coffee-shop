@@ -60,8 +60,13 @@ function staff_validate($d, $id = 0, $needPassword = true)
     if (!preg_match('/^0\d{9}$/', $d['phone'] ?? '')) return 'Số điện thoại phải gồm 10 chữ số và bắt đầu bằng 0.';
     if (($d['email'] ?? '') !== '' && !filter_var($d['email'], FILTER_VALIDATE_EMAIL)) return 'Email chưa hợp lệ.';
 
-    $dup = db()->fetchOne("SELECT staff_id FROM staff WHERE username = ? AND staff_id <> ?", array($u, (int) $id));
-    if ($dup) return 'Tài khoản "' . $u . '" đã tồn tại, hãy chọn tên khác.';
+    $dup = db()->fetchOne("SELECT staff_id, status FROM staff WHERE username = ? AND staff_id <> ?", array($u, (int) $id));
+    if ($dup) {
+        // username có UNIQUE index nên tài khoản đã xóa mềm (status = 0) vẫn giữ tên.
+        return (int) $dup['status'] === 0
+            ? 'Tài khoản "' . $u . '" thuộc một nhân viên đã bị xóa trước đó, hãy chọn tên khác.'
+            : 'Tài khoản "' . $u . '" đã tồn tại, hãy chọn tên khác.';
+    }
     return '';
 }
 
