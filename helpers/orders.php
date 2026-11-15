@@ -467,7 +467,7 @@ function orders_pay($data, $user)
         $total = $subtotal - $discount;
         // Gắn hóa đơn vào ca tiền mặt đang mở; thu ngân bắt buộc phải mở ca mới được thu tiền.
         $openShift = db()->fetchOne('SELECT cash_shift_id FROM cash_shifts WHERE closed_at IS NULL ORDER BY cash_shift_id DESC LIMIT 1');
-        if (!$openShift && $user['roleKey'] === 'cashier') {
+        if (!$openShift) {
             return array(null, 'Chưa mở ca — vào "Ca & Quỹ" để mở ca trước khi thu tiền.');
         }
         $cashShiftId = $openShift ? (int) $openShift['cash_shift_id'] : null;
