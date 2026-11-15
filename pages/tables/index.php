@@ -58,6 +58,16 @@ foreach ($tablesStatus as $t) if (!isset($ordersByTable[(int) $t['table_id']])) 
             <?php if (!$tablesStatus && !$togoOrders): ?><div class="tables-empty">Chưa có bàn nào. Vui lòng liên hệ Quản lý để thêm bàn.</div><?php endif; ?>
         </div>
         <p class="pos-hint">Trang tự tải lại mỗi 15 giây. Bấm một bàn để gọi món hoặc thanh toán.</p>
+        <script>
+        // Tự tải lại sau 15 giây, trừ khi đang gõ dở (vd. form Đơn giao hàng).
+        setInterval(function () {
+          var a = document.activeElement;
+          if (a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) return;
+          var dirty = Array.prototype.some.call(document.querySelectorAll('#order-app input[name]'),
+            function (i) { return i.type !== 'hidden' && i.value !== ''; });
+          if (!dirty) location.reload();
+        }, 15000);
+        </script>
     </div>
 
 <?php elseif ($mode === 'receipt'): ?>

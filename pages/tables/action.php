@@ -50,7 +50,6 @@ if ($receiptParam > 0) {
 }
 
 if ($mode === 'grid') {
-    $metaRefresh = 15; // sơ đồ bàn tự tải lại để thấy bàn mới có khách
     $title = 'Sơ đồ bàn';
 }
 

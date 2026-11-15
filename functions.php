@@ -362,19 +362,21 @@ function schedule_duration($minutes)
 }
 
 // Trạng thái một ca: future | upcoming | working | done | left | noshow | absent
+// Dựa vào bảng timesheets (clock_in/clock_out), không dùng cờ registered.
 function schedule_shift_state($shift, $date, $nowTs = null)
 {
     $nowTs = $nowTs ? $nowTs : time();
     $today = date('Y-m-d', $nowTs);
+    $in = !empty($shift['clock_in']);
     $left = !empty($shift['left_at']);
-    $registered = !empty($shift['registered']);
     if ($date > $today) return 'future';
-    if ($date < $today) return $left ? 'left' : ($registered ? 'done' : 'absent');
+    if ($date < $today) return !$in ? 'absent' : ($left ? 'left' : 'done');
     if ($left) return 'left';
     $now = date('H:i:s', $nowTs);
+    if ($in) return $now >= $shift['end_time'] ? 'done' : 'working';
     if ($now < $shift['start_time']) return 'upcoming';
-    if ($now >= $shift['end_time']) return $registered ? 'done' : 'absent';
-    return $registered ? 'working' : 'noshow';
+    if ($now >= $shift['end_time']) return 'absent';
+    return 'noshow';
 }
 
 function schedule_state_text($state, $shift)
@@ -395,9 +397,12 @@ function public_schedule_week($from, $to)
 {
     return db()->fetchAll(
         "SELECT st.staff_id, st.full_name, st.role,
-                s.shift_id, s.shift_date, s.start_time, s.end_time, s.registered, s.left_at
+                s.shift_id, s.shift_date, s.start_time, s.end_time, s.registered,
+                t.clock_in,
+                CASE WHEN t.clock_out < TIMESTAMP(s.shift_date, s.end_time) THEN t.clock_out END AS left_at
          FROM staff st
          LEFT JOIN shifts s ON s.staff_id = st.staff_id AND s.shift_date BETWEEN ? AND ?
+         LEFT JOIN timesheets t ON t.staff_id = s.staff_id AND t.work_date = s.shift_date
          WHERE st.status = 1
          ORDER BY st.full_name, s.shift_date, s.start_time",
         array($from, $to)
@@ -428,10 +433,13 @@ function schedule_group_week($rows)
 function public_shifts_on($date)
 {
     return db()->fetchAll(
-        "SELECT s.shift_id, s.start_time, s.end_time, s.registered, s.left_at,
+        "SELECT s.shift_id, s.start_time, s.end_time, s.registered,
+                t.clock_in,
+                CASE WHEN t.clock_out < TIMESTAMP(s.shift_date, s.end_time) THEN t.clock_out END AS left_at,
                 st.staff_id, st.full_name, st.role
          FROM shifts s
          JOIN staff st ON st.staff_id = s.staff_id
+         LEFT JOIN timesheets t ON t.staff_id = s.staff_id AND t.work_date = s.shift_date
          WHERE s.shift_date = ? AND st.status = 1
          ORDER BY s.start_time, st.full_name",
         array($date)
@@ -457,9 +465,11 @@ function admin_shifts_upcoming($fromDate, $limit = 10, $offset = 0)
 {
     return db()->fetchAll(
         "SELECT s.shift_id, s.shift_date, s.start_time, s.end_time, s.registered,
+                t.clock_in,
                 st.staff_id, st.full_name, st.role
          FROM shifts s
          JOIN staff st ON st.staff_id = s.staff_id
+         LEFT JOIN timesheets t ON t.staff_id = s.staff_id AND t.work_date = s.shift_date
          WHERE s.shift_date >= ?
          ORDER BY s.shift_date, s.start_time, st.full_name
          LIMIT ? OFFSET ?",
@@ -890,7 +900,7 @@ function shifts_upcoming_rows_html($rows)
             . '<td>' . e(role_label($s['role'])) . '</td>'
             . '<td>' . e(schedule_clock($s['start_time'])) . ' – ' . e(schedule_clock($s['end_time'])) . '</td>'
             . '<td>' . e(schedule_duration(schedule_minutes($s['start_time'], $s['end_time']))) . '</td>'
-            . '<td>' . ((int) $s['registered'] ? 'Đã vào ca' : 'Chưa vào ca') . '</td>'
+            . '<td>' . (!empty($s['clock_in']) ? 'Đã vào ca' : 'Chưa vào ca') . '</td>'
             . '</tr>';
     }
     return $html;

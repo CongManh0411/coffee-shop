@@ -11,6 +11,8 @@ class Database
             $config['database'], $config['port']
         );
         $this->connection->set_charset($config['charset']);
+        // Đồng bộ múi giờ MySQL (NOW()) với PHP (date_default_timezone_set).
+        $this->connection->query("SET time_zone = '" . date('P') . "'");
     }
 
     public function run($sql, $params = array())
