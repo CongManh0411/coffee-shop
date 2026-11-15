@@ -78,21 +78,33 @@ if ($roleKey === 'cashier' && $myStaffId) {
             foreach ((array) ($_POST['reg'] ?? array()) as $v) $wanted[(string) $v] = true;
             $rows = $regLoad();
             $added = 0; $removed = 0; $skipped = array();
+            $toRemove = array(); $toAdd = array();
             for ($i = 0; $i < $regDaysAhead; $i++) {
                 $key = schedule_add_days($today, $i);
                 $mine = null;
                 foreach ($rows as $r) if ((int) $r['staff_id'] === $myStaffId && $r['shift_date'] === $key) $mine = $r;
                 foreach ($regSlots as $sk => $sl) {
+                    // Ca đã bắt đầu/đã qua bị khóa trên giao diện (không được gửi lên) nên bỏ qua, tránh báo lỗi giả.
+                    if (strtotime($key . ' ' . $sl['start'] . ':00') <= time()) continue;
                     $isMine = $mine && schedule_clock($mine['start_time']) === $sl['start'] && schedule_clock($mine['end_time']) === $sl['end'];
                     $want = isset($wanted[$key . '|' . $sk]);
                     if ($want && !$isMine) {
-                        $err = shifts_register($myStaffId, array('date' => $key, 'start' => $sl['start'], 'end' => $sl['end'], 'register' => true));
-                        if ($err) $skipped[] = date('d/m', strtotime($key)) . ' ' . $sl['label'] . ': ' . $err; else $added++;
+                        $toAdd[] = array($key, $sl);
                     } elseif (!$want && $isMine && (int) $mine['registered'] === 1) {
-                        $err = shifts_register($myStaffId, array('date' => $key, 'start' => $sl['start'], 'end' => $sl['end'], 'register' => false));
-                        if ($err) $skipped[] = date('d/m', strtotime($key)) . ' ' . $sl['label'] . ': ' . $err; else $removed++;
+                        $toRemove[] = array($key, $sl);
                     }
                 }
+            }
+            // Hủy trước, đăng ký sau: đổi ca trong cùng ngày (vd. chiều -> sáng) không bị chặn bởi "đã có ca khác".
+            foreach ($toRemove as $it) {
+                list($key, $sl) = $it;
+                $err = shifts_register($myStaffId, array('date' => $key, 'start' => $sl['start'], 'end' => $sl['end'], 'register' => false));
+                if ($err) $skipped[] = date('d/m', strtotime($key)) . ' ' . $sl['label'] . ': ' . $err; else $removed++;
+            }
+            foreach ($toAdd as $it) {
+                list($key, $sl) = $it;
+                $err = shifts_register($myStaffId, array('date' => $key, 'start' => $sl['start'], 'end' => $sl['end'], 'register' => true));
+                if ($err) $skipped[] = date('d/m', strtotime($key)) . ' ' . $sl['label'] . ': ' . $err; else $added++;
             }
             $_SESSION['reg_flash'] = array('ok' => 'Đã xếp ' . $added . ' ca, hủy ' . $removed . ' ca' . ($skipped ? ' • bỏ qua ' . count($skipped) . ' (' . implode('; ', array_slice($skipped, 0, 3)) . (count($skipped) > 3 ? '…' : '') . ')' : '') . '.');
         }
