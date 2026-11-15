@@ -18,9 +18,19 @@ $socialLinks = array(
 function home_safe_url($url) {
     return preg_match('#^https?://#i', (string) $url) ? $url : '';
 }
+// Số liệu thật từ database; Quản lý nhập tay trong Cài đặt thì ưu tiên chữ đã nhập.
+$realStats = home_real_stats();
+$ratingNote = setting('hero_rating_note', '');
+if ($ratingNote === '' && $realStats['guests'] > 0) {
+    $ratingNote = 'Hơn ' . number_format($realStats['guests'], 0, ',', '.') . ' lượt khách đã ghé quán';
+}
+$hl1Title = setting('story_hl1_title', '');
+if ($hl1Title === '') {
+    $hl1Title = $realStats['items'] > 0 ? $realStats['items'] . ' Món nước & Bánh' : 'Món nước & Bánh đa dạng';
+}
 // Bốn ô nổi bật ở phần câu chuyện: icon cố định, tiêu đề và mô tả sửa được trong Cài đặt
 $storyHighlights = array(
-    array('✨', setting('story_hl1_title', '12+ Món nước & Bánh'), setting('story_hl1_desc', 'Pha chế chuẩn vị mỗi ngày')),
+    array('✨', $hl1Title, setting('story_hl1_desc', 'Pha chế chuẩn vị mỗi ngày')),
     array('⚡', setting('story_hl2_title', 'Wifi & Ổ cắm đầy đủ'), setting('story_hl2_desc', 'Tiện lợi cho việc học & làm việc')),
     array('🪴', setting('story_hl3_title', '3 Không gian trải nghiệm'), setting('story_hl3_desc', 'Sân vườn, máy lạnh, góc sofa')),
     array('💛', setting('story_hl4_title', 'Phục vụ tận tâm'), setting('story_hl4_desc', 'Luôn đón tiếp bằng nụ cười')),
@@ -145,7 +155,7 @@ function get_item_badge($index, $catFilter, $price) {
                 <span class="rating-stars">★★★★★</span>
                 <div class="rating-text">
                     <b><?= e(setting('hero_rating_title', 'Đậm vị & Cực Chill')) ?></b>
-                    <small><?= e(setting('hero_rating_note', 'Hơn 1.200+ lượt khách yêu thích')) ?></small>
+                    <?php if ($ratingNote !== ''): ?><small><?= e($ratingNote) ?></small><?php endif; ?>
                 </div>
             </div>
 

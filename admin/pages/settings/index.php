@@ -272,8 +272,8 @@
                     </div>
                     <div class="settings-form-group">
                         <label for="hero_rating_note">Thẻ đánh giá: dòng phụ (số lượt khách)</label>
-                        <input type="text" id="hero_rating_note" name="hero_rating_note" maxlength="100" value="<?= e(setting('hero_rating_note', 'Hơn 1.200+ lượt khách yêu thích')) ?>">
-                        <span class="settings-field-hint">Nên nhập số liệu thật của quán.</span>
+                        <input type="text" id="hero_rating_note" name="hero_rating_note" maxlength="100" value="<?= e(setting('hero_rating_note', '')) ?>" placeholder="Để trống để tự lấy số lượt khách thật">
+                        <span class="settings-field-hint">Để trống: trang chủ tự hiện số đơn đã thanh toán trong hệ thống.</span>
                     </div>
                 </div>
 
@@ -281,7 +281,7 @@
                 <div class="settings-grid-2">
                     <?php
                     $storyHlDefaults = array(
-                        1 => array('12+ Món nước & Bánh', 'Pha chế chuẩn vị mỗi ngày'),
+                        1 => array('', 'Pha chế chuẩn vị mỗi ngày'),
                         2 => array('Wifi & Ổ cắm đầy đủ', 'Tiện lợi cho việc học & làm việc'),
                         3 => array('3 Không gian trải nghiệm', 'Sân vườn, máy lạnh, góc sofa'),
                         4 => array('Phục vụ tận tâm', 'Luôn đón tiếp bằng nụ cười'),
@@ -289,7 +289,7 @@
                     foreach ($storyHlDefaults as $n => $def): ?>
                     <div class="settings-form-group">
                         <label for="story_hl<?= $n ?>_title">Ô <?= $n ?>: tiêu đề</label>
-                        <input type="text" id="story_hl<?= $n ?>_title" name="story_hl<?= $n ?>_title" maxlength="80" value="<?= e(setting('story_hl' . $n . '_title', $def[0])) ?>">
+                        <input type="text" id="story_hl<?= $n ?>_title" name="story_hl<?= $n ?>_title" maxlength="80" value="<?= e(setting('story_hl' . $n . '_title', $def[0])) ?>"<?= $n === 1 ? ' placeholder="Để trống để tự đếm số món đang bán"' : '' ?>>
                     </div>
                     <div class="settings-form-group">
                         <label for="story_hl<?= $n ?>_desc">Ô <?= $n ?>: mô tả</label>

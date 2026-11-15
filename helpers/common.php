@@ -60,6 +60,23 @@ function setting($key, $default = '')
     return isset($all[$key]) && $all[$key] !== '' && $all[$key] !== null ? $all[$key] : $default;
 }
 
+// Số liệu thật cho trang chủ: số món đang bán và số lượt khách (đơn đã thanh toán).
+function home_real_stats()
+{
+    static $stats = null;
+    if ($stats !== null) return $stats;
+    $stats = array('items' => 0, 'guests' => 0);
+    try {
+        $r = db()->fetchOne('SELECT COUNT(*) AS n FROM menu_items WHERE is_hidden = 0');
+        $stats['items'] = (int) ($r['n'] ?? 0);
+        $r = db()->fetchOne("SELECT COUNT(*) AS n FROM orders WHERE status = 'paid'");
+        $stats['guests'] = (int) ($r['n'] ?? 0);
+    } catch (\Throwable $e) {
+        // giữ 0 nếu truy vấn lỗi
+    }
+    return $stats;
+}
+
 // Cập nhật giá trị cài đặt
 function update_setting($key, $value)
 {
