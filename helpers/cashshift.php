@@ -144,7 +144,7 @@ function cashshift_open_row()
 function cashshift_snapshot($user)
 {
     $current = cashshift_open_row();
-    $history = cashshift_select('c.closed_at IS NOT NULL', array(), 'ORDER BY c.cash_shift_id DESC LIMIT 50');
+    $history = cashshift_select('c.closed_at IS NOT NULL', array(), 'ORDER BY c.cash_shift_id DESC LIMIT 200');
     $history = array_reverse($history); // cũ -> mới, giống cách JS đang dùng
     return array(
         'current' => $current ? cashshift_shape($current, (int) $user['staffId']) : null,
