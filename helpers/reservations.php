@@ -1,5 +1,5 @@
 <?php
-function reservation_validate($data, $requirePhone = true)
+function reservation_validate($data, $requirePhone = true, $leadMinutes = 30)
 {
     $name = trim((string) ($data['name'] ?? ''));
     $phone = trim((string) ($data['phone'] ?? ''));
@@ -21,7 +21,9 @@ function reservation_validate($data, $requirePhone = true)
         || $reservedAt->format('Y-m-d\\TH:i') !== $reservedInput) {
         return array(null, 'Vui lòng chọn ngày và giờ hợp lệ.');
     }
-    if ($reservedAt < new DateTime('+30 minutes')) return array(null, 'Thời gian đặt bàn cần trước ít nhất 30 phút.');
+    if ($reservedAt < new DateTime(($leadMinutes >= 0 ? '+' : '') . $leadMinutes . ' minutes')) {
+        return array(null, $leadMinutes > 0 ? 'Thời gian đặt bàn cần trước ít nhất ' . $leadMinutes . ' phút.' : 'Thời gian đặt bàn không được nằm trong quá khứ.');
+    }
 
     $tableId = null;
     if (!empty($data['tableId'])) {
@@ -43,7 +45,8 @@ function reservation_validate($data, $requirePhone = true)
 
 function reservation_create($data, $createdBy = null, $requirePhone = true)
 {
-    list($reservation, $err) = reservation_validate($data, $requirePhone);
+    // Nhân viên ghi nhận khách đến quầy: cho phép đặt cho "ngay bây giờ" (sai số 5 phút do form chỉ chọn đến phút).
+    list($reservation, $err) = reservation_validate($data, $requirePhone, -5);
     if ($err) return array(null, $err);
     return reservation_insert($reservation, $createdBy);
 }

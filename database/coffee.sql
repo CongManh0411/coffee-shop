@@ -136,6 +136,22 @@ CREATE TABLE IF NOT EXISTS shifts (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- orders -> dining_tables, staff, customers, promotions
+CREATE TABLE IF NOT EXISTS cash_shifts (
+  cash_shift_id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  staff_id INT UNSIGNED NOT NULL,
+  opening_amount BIGINT UNSIGNED NOT NULL DEFAULT 0,
+  closing_amount BIGINT UNSIGNED NULL,
+  expected_amount BIGINT UNSIGNED NULL,
+  opened_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  closed_at DATETIME NULL,
+  closed_by INT UNSIGNED NULL,
+  difference BIGINT NULL,
+  diff_reason VARCHAR(500) NULL,
+  summary_json TEXT NULL,
+  INDEX idx_cash_shift_staff_open (staff_id, closed_at),
+  CONSTRAINT fk_cash_shift_staff FOREIGN KEY (staff_id) REFERENCES staff(staff_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE IF NOT EXISTS orders (
   order_id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   order_code VARCHAR(32) NULL UNIQUE,
@@ -155,15 +171,18 @@ CREATE TABLE IF NOT EXISTS orders (
   payment_ref VARCHAR(120) NULL,
   created_by INT UNSIGNED NULL,
   paid_by INT UNSIGNED NULL,
+  cash_shift_id BIGINT UNSIGNED NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   paid_at DATETIME NULL,
+  INDEX idx_orders_cash_shift (cash_shift_id),
   INDEX idx_orders_status_created (status, created_at),
   INDEX idx_orders_table_status (table_id, status),
   CONSTRAINT fk_orders_table FOREIGN KEY (table_id) REFERENCES dining_tables(table_id) ON DELETE SET NULL,
   CONSTRAINT fk_orders_created_by FOREIGN KEY (created_by) REFERENCES staff(staff_id) ON DELETE SET NULL,
   CONSTRAINT fk_orders_paid_by FOREIGN KEY (paid_by) REFERENCES staff(staff_id) ON DELETE SET NULL,
   CONSTRAINT fk_orders_customer FOREIGN KEY (customer_id) REFERENCES customers(customer_id) ON DELETE SET NULL,
-  CONSTRAINT fk_orders_promo FOREIGN KEY (promotion_id) REFERENCES promotions(promotion_id) ON DELETE SET NULL
+  CONSTRAINT fk_orders_promo FOREIGN KEY (promotion_id) REFERENCES promotions(promotion_id) ON DELETE SET NULL,
+  CONSTRAINT fk_orders_cash_shift FOREIGN KEY (cash_shift_id) REFERENCES cash_shifts(cash_shift_id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS reservations (
@@ -234,18 +253,6 @@ CREATE TABLE IF NOT EXISTS menu_stock_movements (
   CONSTRAINT fk_menu_stock_move_staff FOREIGN KEY (staff_id) REFERENCES staff(staff_id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE IF NOT EXISTS cash_shifts (
-  cash_shift_id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  staff_id INT UNSIGNED NOT NULL,
-  opening_amount BIGINT UNSIGNED NOT NULL DEFAULT 0,
-  closing_amount BIGINT UNSIGNED NULL,
-  expected_amount BIGINT UNSIGNED NULL,
-  opened_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  closed_at DATETIME NULL,
-  INDEX idx_cash_shift_staff_open (staff_id, closed_at),
-  CONSTRAINT fk_cash_shift_staff FOREIGN KEY (staff_id) REFERENCES staff(staff_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
 -- =====================================================================
 -- PHAN 3: BANG PHU THUOC CAP 2 (orders, shifts, cash_shifts, ...)
 -- =====================================================================
@@ -313,6 +320,7 @@ CREATE TABLE IF NOT EXISTS cash_transactions (
   cash_transaction_id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   cash_shift_id BIGINT UNSIGNED NULL,
   transaction_type ENUM('cash_in','cash_out','refund','correction') NOT NULL,
+  category VARCHAR(80) NULL,
   amount BIGINT UNSIGNED NOT NULL,
   note VARCHAR(500) NULL,
   staff_id INT UNSIGNED NULL,
@@ -389,17 +397,3 @@ INSERT IGNORE INTO site_settings (setting_key, setting_value, setting_label) VAL
 ('shop_phone', '0901 234 567', 'Số điện thoại hotline đặt bàn'),
 ('shop_hours', '07:00 – 22:30', 'Giờ mở cửa ngày thường'),
 ('shop_hours_weekend', '06:30 – 23:00', 'Giờ mở cửa cuối tuần');
--- Cash shift closeout and order linkage (kept from the existing project merge).
-ALTER TABLE cash_shifts
-  ADD COLUMN IF NOT EXISTS closed_by INT UNSIGNED NULL AFTER closed_at,
-  ADD COLUMN IF NOT EXISTS difference BIGINT NULL AFTER closed_by,
-  ADD COLUMN IF NOT EXISTS diff_reason VARCHAR(500) NULL AFTER difference,
-  ADD COLUMN IF NOT EXISTS summary_json TEXT NULL AFTER diff_reason;
-
-ALTER TABLE cash_transactions
-  ADD COLUMN IF NOT EXISTS category VARCHAR(80) NULL AFTER transaction_type;
-
-ALTER TABLE orders
-  ADD COLUMN IF NOT EXISTS cash_shift_id BIGINT UNSIGNED NULL AFTER paid_by,
-  ADD INDEX IF NOT EXISTS idx_orders_cash_shift (cash_shift_id),
-  ADD FOREIGN KEY IF NOT EXISTS fk_orders_cash_shift (cash_shift_id) REFERENCES cash_shifts(cash_shift_id) ON DELETE SET NULL;
