@@ -78,6 +78,9 @@ if (!in_array($page, array('404', 'home', 'public-menu', 'menu-detail'), true)) 
     }
     $allowed = $rolePages[$user['roleKey']] ?? array();
     if (!in_array($page, $allowed, true)) {
+        if ($user['roleKey'] === 'manager') {
+            redirect('admin/index.php?page=tablemanage');
+        }
         if (!$allowed) {
             http_response_code(403);
             exit('403 - Tai khoan khong co quyen truy cap.');

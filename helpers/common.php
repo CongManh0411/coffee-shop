@@ -81,6 +81,11 @@ function home_real_stats()
 function update_setting($key, $value)
 {
     try {
+        // Đổi logo/ảnh trang chủ: xóa file cũ do hệ thống tải lên (upload_delete_files bỏ qua ảnh mẫu / logo mặc định).
+        if (($key === 'shop_logo' || substr($key, -6) === '_image') && function_exists('upload_delete_files')) {
+            $old = db()->fetchOne('SELECT setting_value FROM site_settings WHERE setting_key = ?', array($key));
+            if ($old && $old['setting_value'] !== $value) upload_delete_files(array($old['setting_value']));
+        }
         db()->execute(
             'INSERT INTO site_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?',
             array($key, $value, $value)

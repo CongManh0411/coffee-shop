@@ -792,9 +792,23 @@ function invoice_cancel_or_refund($orderId, $mode, $reason, $user)
     if ($orderId <= 0) return 'Hóa đơn không hợp lệ.';
     if ($reason === '') return 'Vui lòng nhập lý do.';
     if (function_exists('mb_strlen') ? mb_strlen($reason, 'UTF-8') > 500 : strlen($reason) > 500) return 'Lý do tối đa 500 ký tự.';
-    if ($mode === 'refund') return orders_refund_paid($orderId, $reason, $user);
-    if ($mode === 'cancel') return orders_cancel_paid($orderId, $reason, $user);
-    return 'Thao tác không hợp lệ.';
+    if ($mode !== 'refund' && $mode !== 'cancel') return 'Thao tác không hợp lệ.';
+    $info = db()->fetchOne("SELECT order_code, total FROM orders WHERE order_id = ?", array($orderId));
+    $err = $mode === 'refund' ? orders_refund_paid($orderId, $reason, $user) : orders_cancel_paid($orderId, $reason, $user);
+    if ($err === '' && $info) {
+        // Ghi nhật ký kiểm toán để quản lý xem được ai hoàn tiền / hủy hóa đơn. Lỗi ghi log không làm hỏng thao tác chính.
+        try {
+            auditlog_create(array(
+                'type' => $mode === 'refund' ? 'refund' : 'cancel_order',
+                'text' => ($mode === 'refund' ? 'Hoàn tiền' : 'Hủy hóa đơn') . ' ' . ($info['order_code'] ?: ('#' . $orderId)) . ': ' . $reason,
+                'amount' => (int) $info['total'],
+                'flag' => 1,
+            ), $user);
+        } catch (Exception $e) {
+            error_log($e);
+        }
+    }
+    return $err;
 }
 
 // ---------------------------- Bếp ----------------------------
