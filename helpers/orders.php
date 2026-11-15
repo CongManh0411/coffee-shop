@@ -116,6 +116,7 @@ function orders_refund_paid($orderId, $reason, $user)
         db()->execute("INSERT INTO order_refunds (order_id, amount, reason, refunded_by) VALUES (?, ?, ?, ?)",
             array($orderId, (int) $order['total'], $reason, (int) $user['staffId']));
         db()->execute("UPDATE orders SET status = 'cancelled' WHERE order_id = ?", array($orderId));
+        warehouse_restore_sale($orderId, $user);
         return '';
     });
 }
@@ -130,6 +131,7 @@ function orders_cancel_paid($orderId, $reason, $user)
         db()->execute("UPDATE orders SET status = 'cancelled' WHERE order_id = ?", array($orderId));
         db()->execute("INSERT INTO order_cancellations (order_id, reason, cancelled_by) VALUES (?, ?, ?)",
             array($orderId, $reason, (int) $user['staffId']));
+        warehouse_restore_sale($orderId, $user);
         return '';
     });
 }

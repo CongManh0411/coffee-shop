@@ -338,3 +338,39 @@ function warehouse_deduct_sale($orderId, $orderCode, $user)
 
     return '';
 }
+
+// Hoàn kho khi hóa đơn đã thanh toán bị hoàn tiền / hủy: cộng lại đúng số lượng đã trừ lúc bán
+// (đọc từ lịch sử 'sale' trừ đi các 'sale_rollback' đã làm trước đó, nên gọi nhiều lần cũng không cộng trùng).
+// Phải gọi bên trong transaction của hàm hoàn tiền / hủy.
+function warehouse_restore_sale($orderId, $user)
+{
+    $order = db()->fetchOne("SELECT order_code FROM orders WHERE order_id = ?", array((int) $orderId));
+    if (!$order || (string) $order['order_code'] === '') return '';
+    $code = $order['order_code'];
+
+    $rows = db()->fetchAll(
+        "SELECT menu_item_id, SUM(-quantity_delta) AS sold
+         FROM menu_stock_movements
+         WHERE reference = ? AND movement_type IN ('sale', 'sale_rollback')
+         GROUP BY menu_item_id ORDER BY menu_item_id",
+        array($code)
+    );
+    $staffId = (int) ($user['staffId'] ?? 0);
+    foreach ($rows as $r) {
+        $qty = (int) $r['sold'];
+        if ($qty <= 0) continue; // đã hoàn rồi hoặc không có gì để hoàn
+        $mId = (int) $r['menu_item_id'];
+        db()->execute("INSERT IGNORE INTO menu_stock (menu_item_id, quantity, min_quantity) VALUES (?, 0, 10)", array($mId));
+        $cur = db()->fetchOne("SELECT quantity FROM menu_stock WHERE menu_item_id = ? FOR UPDATE", array($mId));
+        $newQty = (int) $cur['quantity'] + $qty;
+        db()->execute("UPDATE menu_stock SET quantity = ?, updated_at = NOW() WHERE menu_item_id = ?", array($newQty, $mId));
+        db()->execute("UPDATE menu_items SET stock = ? WHERE item_id = ?", array($newQty, $mId));
+        db()->execute(
+            "INSERT INTO menu_stock_movements (menu_item_id, movement_type, quantity_delta, reference, note, staff_id, created_at)
+             VALUES (?, 'sale_rollback', ?, ?, ?, ?, NOW())",
+            array($mId, $qty, $code, 'Hoàn kho do hoàn tiền/hủy hóa đơn ' . $code, $staffId > 0 ? $staffId : null)
+        );
+    }
+    return '';
+}
+
